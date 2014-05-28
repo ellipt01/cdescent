@@ -141,7 +141,6 @@ main (int argc, char **argv)
 	linreg_centering_y (lreg);
 	linreg_centering_x (lreg);
 	linreg_normalizing_x (lreg);
-//	linreg_standardizing_x (lreg);
 
 	/* penalty term: S-Lasso */
 	{

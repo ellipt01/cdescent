@@ -1,0 +1,41 @@
+<<<<<<< HEAD
+*~
+*.old
+*.orig
+
+# working directries
+#bin
+.cproject
+.autotools
+.settings
+work
+share
+Debug
+
+=======
+# Object files
+*.o
+*.lo
+*.ko
+*.obj
+*.elf
+
+# Libraries
+*.lib
+*.la
+*.a
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+>>>>>>> origin/master
