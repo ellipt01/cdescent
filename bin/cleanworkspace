@@ -1,0 +1,10 @@
+#!/bin/sh
+
+d=$(dirname $BASH_SOURCE)
+root=${d%bin}
+
+find $root -name '*~' -exec rm {} \;
+find $root -name '*.o' -exec rm {} \;
+find $root -name 'beta*' -exec rm {} \;
+find $root -name 'out*.eps' -exec rm {} \;
+

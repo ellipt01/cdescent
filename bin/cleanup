@@ -1,0 +1,59 @@
+#!/bin/sh
+
+if [ -e Makefile ]; then
+	echo "make clean"
+	make clean > /dev/null 2>&1
+fi
+
+echo "cleanworkspace"
+path=${0%/*}
+./"$path"/cleanworkspace
+
+echo "rm -rf autom4te.cache"
+rm -rf autom4te.cache
+
+echo "rm -f INSTALL COPYING compile"
+rm -f INSTALL COPYING compile
+
+echo "rm -f config.h.in install-sh missing depcomp aclocal.m4 acinclude.m4"
+rm -f config.h.in install-sh missing depcomp aclocal.m4 acinclude.m4
+
+echo "rm -f stamp-h.in"
+rm -f stamp-h.in
+
+echo "rm -f *.pc"
+rm -f *.pc
+
+echo "rm -f ltmain.sh stamp-h1 config.log config.h config.sub config.status config.guess"
+rm -f ltmain.sh stamp-h1 config.log config.h config.sub config.status config.guess
+
+echo "rm -f configure libtool bin/.dirstamp"
+rm -f configure libtool bin/.dirstamp
+
+for i in . src src/cdescent src/linreg include example test; do
+
+	echo "rm -f $i/Makefile"
+	rm -f $i/Makefile
+ 
+	echo "rm -f $i/Makefile.am.*"
+	rm -f $i/Makefile.am.*
+
+	echo "rm -f $i/Makefile.in*"
+	rm -f $i/Makefile.in*
+
+	echo "rm -rf $i/.deps"
+	rm -rf $i/.deps
+done
+
+echo -n "rm "
+find . -name '*~' -print
+find . -name '*~' -exec rm {} \;
+
+DEBUG=Debug
+PAR=$(readlink -f $DEBUG)
+if [ -d $PAR ]; then
+	echo "cd $PAR"
+	cd $PAR
+	echo "make clean"
+	make clean > /dev/null 2>&1
+fi

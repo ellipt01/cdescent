@@ -1,0 +1,38 @@
+#!/bin/sh
+
+if [ -z "$1" ]; then
+	echo "USAGE: $0 <num of variables> { <lambda1> [x1:x2] [y1:y2] }"
+	exit
+fi
+
+echo "set terminal postscript eps enhanced color" >| tmp.gnuplot
+echo "set output \"out.eps\"" >> tmp.gnuplot
+echo "unset key" >> tmp.gnuplot
+
+echo -n "set title \"Trace Plot of coefficients fit by Lasso, Elastic net" >> tmp.gnuplot
+if [ -n "$2" ]; then
+	echo -n " ({/Symbol l}_2 = $2)"  >> tmp.gnuplot
+fi
+echo "\""  >> tmp.gnuplot
+
+echo "set xlabel \"{/Symbol S}_j|{/Symbol b}_j|\"" >> tmp.gnuplot
+echo "set ylabel \"{/Symbol b}\"" >> tmp.gnuplot
+
+echo -n "plot $3 $4 0 linetype 0 linewidth 2, " >> tmp.gnuplot
+
+j=1
+for i in `seq -f %03g 0 $1`; do
+	fn=beta"$i".res
+
+	echo -n "\"$fn\" using 2:3 with lines linecolor $j linetype 1 linewidth 1" >> tmp.gnuplot
+	if [ $i -lt $1 ]; then
+		echo -n ", " >> tmp.gnuplot
+	fi
+
+	j=$((j+1))
+done
+
+gnuplot tmp.gnuplot
+rm -f tmp.gnuplot
+
+evince out.eps &
