@@ -39,7 +39,7 @@ cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
 	}
 	cd->camax = cd->c[idamax_ (&lreg->p, cd->c, &ione)];
 
-	cd->h = 0.;
+	cd->b = 0.;
 	cd->nrm1 = 0.;
 	cd->beta = (double *) malloc (lreg->p * sizeof (double));
 	array_set_all (lreg->p, cd->beta, 0.);

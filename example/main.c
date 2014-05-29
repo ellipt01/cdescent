@@ -160,7 +160,7 @@ main (int argc, char **argv)
 	{
 		clock_t	t1, t2;
 		t1 = clock ();
-		example_cdescent_cyclic (lreg, start, dt, stop, 1.e-3, 1000);
+		example_cdescent_pathwise (lreg, start, dt, stop, 1.e-3, 1000);
 		t2 = clock ();
 		fprintf (stderr, "time = %.2e\n", (double) (t2 - t1) / CLOCKS_PER_SEC);
 	}

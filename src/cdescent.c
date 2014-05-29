@@ -56,7 +56,7 @@ sum_of_array (const int n, const double *x)
 
 /* intercept = sum ( (r - X * beta) ) / n */
 static double
-update_intercept (const cdescent *cd)
+eval_intercept (const cdescent *cd)
 {
 	int				n = cd->lreg->n;
 	const double	*y = cd->lreg->y;
@@ -93,7 +93,7 @@ beta_j_updater (const int j, const cdescent *cd, double *jb)
 	// if need to consider intercept, z -= h * s' * xj
 	if (!cd->lreg->ycentered || !cd->lreg->xcentered) {
 		double		sum_xj = sum_of_array (n, xj);
-		z -= sum_xj * cd->h;
+		z -= sum_xj * cd->b;
 	}
 
 	/* user defined penalty (not lasso nor ridge) */
@@ -144,7 +144,7 @@ cdescent_cyclic_once_cycle (cdescent *cd)
 	dcopy_ (&p, cd->beta, &ione, cd->beta_prev, &ione);
 
 	/* z = X(:,j)' * y - h - X(:,j)' * X * beta + beta(j) */
-	cd->h = (!cd->lreg->ycentered || !cd->lreg->xcentered) ? update_intercept (cd) : 0.;
+	cd->b = (!cd->lreg->ycentered || !cd->lreg->xcentered) ? eval_intercept (cd) : 0.;
 
 	/*** single "one-at-a-time" update of cyclic coordinate descent ***/
 	for (j = 0; j < p; j++) {
@@ -185,7 +185,7 @@ cdescent_cyclic_once_cycle (cdescent *cd)
 
 /*
  * cyclic coordinate descent
- * repeat coordinate descent cycle until solution is converged
+ * repeat coordinate descent until solution is converged
  */
 bool
 cdescent_cyclic (cdescent *cd, const int maxiter)

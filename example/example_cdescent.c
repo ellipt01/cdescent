@@ -36,7 +36,7 @@ output_solutionpath_cdescent (int iter, const cdescent *cd)
 }
 
 void
-example_cdescent_cyclic (const linreg *lreg, double tmin, double dt, double tmax, double tol, int maxiter)
+example_cdescent_pathwise (const linreg *lreg, double tmin, double dt, double tmax, double tol, int maxiter)
 {
 	int			iter = 0;
 	double		t;
