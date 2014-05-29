@@ -15,11 +15,9 @@ libexample_la_CPPFLAGS =\
 	-I$(top_srcdir)/include\
 	-I$(top_srcdir)/example
 
-libexample_la_LDFLAGS =\
-	-L$(top_srcdir)/src/linreg\
-	-L$(top_srcdir)/src/cdescent
+libexample_la_LDFLAGS = -L$(top_srcdir)/src
 
-libexample_la_LIBADD = -llinreg -lcdescent
+libexample_la_LIBADD = -lcdescent
 
 # sample program
 l1reg_example_SOURCES = main.c

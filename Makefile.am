@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = src/linreg src/cdescent include example
+SUBDIRS = src include example
 
 libcdescentdocdir = ${prefix}/doc/cdescent
 libcdescentdoc_DATA = \

@@ -138,7 +138,7 @@ main (int argc, char **argv)
 	/* linear system */
 	read_data (fn, skipheaders, &n, &p, &y, &x);
 	lreg = linreg_alloc (n, p, y, x);
-	linreg_centering_y (lreg);
+//	linreg_centering_y (lreg);
 	linreg_centering_x (lreg);
 	linreg_normalizing_x (lreg);
 

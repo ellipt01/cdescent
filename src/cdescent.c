@@ -46,24 +46,31 @@ update_partially  (const int j, const double delta, size_t n, const double *x, d
 }
 
 static double
-update_intercept (const int j, const cdescent *cd)
+sum_of_array (const size_t n, const double *x)
 {
-	int				i;
-	double			h;
-	double			*r;
+	int		i;
+	double	sum = 0.;
+	for (i = 0; i < n; i++) sum += x[i];
+	return sum;
+}
+
+/* intercept = sum ( (r - X * beta) ) / n */
+static double
+update_intercept (const cdescent *cd)
+{
 	size_t			n = cd->lreg->n;
 	const double	*y = cd->lreg->y;
+	double			sum_r;
+	double			*r = (double *) malloc (n * sizeof (double));
 
-	/* h = y - mu */
-	r = (double *) malloc (n * sizeof (double));
-	dcopy_ (LINREG_CINTP (n), y, &ione, r, &ione);
-	daxpy_ (LINREG_CINTP (n), &dmone, cd->mu, &ione, r, &ione);
+	// h = y - mu
+	dcopy_ (LINREG_CINTP (n), y, &ione, r, &ione);	// r = y
+	daxpy_ (LINREG_CINTP (n), &dmone, cd->mu, &ione, r, &ione);	// r = y - mu
 
-	h = 0.;
-	for (i = 0; i < n; i++) h += r[i];
+	sum_r = sum_of_array (n, r);
 	free (r);
 
-	return h;
+	return sum_r / (double) n;
 }
 
 /*
@@ -79,12 +86,15 @@ beta_j_updater (const int j, const cdescent *cd, double *jb)
 	const double	*xj = x + LINREG_INDEX_OF_MATRIX (0, j, n);	// X(:,j)
 	double			xjtm = ddot_ (LINREG_CINTP (n), xj, &ione, cd->mu, &ione);	// X(:,j)' * mu
 
-	double			xtx = (cd->lreg->xnormalized) ? 1. : cd->xtx[j];
+	double			xtx = (cd->lreg->xnormalized) ? 1. : cd->xtx[j];	// norm of X(:,j)
 
 	double			z = cj - xjtm + xtx * cd->beta[j];
 
-	/* z = X(:,j)' * y - h - X(:,j)' * X * beta + beta(j) */
-	if (!cd->lreg->ycentered && !cd->lreg->xcentered) z -= update_intercept (j, cd);
+	// if need to consider intercept, z -= h * s' * xj
+	if (!cd->lreg->ycentered || !cd->lreg->xcentered) {
+		double		sum_xj = sum_of_array (n, xj);
+		z -= sum_xj * cd->h;
+	}
 
 	/* user defined penalty (not lasso nor ridge) */
 	if (cdescent_is_regtype_userdef (cd)) {
@@ -112,15 +122,15 @@ beta_j_updater (const int j, const cdescent *cd, double *jb)
 bool
 cdescent_cyclic_once_cycle (cdescent *cd)
 {
-	int				j;
-	size_t			p = cd->lreg->p;
-	double			lambda1 = cd->lambda1;
+	int			j;
+	size_t		p = cd->lreg->p;
+	double		lambda1 = cd->lambda1;
 
-	double			nrm;
-	double			*delta = (double *) malloc (p * sizeof (double));
-	bool			converged;
+	double		nrm;
+	double		*delta = (double *) malloc (p * sizeof (double));
+	bool		converged;
 
-	double			*jb = NULL;	// J * beta
+	double		*jb = NULL;	// J * beta
 	if (cdescent_is_regtype_userdef (cd)) {
 		// J * beta
 		size_t			pj = cd->lreg->pen->pj;
@@ -133,9 +143,15 @@ cdescent_cyclic_once_cycle (cdescent *cd)
 	cd->nrm1 = cd->nrm1_prev;
 	dcopy_ (LINREG_CINTP (p), cd->beta, &ione, cd->beta_prev, &ione);
 
+	/* z = X(:,j)' * y - h - X(:,j)' * X * beta + beta(j) */
+	cd->h = (!cd->lreg->ycentered || !cd->lreg->xcentered) ? update_intercept (cd) : 0.;
+
+	/*** single "one-at-a-time" update of cyclic coordinate descent ***/
 	for (j = 0; j < p; j++) {
+		double		z;
 		double		scale2 = get_jth_scale2 (j, cd);
-		double		z = beta_j_updater (j, cd, jb);
+
+		z = beta_j_updater (j, cd, jb);
 
 		cd->beta[j] = scale2 * soft_threshold (z, lambda1);
 

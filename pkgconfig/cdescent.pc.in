@@ -3,8 +3,8 @@ exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
 
-Name: @PACKAGE@-cdescent
+Name: @PACKAGE@
 Description: @CDESCENT_DESCRIPTION@
 Version: @VERSION@
 Libs: -L${libdir} -lcdescent -llinreg
-Cflags: -I${includedir}/liblarsen
+Cflags: -I${includedir}/@PACKAGE@

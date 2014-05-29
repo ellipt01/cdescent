@@ -58,7 +58,6 @@ AC_CONFIG_FILES([cdescent.pc:pkgconfig/cdescent.pc.in])
 # make files
 AC_CONFIG_FILES([Makefile
                  include/Makefile
-                 src/linreg/Makefile
-                 src/cdescent/Makefile
+                 src/Makefile
                  example/Makefile])
 AC_OUTPUT

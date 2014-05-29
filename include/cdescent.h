@@ -29,6 +29,7 @@ struct s_cdescent {
 
 
 	double			nrm1;		// L-1 norm: sum ( abs(beta) )
+	double			h;			// intercept
 	double			*beta;		// solution
 	double			*mu;		// estimation of y
 
