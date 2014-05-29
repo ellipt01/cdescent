@@ -14,7 +14,6 @@
 extern "C" {
 #endif
 
-#include <stddef.h>
 #include <stdbool.h>
 
 typedef enum {
@@ -36,42 +35,42 @@ typedef struct s_penalty		penalty;
  *   Z = scale * [X; sqrt(lambda2) * J]
  */
 struct s_linreg {
-	size_t					n;	// number of data
-	size_t					p;	// number of variables
+	int					n;	// number of data
+	int					p;	// number of variables
 
-	double					*y;		// data
-	double					*x;		// variables
+	double				*y;		// data
+	double				*x;		// variables
 
-	bool					ycentered;
-	bool					xcentered;
-	bool					xnormalized;
+	bool				ycentered;
+	bool				xcentered;
+	bool				xnormalized;
 
-	double					*meany;	// mean(y)
-	double					*meanx;	// meanx[j] = mean( X(:,j) )
-	double					*normx;	// normx[j] = norm( X(:,j) )
+	double				*meany;	// mean(y)
+	double				*meanx;	// meanx[j] = mean( X(:,j) )
+	double				*normx;	// normx[j] = norm( X(:,j) )
 
 	/* penalty type */
-	LinegPenaltyType		pentype;
+	LinegPenaltyType	pentype;
 
 	/* threshold for L2 penalty */
-	double					lambda2;
+	double				lambda2;
 
 	/* penalty term.
 	 * if pen == NULL && lambda2 > 0, ridge regression is assumed. */
-	const penalty			*pen;
+	const penalty		*pen;
 
 };
 
 /* penalty term */
 struct s_penalty {
-	size_t					pj;		// rows of r
-	size_t					p;		// columns of r
-	double					a;		// scale factor
-	const double			*r;		// pj x p penalty matrix
+	int					pj;		// rows of r
+	int					p;		// columns of r
+	double				a;		// scale factor
+	const double		*r;		// pj x p penalty matrix
 };
 
 /* linreg.c */
-linreg			*linreg_alloc (const size_t n, const size_t p, double *y, double *x);
+linreg			*linreg_alloc (const int n, const int p, double *y, double *x);
 void			linreg_free (linreg *l);
 
 void			linreg_centering_y (linreg *lreg);
@@ -79,7 +78,7 @@ void			linreg_centering_x (linreg *lreg);
 void			linreg_normalizing_x (linreg *lreg);
 void			linreg_standardizing_x (linreg *lreg);
 
-penalty		*penalty_alloc (const size_t p1, const size_t p, const double a, const double *r);
+penalty		*penalty_alloc (const int p1, const int p, const double a, const double *r);
 void			penalty_free (penalty *pen);
 
 void			linreg_set_penalty (linreg *lreg, const double lambda2, const penalty *pen);

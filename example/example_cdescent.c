@@ -15,7 +15,7 @@ output_solutionpath_cdescent (int iter, const cdescent *cd)
 	int			i;
 	char		fn[80];
 	FILE		*fp;
-	size_t		p = cd->lreg->p;
+	int			p = cd->lreg->p;
 	double		*beta = cdescent_copy_beta (cd, true);
 	double		a = (cd->lreg->pen) ? cd->lreg->pen->a : 1.;
 	double		nrm1 = cd->nrm1 * (1. + a * cd->lreg->lambda2);	// cd->nrm1 / cd->lreg->scale2;

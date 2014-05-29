@@ -35,9 +35,9 @@ linreg_error (const char * function_name, const char *error_msg, const char *fil
 }
 
 linreg *
-linreg_alloc (const size_t n, const size_t p, double *y, double *x)
+linreg_alloc (const int n, const int p, double *y, double *x)
 {
-	size_t		np;
+	int		np;
 	linreg		*lreg;
 
 	if (!y) linreg_error ("lisys_alloc", "vector *y is empty.", __FILE__, __LINE__);
@@ -86,7 +86,7 @@ linreg_free (linreg *lreg)
 /* centering each column of matrix:
  * x(:, j) -> x(:, j) - mean(x(:, j)) */
 static double *
-centering (const size_t size1, const size_t size2, double *x)
+centering (const int size1, const int size2, double *x)
 {
 	int		i, j;
 	double	*mean = (double *) malloc (size2 * sizeof (double));
@@ -104,7 +104,7 @@ centering (const size_t size1, const size_t size2, double *x)
 /* normalizing each column of matrix:
  * x(:, j) -> x(:, j) / norm(x(:, j)) */
 static double *
-normalizing (const size_t size1, const size_t size2, double *x)
+normalizing (const int size1, const int size2, double *x)
 {
 	int		j;
 	double	*nrm = (double *) malloc (size2 * sizeof (double));
@@ -112,9 +112,9 @@ normalizing (const size_t size1, const size_t size2, double *x)
 		double	alpha;
 		double	nrmj;
 		double	*xj = x + LINREG_INDEX_OF_MATRIX (0, j, size1);
-		nrmj = dnrm2_ (LINREG_CINTP (size1), xj, &ione);
+		nrmj = dnrm2_ (&size1, xj, &ione);
 		alpha = 1. / nrmj;
-		dscal_ (LINREG_CINTP (size1), &alpha, xj, &ione);
+		dscal_ (&size1, &alpha, xj, &ione);
 		nrm[j] = nrmj;
 	}
 	return nrm;
@@ -160,7 +160,7 @@ linreg_standardizing_x (linreg *lreg)
 }
 
 penalty *
-penalty_alloc (const size_t pj, const size_t p, const double a, const double *r)
+penalty_alloc (const int pj, const int p, const double a, const double *r)
 {
 	penalty	*pen;
 

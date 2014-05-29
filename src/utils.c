@@ -11,7 +11,7 @@
 #include "linreg_private.h"
 
 static void
-array_set_all (const size_t n, double *x, const double val)
+array_set_all (const int n, double *x, const double val)
 {
 	int		i;
 	for (i = 0; i < n; i++) x[i] = val;
@@ -25,7 +25,6 @@ cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
 
 	if (!lreg) linreg_error ("cdescent_alloc", "linreg *lreg is empty.", __FILE__, __LINE__);
 
-
 	cd = (cdescent *) malloc (sizeof (cdescent));
 
 	cd->lreg = lreg;
@@ -36,11 +35,9 @@ cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
 	// c = X' * y
 	cd->c = (double *) malloc (lreg->p * sizeof (double));
 	{
-		int		n = (int) lreg->n;
-		int		p = (int) lreg->p;
-		dgemv_ ("T", &n, &p, &done, lreg->x, &n, lreg->y, &ione, &dzero, cd->c, &ione);
+		dgemv_ ("T", &lreg->n, &lreg->p, &done, lreg->x, &lreg->n, lreg->y, &ione, &dzero, cd->c, &ione);
 	}
-	cd->camax = cd->c[idamax_ (LINREG_CINTP (lreg->p), cd->c, &ione)];
+	cd->camax = cd->c[idamax_ (&lreg->p, cd->c, &ione)];
 
 	cd->h = 0.;
 	cd->nrm1 = 0.;
@@ -55,26 +52,22 @@ cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
 	/* xtx = diag (X' * X) */
 	if (!lreg->xnormalized) {
 		int				j;
-		size_t			n = lreg->n;
-		size_t			p = lreg->p;
-		const double	*x = lreg->x;
-		cd->xtx = (double *) malloc (p * sizeof (double));
-		for (j = 0; j < p; j++) {
-			const double	*xj = x + LINREG_INDEX_OF_MATRIX (0, j, n);
-			cd->xtx[j] = ddot_ (LINREG_CINTP (n), xj, &ione, xj, &ione);
+		cd->xtx = (double *) malloc (lreg->p * sizeof (double));
+		for (j = 0; j < lreg->p; j++) {
+			const double	*xj = lreg->x + LINREG_INDEX_OF_MATRIX (0, j, lreg->n);
+			cd->xtx[j] = ddot_ (&lreg->n, xj, &ione, xj, &ione);
 		}
 	} else cd->xtx = NULL;
 
 	/* jtj = diag (J' * J) */
 	if (lreg->pentype == PENALTY_USERDEF) {
 		int				j;
-		size_t			p = lreg->p;
-		size_t			pj = lreg->pen->pj;
+		int				pj = lreg->pen->pj;
 		const double	*jr = lreg->pen->r;
-		cd->jtj = (double *) malloc (p * sizeof (double));
-		for (j = 0; j < p; j++) {
+		cd->jtj = (double *) malloc (lreg->p * sizeof (double));
+		for (j = 0; j < lreg->p; j++) {
 			const double	*jrj = jr + LINREG_INDEX_OF_MATRIX (0, j, pj);
-			cd->jtj[j] = ddot_ (LINREG_CINTP (pj), jrj, &ione, jrj, &ione);
+			cd->jtj[j] = ddot_ (&pj, jrj, &ione, jrj, &ione);
 		}
 	} else cd->jtj = NULL;
 
@@ -104,9 +97,9 @@ cdescent_set_lambda1 (cdescent *cd, const double lambda1)
 double *
 cdescent_copy_beta (const cdescent *cd, bool scaling)
 {
-	size_t	p = cd->lreg->p;
+	int		p = cd->lreg->p;
 	double	*beta = (double *) malloc (p * sizeof (double));
-	dcopy_ (LINREG_CINTP (p), cd->beta, &ione, beta, &ione);
+	dcopy_ (&p, cd->beta, &ione, beta, &ione);
 	if (scaling && !cdescent_is_regtype_lasso (cd)) {
 		int		j;
 		double	lambda2 = cd->lreg->lambda2;

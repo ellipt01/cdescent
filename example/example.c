@@ -10,10 +10,10 @@
 #include <string.h>
 
 static void
-count_data (char *fn, int skip_header, size_t *row, size_t *col)
+count_data (char *fn, int skip_header, int *row, int *col)
 {
-	size_t	ndata = 0;
-	size_t	npred = 0;
+	int		ndata = 0;
+	int		npred = 0;
 	char	buf[100 * BUFSIZ];
 	FILE	*fp;
 
@@ -39,17 +39,17 @@ count_data (char *fn, int skip_header, size_t *row, size_t *col)
 }
 
 void
-read_data (char *fn, int skip_header, size_t *n, size_t *p, double **y, double **x)
+read_data (char *fn, int skip_header, int *n, int *p, double **y, double **x)
 {
-	int			i, j;
-	size_t		size1;
-	size_t		size2;
+	int		i, j;
+	int		size1;
+	int		size2;
 
-	char		buf[100 * BUFSIZ];
-	FILE		*fp;
+	char	buf[100 * BUFSIZ];
+	FILE	*fp;
 
-	double		*_y;
-	double		*_x;
+	double	*_y;
+	double	*_x;
 
 	count_data (fn, skip_header, &size1, &size2);
 

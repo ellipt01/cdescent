@@ -14,7 +14,7 @@
 #include "example.h"
 
 char		fn[80] = "\0";
-size_t		skipheaders = 0;
+int			skipheaders = 0;
 double		lambda2 = 0.;
 double		start = 0.;
 double		stop = 100.;
@@ -122,13 +122,13 @@ fprintf_params (void)
 int
 main (int argc, char **argv)
 {
-	size_t		n;
-	size_t		p;
+	int			n;
+	int			p;
 	double		*y;
 	double		*x;
 	linreg		*lreg;
 
-	size_t		pj;
+	int			pj;
 	double		*r;
 	penalty	*pen;
 

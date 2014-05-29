@@ -38,16 +38,6 @@ extern void	dgemm_ (const char *transa, const char *transb, const int *m, const 
 extern double	dlamch_ (const char *cmach);
 #endif
 
-/* cast pointer type to const int * */
-#ifndef LINREG_CINTP
-#define LINREG_CINTP(a)	((const int *) &(a))
-#endif
-
-/* min(a, b) */
-#ifndef LINREG_MIN
-#define LINREG_MIN(a, b)	(((a) <= (b)) ? (a) : (b))
-#endif
-
 /* following constants are set in linreg.c */
 extern const int		ione;	//  1
 extern const double	dzero;	//  0.
