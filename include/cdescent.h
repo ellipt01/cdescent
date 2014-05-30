@@ -61,11 +61,9 @@ struct s_cdescent {
 cdescent	*cdescent_alloc (const linreg *lreg, const double lambda1, const double tol);
 void		cdescent_free (cdescent *cd);
 
-void		cdescent_set_lambda1 (cdescent *cd, const double lambda1);
 double		cdescent_get_lambda2 (const cdescent *cd, bool scaling);
 
 double		*cdescent_copy_beta (const cdescent *cd, bool scaling);
-//double		*cdescent_copy_mu (const cdescent *cd, bool scaling);
 
 bool		cdescent_is_regtype_lasso (const cdescent *cd);
 bool		cdescent_is_regtype_ridge (const cdescent *cd);

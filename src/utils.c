@@ -6,6 +6,7 @@
  */
 
 #include <stdlib.h>
+#include <math.h>
 #include <cdescent.h>
 
 #include "linreg_private.h"
@@ -30,14 +31,14 @@ cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
 	cd->lreg = lreg;
 
 	cd->tolerance = tol;
-	cd->lambda1 = lambda1;
 
 	// c = X' * y
 	cd->c = (double *) malloc (lreg->p * sizeof (double));
-	{
-		dgemv_ ("T", &lreg->n, &lreg->p, &done, lreg->x, &lreg->n, lreg->y, &ione, &dzero, cd->c, &ione);
-	}
-	cd->camax = cd->c[idamax_ (&lreg->p, cd->c, &ione)];
+	dgemv_ ("T", &lreg->n, &lreg->p, &done, lreg->x, &lreg->n, lreg->y, &ione, &dzero, cd->c, &ione);
+
+	cd->camax = fabs (cd->c[idamax_ (&lreg->p, cd->c, &ione) - 1]);
+
+	cd->lambda1 = (cd->camax < lambda1) ? floor (cd->camax) + 1. : lambda1;
 
 	cd->b = 0.;
 	cd->nrm1 = 0.;
@@ -54,6 +55,7 @@ cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
 	if (!lreg->ycentered) {
 		int		i;
 		for (i = 0; i < cd->lreg->n; i++) cd->sy += cd->lreg->y[i];
+		cd->b = cd->sy / (double) lreg->n;
 	}
 
 	/* sx(j) = sum X(:,j) */
@@ -104,13 +106,6 @@ cdescent_free (cdescent *cd)
 		if (cd->beta_prev) free (cd->beta_prev);
 		free (cd);
 	}
-	return;
-}
-
-void
-cdescent_set_lambda1 (cdescent *cd, const double lambda1)
-{
-	cd->lambda1 = lambda1;
 	return;
 }
 
