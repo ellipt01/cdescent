@@ -45,32 +45,20 @@ update_partially  (const int j, const double delta, int n, const double *x, doub
 	return;
 }
 
-static double
-sum_of_array (const int n, const double *x)
-{
-	int		i;
-	double	sum = 0.;
-	for (i = 0; i < n; i++) sum += x[i];
-	return sum;
-}
-
 /* intercept = sum ( (r - X * beta) ) / n */
 static double
 eval_intercept (const cdescent *cd)
 {
-	int				n = cd->lreg->n;
-	const double	*y = cd->lreg->y;
-	double			sum_r;
-	double			*r = (double *) malloc (n * sizeof (double));
+	int			n = cd->lreg->n;
+	int			p = cd->lreg->p;
+	double		nb = 0.;	// n * b
 
-	// h = y - mu
-	dcopy_ (&n, y, &ione, r, &ione);	// r = y
-	daxpy_ (&n, &dmone, cd->mu, &ione, r, &ione);	// r = y - mu
-
-	sum_r = sum_of_array (n, r);
-	free (r);
-
-	return sum_r / (double) n;
+	if (cd->lreg->ycentered && cd->lreg->xcentered) return 0.;
+	if (!cd->lreg->ycentered) nb += cd->sy;	// b = bar(y)
+	if (!cd->lreg->xcentered) {	// b -= bar(X) * beta
+		nb -= ddot_ (&p, cd->sx, &ione, cd->beta, &ione);
+	}
+	return nb / (double) n;	// return b
 }
 
 /*
@@ -90,11 +78,8 @@ beta_j_updater (const int j, const cdescent *cd, double *jb)
 
 	double			z = cj - xjtm + xtx * cd->beta[j];
 
-	// if need to consider intercept, z -= h * s' * xj
-	if (!cd->lreg->ycentered || !cd->lreg->xcentered) {
-		double		sum_xj = sum_of_array (n, xj);
-		z -= sum_xj * cd->b;
-	}
+	// if y or X are not centered, need to consider intercept : z -= sum( X(:,j) ) * b
+	if (!cd->lreg->xcentered) z -= cd->sx[j] * cd->b;
 
 	/* user defined penalty (not lasso nor ridge) */
 	if (cdescent_is_regtype_userdef (cd)) {
@@ -143,8 +128,11 @@ cdescent_cyclic_once_cycle (cdescent *cd)
 	cd->nrm1 = cd->nrm1_prev;
 	dcopy_ (&p, cd->beta, &ione, cd->beta_prev, &ione);
 
-	/* z = X(:,j)' * y - h - X(:,j)' * X * beta + beta(j) */
-	cd->b = (!cd->lreg->ycentered || !cd->lreg->xcentered) ? eval_intercept (cd) : 0.;
+	/* b = (sum(y) - sum(X) * beta) / n.
+	 * so, if y or X are not centered,
+	 * i.e. sum(y) != 0 or sum(X) != 0,
+	 * b must be updated on each cycle. */
+	if (!cd->lreg->xcentered) cd->b = eval_intercept (cd);
 
 	/*** single "one-at-a-time" update of cyclic coordinate descent ***/
 	for (j = 0; j < p; j++) {

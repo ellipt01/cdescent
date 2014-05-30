@@ -37,11 +37,14 @@ struct s_cdescent {
 	double			nrm1_prev;
 	double			*beta_prev;
 
-	/*
-	 * xtx = diag(X' * X)
-	 * This value is need when X is not
-	 * normalized.
-	 */
+
+	/* sum of y. If y is centered, sy = 0. */
+	double			sy;
+
+	/* sum of X(:, j). If X is centered, sx[j] = 0. */
+	double			*sx;
+
+	/* norm of X(:, j). If X is normalized, xtx[j] = 1. */
 	double			*xtx;
 
 	/*

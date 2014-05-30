@@ -49,6 +49,26 @@ cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
 
 	cd->beta_prev = (double *) malloc (lreg->p * sizeof (double));
 
+	/* sum y */
+	cd->sy = 0.;
+	if (!lreg->ycentered) {
+		int		i;
+		for (i = 0; i < cd->lreg->n; i++) cd->sy += cd->lreg->y[i];
+	}
+
+	/* sx(j) = sum X(:,j) */
+	if (!lreg->xcentered) {
+		int		j;
+		cd->sx = (double *) malloc (lreg->p * sizeof (double));
+		for (j = 0; j < lreg->p; j++) {
+			int				i;
+			const double	*xj = lreg->x + LINREG_INDEX_OF_MATRIX (0, j, lreg->n);
+			cd->sx[j] = 0.;
+			for (i = 0; i < lreg->n; i++) cd->sx[j] += xj[i];
+		}
+	} else cd->sx = NULL;
+
+
 	/* xtx = diag (X' * X) */
 	if (!lreg->xnormalized) {
 		int				j;
