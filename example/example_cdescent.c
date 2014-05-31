@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <cdescent.h>
 
 static void
@@ -16,9 +17,8 @@ output_solutionpath_cdescent (int iter, const cdescent *cd)
 	char		fn[80];
 	FILE		*fp;
 	int			p = cd->lreg->p;
-	double		*beta = cdescent_copy_beta (cd, true);
-	double		a = (cd->lreg->pen) ? cd->lreg->pen->a : 1.;
-	double		nrm1 = cd->nrm1 * (1. + a * cd->lreg->lambda2);	// cd->nrm1 / cd->lreg->scale2;
+	double		*beta = cdescent_copy_beta (cd);
+	double		nrm1 = cdescent_beta_nrm1 (cd, true);
 
 	for (i = 0; i < p; i++) {
 
@@ -46,11 +46,11 @@ example_cdescent_pathwise (const linreg *lreg, double tmin, double dt, double tm
 
 	while (tmin <= cd->lambda1) {
 
+		fprintf (stdout, "t = %f\n", cd->lambda1);
 		if (!cdescent_cyclic (cd, maxiter)) break;
 		output_solutionpath_cdescent (iter, cd);
 
 		cd->lambda1 -= dt;
-		fprintf (stdout, "t = %f\n", cd->lambda1);
 		iter++;
 	}
 

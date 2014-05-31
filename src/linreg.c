@@ -160,16 +160,15 @@ linreg_standardizing_x (linreg *lreg)
 }
 
 penalty *
-penalty_alloc (const int pj, const int p, const double a, const double *r)
+penalty_alloc (const int pj, const int p, const double *d)
 {
 	penalty	*pen;
 
-	if (!r) linreg_error ("penalty_alloc", "matrix *r is empty.", __FILE__, __LINE__);
+	if (!d) linreg_error ("penalty_alloc", "matrix *d is empty.", __FILE__, __LINE__);
 	pen = (penalty *) malloc (sizeof (penalty));
 	pen->pj = pj;
 	pen->p = p;
-	pen->a = a;
-	pen->r = r;
+	pen->d = d;
 	return pen;
 }
 

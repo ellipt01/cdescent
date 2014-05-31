@@ -63,10 +63,9 @@ struct s_linreg {
 
 /* penalty term */
 struct s_penalty {
-	int					pj;		// rows of r
-	int					p;		// columns of r
-	double				a;		// scale factor
-	const double		*r;		// pj x p penalty matrix
+	int					pj;		// rows of D
+	int					p;		// columns of D
+	const double		*d;		// pj x p penalty matrix D
 };
 
 /* linreg.c */
@@ -78,7 +77,7 @@ void			linreg_centering_x (linreg *lreg);
 void			linreg_normalizing_x (linreg *lreg);
 void			linreg_standardizing_x (linreg *lreg);
 
-penalty		*penalty_alloc (const int p1, const int p, const double a, const double *r);
+penalty		*penalty_alloc (const int p1, const int p, const double *d);
 void			penalty_free (penalty *pen);
 
 void			linreg_set_penalty (linreg *lreg, const double lambda2, const penalty *pen);

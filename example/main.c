@@ -108,7 +108,6 @@ void
 fprintf_params (void)
 {
 	fprintf (stderr, "###########################################################\n\n");
-	fprintf (stderr, "solver type :\t");
 	fprintf (stderr, "read file: \t\"%s\" (skip headers = %d)\n", fn, (int) skipheaders);
 	fprintf (stderr, "lambda1 :\t[%.2f : %.2f : %.2f]\n", start, dt, stop);
 	fprintf (stderr, "lambda2 :\t%.2f\n", lambda2);
@@ -152,7 +151,7 @@ main (int argc, char **argv)
 			r[LINREG_INDEX_OF_MATRIX (i, i, pj)] = 1.;
 			r[LINREG_INDEX_OF_MATRIX (i, i + 1, pj)] = -1.;
 		}
-		pen = penalty_alloc (pj, p, 2., r);
+		pen = penalty_alloc (pj, p, r);
 		linreg_set_penalty (lreg, lambda2, pen);
 //		linreg_set_penalty (lreg, lambda2, NULL);
 	}
