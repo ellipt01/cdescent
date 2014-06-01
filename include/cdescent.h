@@ -27,12 +27,13 @@ struct s_cdescent {
 	double			camax;		// mas ( abs(c) )
 	double			*c;			// correlation: c = X' * y
 
-
 	double			b;			// intercept
+	double			nrm1;
 	double			*beta;		// solution
 	double			*mu;		// estimation of y
 
 	/* backup of solution */
+	double			nrm1_prev;
 	double			*beta_prev;
 
 	/* sum of y. If y is centered, sy = 0. */
@@ -57,9 +58,6 @@ struct s_cdescent {
 /* utils.c */
 cdescent	*cdescent_alloc (const linreg *lreg, const double lambda1, const double tol);
 void		cdescent_free (cdescent *cd);
-
-double		*cdescent_copy_beta (const cdescent *cd);
-double		cdescent_beta_nrm1 (const cdescent *cd, const bool scaling);
 
 bool		cdescent_is_regtype_lasso (const cdescent *cd);
 bool		cdescent_is_regtype_ridge (const cdescent *cd);

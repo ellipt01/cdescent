@@ -17,8 +17,6 @@ output_solutionpath_cdescent (int iter, const cdescent *cd)
 	char		fn[80];
 	FILE		*fp;
 	int			p = cd->lreg->p;
-	double		*beta = cdescent_copy_beta (cd);
-	double		nrm1 = cdescent_beta_nrm1 (cd, true);
 
 	for (i = 0; i < p; i++) {
 
@@ -28,10 +26,9 @@ output_solutionpath_cdescent (int iter, const cdescent *cd)
 		else fp = fopen (fn, "aw");
 		if (fp == NULL) continue;
 
-		fprintf (fp, "%d\t%.4e\t%.4e\n", iter, nrm1, beta[i]);
+		fprintf (fp, "%d\t%.4e\t%.4e\n", iter, cd->nrm1, cd->beta[i]);
 		fclose (fp);
 	}
-	free (beta);
 	return;
 }
 

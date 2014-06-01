@@ -11,6 +11,8 @@
 
 #include "linreg_private.h"
 
+extern double	cdescent_jth_scale2 (const int j, const cdescent *cd);
+
 static void
 array_set_all (const int n, double *x, const double val)
 {
@@ -41,12 +43,14 @@ cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
 	cd->lambda1 = (cd->camax < lambda1) ? floor (cd->camax) + 1. : lambda1;
 
 	cd->b = 0.;
+	cd->nrm1 = 0.;
 	cd->beta = (double *) malloc (lreg->p * sizeof (double));
 	array_set_all (lreg->p, cd->beta, 0.);
 
 	cd->mu = (double *) malloc (lreg->n * sizeof (double));
 	array_set_all (lreg->n, cd->mu, 0.);
 
+	cd->nrm1_prev = 0.;
 	cd->beta_prev = (double *) malloc (lreg->p * sizeof (double));
 
 	/* sum y */
@@ -104,50 +108,14 @@ cdescent_free (cdescent *cd)
 		if (cd->beta) free (cd->beta);
 		if (cd->mu) free (cd->mu);
 		if (cd->beta_prev) free (cd->beta_prev);
+
+		if (cd->sx) free (cd->sx);
+		if (cd->xtx) free (cd->xtx);
+		if (cd->dtd) free (cd->dtd);
+
 		free (cd);
 	}
 	return;
-}
-
-static void
-scale2_beta (const cdescent *cd, double *beta)
-{
-	int		p = cd->lreg->p;
-	if (!cdescent_is_regtype_lasso (cd)) {
-		int		j;
-		double	lambda2 = cd->lreg->lambda2;
-		for (j = 0; j < p; j++) {
-			double	xtxj = (cd->xtx) ? cd->xtx[j] : 1.;
-			double	dtdj = (cd->dtd) ? cd->dtd[j] : 1.;
-			double	scale2 = xtxj + dtdj * lambda2;
-			beta[j] *= scale2;
-		}
-	}
-	return;
-}
-
-/* return copy of beta = scale2 * Z^-1 * b */
-double *
-cdescent_copy_beta (const cdescent *cd)
-{
-	int		p = cd->lreg->p;
-	double	*beta = (double *) malloc (p * sizeof (double));
-	dcopy_ (&p, cd->beta, &ione, beta, &ione);
-	scale2_beta (cd, beta);
-	return beta;
-}
-
-/* return |beta|. If scaling == true, return | scale2 * beta | */
-double
-cdescent_beta_nrm1 (const cdescent *cd, const bool scaling)
-{
-	int		p = cd->lreg->p;
-	double	nrm1;
-	double	*beta = cdescent_copy_beta (cd);
-	if (scaling) scale2_beta (cd, beta);
-	nrm1 = dasum_ (&p, beta, &ione);
-	free (beta);
-	return nrm1;
 }
 
 /* lambda2 <= eps, regression type = lasso */

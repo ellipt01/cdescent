@@ -125,6 +125,7 @@ cdescent_cyclic_once_cycle (cdescent *cd)
 	}
 
 	/* backup solution */
+	cd->nrm1_prev = cd->nrm1;
 	dcopy_ (&p, cd->beta, &ione, cd->beta_prev, &ione);
 
 	/* b = (sum(y) - sum(X) * beta) / n.
@@ -161,6 +162,7 @@ cdescent_cyclic_once_cycle (cdescent *cd)
 	}
 	if (db) free (db);
 
+	cd->nrm1 = dasum_ (&p, cd->beta, &ione);
 	nrm = dnrm2_ (&p, delta, &ione);
 	free (delta);
 	converged = (nrm < cd->tolerance);
