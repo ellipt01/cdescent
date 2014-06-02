@@ -62,8 +62,8 @@ bool		cdescent_is_regtype_ridge (const cdescent *cd);
 bool		cdescent_is_regtype_userdef (const cdescent *cd);
 
 /* update.c */
-double		cdescent_intercept_updater (const cdescent *cd);
-double		cdescent_beta_updater (const cdescent *cd, int j);
+double		cdescent_update_intercept (const cdescent *cd);
+double		cdescent_beta_stepsize (const cdescent *cd, const int j);
 
 /* cdescent.c */
 bool		cdescent_cyclic_once_cycle (cdescent *cd);
