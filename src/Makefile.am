@@ -11,6 +11,7 @@ lib_LTLIBRARIES = libcdescent.la
 libcdescent_la_SOURCES =\
 	linreg.c\
 	utils.c\
+	update.c\
 	cdescent.c
 
 libcdescent_la_CPPFLAGS = -I$(top_srcdir)/include

@@ -11,8 +11,6 @@
 
 #include "linreg_private.h"
 
-extern double	cdescent_jth_scale2 (const int j, const cdescent *cd);
-
 static void
 array_set_all (const int n, double *x, const double val)
 {
@@ -47,11 +45,14 @@ cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
 	cd->beta = (double *) malloc (lreg->p * sizeof (double));
 	array_set_all (lreg->p, cd->beta, 0.);
 
+	// mu = X * beta
 	cd->mu = (double *) malloc (lreg->n * sizeof (double));
 	array_set_all (lreg->n, cd->mu, 0.);
-
-	cd->nrm1_prev = 0.;
-	cd->beta_prev = (double *) malloc (lreg->p * sizeof (double));
+	// nu = D * beta
+	if (lreg->pentype == PENALTY_USERDEF) {
+		cd->nu = (double *) malloc (lreg->pen->pj * sizeof (double));
+		array_set_all (lreg->pen->pj, cd->nu, 0.);
+	} else cd->nu = NULL;
 
 	/* sum y */
 	cd->sy = 0.;
@@ -107,7 +108,7 @@ cdescent_free (cdescent *cd)
 		if (cd->c) free (cd->c);
 		if (cd->beta) free (cd->beta);
 		if (cd->mu) free (cd->mu);
-		if (cd->beta_prev) free (cd->beta_prev);
+		if (cd->nu) free (cd->nu);
 
 		if (cd->sx) free (cd->sx);
 		if (cd->xtx) free (cd->xtx);

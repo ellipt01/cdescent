@@ -30,11 +30,9 @@ struct s_cdescent {
 	double			b;			// intercept
 	double			nrm1;
 	double			*beta;		// solution
-	double			*mu;		// estimation of y
 
-	/* backup of solution */
-	double			nrm1_prev;
-	double			*beta_prev;
+	double			*mu;		// mu = X * beta, estimatier of y
+	double			*nu;		// nu = D * beta.
 
 	/* sum of y. If y is centered, sy = 0. */
 	double			sy;
@@ -62,6 +60,10 @@ void		cdescent_free (cdescent *cd);
 bool		cdescent_is_regtype_lasso (const cdescent *cd);
 bool		cdescent_is_regtype_ridge (const cdescent *cd);
 bool		cdescent_is_regtype_userdef (const cdescent *cd);
+
+/* update.c */
+double		cdescent_intercept_updater (const cdescent *cd);
+double		cdescent_beta_updater (const cdescent *cd, int j);
 
 /* cdescent.c */
 bool		cdescent_cyclic_once_cycle (cdescent *cd);
