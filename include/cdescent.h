@@ -24,31 +24,26 @@ struct s_cdescent {
 
 	double			tolerance;	// tolerance of convergence
 
-	double			camax;		// mas ( abs(c) )
+	double			camax;		// max ( abs(c) )
 	double			*c;			// correlation: c = X' * y
 
 	double			b;			// intercept
 	double			nrm1;
 	double			*beta;		// solution
 
-	double			*mu;		// mu = X * beta, estimatier of y
+	double			*mu;		// mu = X * beta, estimate of y
 	double			*nu;		// nu = D * beta.
 
 	/* sum of y. If y is centered, sy = 0. */
 	double			sy;
 
-	/* sum of X(:, j). If X is centered, sx[j] = 0. */
+	/* sum of X(:, j). If X is centered, sx = NULL. */
 	double			*sx;
 
-	/* norm of X(:, j). If X is normalized, xtx[j] = 1. */
+	/* norm of X(:, j). If X is normalized, xtx = NULL. */
 	double			*xtx;
 
-	/*
-	 * dtd = diag(D' * D), D = lreg->pen->d
-	 * This value is need to update the solution
-	 * when the penalty is user defined
-	 * (not lasso nor ridge penalty).
-	 */
+	/* dtd = diag(D' * D), D = lreg->pen->d */
 	double			*dtd;
 
 };

@@ -76,16 +76,16 @@ cdescent_update_intercept (const cdescent *cd)
 	double		nb = 0.;	// n * b
 
 	if (cd->lreg->ycentered && cd->lreg->xcentered) return 0.;
-	if (!cd->lreg->ycentered) nb += cd->sy;	// b = bar(y)
-	if (!cd->lreg->xcentered) {	// b -= bar(X) * beta
-		nb -= ddot_ (&p, cd->sx, &ione, cd->beta, &ione);
-	}
+	// b = bar(y)
+	if (!cd->lreg->ycentered) nb += cd->sy;
+	// b -= bar(X) * beta
+	if (!cd->lreg->xcentered) nb -= ddot_ (&p, cd->sx, &ione, cd->beta, &ione);
 	return nb / (double) n;	// return b
 }
 
 /*** return step-size for updating beta ***/
 double
-cdescent_beta_stepsize (const cdescent *cd, int j)
+cdescent_beta_stepsize (const cdescent *cd, const int j)
 {
 	double		scale2 = cdescent_scale2 (cd, j);
 	double		z = cdescent_gradient (cd, j) / scale2;
