@@ -10,12 +10,16 @@
 
 #include "linreg_private.h"
 
-/*** return S(z + beta, gamma) - beta ***/
+/*** soft thresholding ***/
+/* S(z, gamma) = sign(z)(|z| - gamma)+
+ *             = 0, -gamma <= z <= gamma,
+ *               z - gamma, z >  gamma (> 0)
+ *               z + gamma, z < -gamma (< 0) */
 static double
-cdescent_soft_threshold (const double z, const double gamma, const double beta)
+soft_threshold (const double z, const double gamma)
 {
-	double	val = - beta;
-	if (gamma < fabs (z + beta)) val = (z + beta > 0.) ? z - gamma : z + gamma;
+	double	val = 0.;
+	if (gamma < fabs (z)) val = (z > 0.) ? z - gamma : z + gamma;
 	return val;
 }
 
@@ -35,8 +39,10 @@ cdescent_scale2 (const cdescent *cd, const int j)
 }
 
 /*** return gradient of objective function with respect to beta_j ***/
-/* z = d L_j - beta_j
- *   = c(j) - X(:,j)' * mu - lambda2 * D(:,j)' * D * beta */
+/* z = d L_j
+ *   = c(j) - X(:,j)' * mu - lambda2 * D(:,j)' * D * beta
+ *     + scale2 * beta_j,
+ * however, the last term scale2 * beta_j is omitted */
 static double
 cdescent_gradient (const cdescent *cd, const int j)
 {
@@ -67,7 +73,7 @@ cdescent_gradient (const cdescent *cd, const int j)
 	return z;
 }
 
-/*** updater of intercept: ( sum (y) - sum(X) * beta ) / n ***/
+/*** updater of intercept: (sum (y) - sum(X) * beta) / n ***/
 double
 cdescent_update_intercept (const cdescent *cd)
 {
@@ -76,7 +82,7 @@ cdescent_update_intercept (const cdescent *cd)
 	double		nb = 0.;	// n * b
 
 	if (cd->lreg->ycentered && cd->lreg->xcentered) return 0.;
-	// b = bar(y)
+	// b += bar(y)
 	if (!cd->lreg->ycentered) nb += cd->sy;
 	// b -= bar(X) * beta
 	if (!cd->lreg->xcentered) nb -= ddot_ (&p, cd->sx, &ione, cd->beta, &ione);
@@ -91,5 +97,5 @@ cdescent_beta_stepsize (const cdescent *cd, const int j)
 	double		z = cdescent_gradient (cd, j) / scale2;
 	double		gamma = cd->lambda1 / scale2;
 	/* eta = S(z / scale2 + beta, lambda1 / scale2) - beta */
-	return cdescent_soft_threshold (z, gamma, cd->beta[j]);
+	return soft_threshold (z + cd->beta[j], gamma) - cd->beta[j];
 }

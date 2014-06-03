@@ -37,27 +37,27 @@ cdescent_cyclic_once_cycle (cdescent *cd)
 
 	/*** single "one-at-a-time" update of cyclic coordinate descent ***/
 	for (j = 0; j < p; j++) {
-		// deltaj = beta[j] - beta_prev[j]
-		double	deltaj = cdescent_beta_stepsize (cd, j);
+		// era[j] = beta[j] - beta_prev[j]
+		double	etaj = cdescent_beta_stepsize (cd, j);
 
 		// update beta[j]
-		cd->beta[j] += deltaj;
+		cd->beta[j] += etaj;
 
-		if (fabs (deltaj) > 0.) {
+		if (fabs (etaj) > 0.) {
 			int				n = cd->lreg->n;
 			const double	*x = cd->lreg->x;
 			// update mu : mu += X(:, j) * (beta[j] - beta_prev[j])
-			update_partially (j, deltaj, n, x, cd->mu);
+			update_partially (j, etaj, n, x, cd->mu);
 
 			/* user defined penalty (not lasso nor ridge) */
 			if (cd->nu) {
 				int			pj = cd->lreg->pen->pj;
 				const double	*d = cd->lreg->pen->d;
 				// update nu : nu += D(:,j) * (beta[j] - beta_prev[j])
-				update_partially (j, deltaj, pj, d, cd->nu);
+				update_partially (j, etaj, pj, d, cd->nu);
 			}
 
-			nrm2 += pow (deltaj, 2.);
+			nrm2 += pow (etaj, 2.);
 		}
 
 	}
