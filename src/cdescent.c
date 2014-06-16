@@ -51,6 +51,7 @@ cdescent_cyclic_once_cycle (cdescent *cd)
 
 			/* user defined penalty (not lasso nor ridge) */
 			if (cd->nu) {
+/* todo: MatrixMarket形式に変更した際に変更が必要 */
 				int			pj = cd->lreg->pen->pj;
 				const double	*d = cd->lreg->pen->d;
 				// update nu : nu += D(:,j) * (beta[j] - beta_prev[j])

@@ -65,6 +65,7 @@ cdescent_gradient (const cdescent *cd, const int j)
 		z -= lambda2 * cd->beta[j];
 	} else if (cdescent_is_regtype_userdef (cd)) {	// not lasso nor ridge
 		// z -= lambda2 * D(:,j)' * D * beta
+/* todo: MatrixMarket形式に変更した際に変更が必要 */
 		int				pj = cd->lreg->pen->pj;
 		const double	*d = cd->lreg->pen->d;
 		const double	*dj = d + LINREG_INDEX_OF_MATRIX (0, j, pj);
