@@ -12,10 +12,9 @@
 #include "linreg_private.h"
 
 static void
-array_set_all (const int n, double *x, const double val)
+array_set_all (int n, double *x, const double val)
 {
-	int		i;
-	for (i = 0; i < n; i++) x[i] = val;
+	while (n--) *x++ = val;
 	return;
 }
 
