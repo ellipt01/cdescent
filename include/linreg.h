@@ -20,7 +20,7 @@ typedef enum {
 	NO_PENALTY			= 0,
 	PENALTY_RIDGE		= 1,
 	PENALTY_USERDEF	= 2
-} LinegPenaltyType;
+} LinRegPenaltyType;
 
 #ifndef LINREG_INDEX_OF_MATRIX
 #define LINREG_INDEX_OF_MATRIX(i, j, lda) ((i) + (j) * (lda))
@@ -50,7 +50,7 @@ struct s_linreg {
 	double				*normx;	// normx[j] = norm( X(:,j) )
 
 	/* penalty type */
-	LinegPenaltyType	pentype;
+	LinRegPenaltyType	pentype;
 
 	/* threshold for L2 penalty */
 	double				lambda2;
