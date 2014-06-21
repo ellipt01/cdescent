@@ -70,7 +70,6 @@ linreg_alloc (const int n, const int p, double *y, double *x)
 		lreg->x->p[j + 1] = k;
 	}
 
-	lreg->y1 = lreg->y->data;
 	lreg->x1 = lreg->x->data;
 
 	/* By default, data is assumed to be not centered or standardized */

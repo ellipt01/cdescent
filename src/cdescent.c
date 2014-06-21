@@ -47,7 +47,7 @@ cdescent_cyclic_once_cycle (cdescent *cd)
 			int				n = cd->lreg->n;
 			const double	*x = cd->lreg->x1;
 			// update mu : mu += X(:, j) * (beta[j] - beta_prev[j])
-			update_partially (j, etaj, n, x, cd->mu);
+			update_partially (j, etaj, n, x, cd->mu->data);
 
 			/* user defined penalty (not lasso nor ridge) */
 			if (cd->nu) {

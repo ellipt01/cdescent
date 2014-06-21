@@ -46,16 +46,12 @@ cdescent_scale2 (const cdescent *cd, const int j)
 static double
 cdescent_gradient (const cdescent *cd, const int j)
 {
-	int				n = cd->lreg->n;
 	double			cj = cd->c->data[j];	// X' * y
-	const double	*x = cd->lreg->x1;
-	const double	*xj = x + LINREG_INDEX_OF_MATRIX (0, j, n);	// X(:,j)
-	double			xjtmu = ddot_ (&n, xj, &ione, cd->mu, &ione);	// X(:,j)' * mu
-
+	double			xjmu = mm_mtx_real_xj_dot_y (j, cd->lreg->x, cd->mu);	// X(:,j)' * mu
 	double			lambda2 = cd->lreg->lambda2;
 
 	//	z = c(j) - X(:,j)' * mu
-	double			z = cj - xjtmu;
+	double			z = cj - xjmu;
 
 	// if X is not centered, z -= sum(X(:,j)) * b
 	if (!cd->lreg->xcentered) z -= cd->sx[j] * cd->b;

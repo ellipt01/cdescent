@@ -44,12 +44,15 @@ cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
 	array_set_all (lreg->p, cd->beta, 0.);
 
 	// mu = X * beta
-	cd->mu = (double *) malloc (lreg->n * sizeof (double));
-	array_set_all (lreg->n, cd->mu, 0.);
+	cd->mu = mm_mtx_real_new (false, false, lreg->x->m, 1, lreg->x->m);
+	cd->mu->data = (double *) malloc (lreg->x->m * sizeof (double));
+	mm_mtx_real_set_all (cd->mu, 0.);
+
 	// nu = D * beta
 	if (!cdescent_is_regtype_lasso (cd)) {
-		cd->nu = (double *) malloc (lreg->pen->pj * sizeof (double));
-		array_set_all (lreg->pen->pj, cd->nu, 0.);
+		cd->nu = mm_mtx_real_new (false, false, lreg->pen->pj, 1, lreg->pen->pj);
+		cd->nu->data = (double *) malloc (lreg->pen->pj * sizeof (double));
+		mm_mtx_real_set_all (cd->nu, 0.);
 	} else cd->nu = NULL;
 
 	/* sum y */
@@ -66,9 +69,11 @@ cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
 		cd->sx = (double *) malloc (lreg->p * sizeof (double));
 		for (j = 0; j < lreg->p; j++) {
 			int				i;
-			const double	*xj = lreg->x1 + LINREG_INDEX_OF_MATRIX (0, j, lreg->n);
 			cd->sx[j] = 0.;
-			for (i = 0; i < lreg->n; i++) cd->sx[j] += xj[i];
+			if (mm_is_sparse (lreg->x->typecode))
+				for (i = lreg->x->p[j]; i < lreg->x->p[j + 1]; i++) cd->sx[j] += lreg->x->data[i];
+			else
+				for (i = 0; i < lreg->x->m; i++) cd->sx[j] += lreg->x->data[i + j * lreg->x->m];
 		}
 	} else cd->sx = NULL;
 

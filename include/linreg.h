@@ -36,7 +36,7 @@ struct s_linreg {
 	mm_mtx				*x;
 	mm_mtx				*y;
 
-	double				*y1;		// data
+//	double				*y1;		// data
 	double				*x1;		// variables
 
 	bool				ycentered;
@@ -52,6 +52,7 @@ struct s_linreg {
 
 	/* penalty term.
 	 * if pen == NULL && lambda2 > 0, ridge regression is assumed. */
+	const mm_mtx		*d;
 	const penalty		*pen;
 
 };

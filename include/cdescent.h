@@ -30,8 +30,8 @@ struct s_cdescent {
 	double			nrm1;
 	double			*beta;		// solution
 
-	double			*mu;		// mu = X * beta, estimate of y
-	double			*nu;		// nu = D * beta.
+	mm_mtx			*mu;		// mu = X * beta, estimate of y
+	mm_mtx			*nu;		// nu = D * beta.
 
 	/* sum of y. If y is centered, sy = 0. */
 	double			sy;
