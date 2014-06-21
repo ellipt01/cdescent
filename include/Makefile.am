@@ -3,6 +3,8 @@
 libcdescent_includedir = $(pkgincludedir)
 
 libcdescent_include_DATA =\
+	mmio.h\
+	mm_mtx.h\
 	linreg.h\
 	cdescent.h
 

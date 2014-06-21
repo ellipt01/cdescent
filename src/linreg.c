@@ -37,7 +37,7 @@ linreg_error (const char * function_name, const char *error_msg, const char *fil
 linreg *
 linreg_alloc (const int n, const int p, double *y, double *x)
 {
-	int		np;
+	int			nz;
 	linreg		*lreg;
 
 	if (!y) linreg_error ("lisys_alloc", "vector *y is empty.", __FILE__, __LINE__);
@@ -49,10 +49,29 @@ linreg_alloc (const int n, const int p, double *y, double *x)
 
 	lreg->n = n;
 	lreg->p = p;
-	np = lreg->n * lreg->p;
+	nz = n * p;
 
-	lreg->y = y;
-	lreg->x = x;
+	lreg->y = mm_mtx_real_new (false, false, n, 1, n);
+	lreg->y->data = y;
+
+	lreg->x = mm_mtx_real_new (true, false, n, p, nz);
+	lreg->x->i = (int *) malloc (nz * sizeof (int));
+	lreg->x->j = (int *) malloc (nz * sizeof (int));
+	lreg->x->p = (int *) malloc ((p + 1) * sizeof (int));
+	lreg->x->data = x;
+	int		i, j, k = 0;
+	lreg->x->p[0] = 0;
+	for (j = 0; j < p; j++) {
+		for (i = 0; i < n; i++) {
+			lreg->x->i[k] = i;
+			lreg->x->j[k] = j;
+			k++;
+		}
+		lreg->x->p[j + 1] = k;
+	}
+
+	lreg->y1 = lreg->y->data;
+	lreg->x1 = lreg->x->data;
 
 	/* By default, data is assumed to be not centered or standardized */
 	lreg->meany = NULL;
@@ -62,10 +81,7 @@ linreg_alloc (const int n, const int p, double *y, double *x)
 	lreg->xcentered = false;
 	lreg->xnormalized = false;
 
-	lreg->pentype = NO_PENALTY;
-
 	lreg->lambda2 = 0.;
-
 	lreg->pen = NULL;
 
 	return lreg;
@@ -86,16 +102,23 @@ linreg_free (linreg *lreg)
 /* centering each column of matrix:
  * x(:, j) -> x(:, j) - mean(x(:, j)) */
 static double *
-centering (const int size1, const int size2, double *x)
+centering_mm_mtx_real (mm_mtx *x)
 {
 	int		i, j;
-	double	*mean = (double *) malloc (size2 * sizeof (double));
-	for (j = 0; j < size2; j++) {
+	double	*mean = (double *) malloc (x->n * sizeof (double));
+	for (j = 0; j < x->n; j++) {
 		double	meanj = 0.;
-		double	*xj = x + LINREG_INDEX_OF_MATRIX (0, j, size1);
-		for (i = 0; i < size1; i++) meanj += xj[i];
-		meanj /= (double) size1;
-		for (i = 0; i < size1; i++) xj[i] -= meanj;
+		if (mm_is_sparse (x->typecode)) {
+			for (i = x->p[j]; i < x->p[j + 1]; i++) meanj += x->data[i];
+		} else {
+			for (i = 0; i < x->n; i++) meanj += x->data[i + j * x->m];
+		}
+		meanj /= (double) x->m;
+		if (mm_is_sparse (x->typecode)) {
+			for (i = x->p[j]; i < x->p[j + 1]; i++) x->data[i] -= meanj;
+		} else {
+			for (i = 0; i < x->n; i++) x->data[i + j * x->m] -= meanj;
+		}
 		mean[j] = meanj;
 	}
 	return mean;
@@ -104,17 +127,18 @@ centering (const int size1, const int size2, double *x)
 /* normalizing each column of matrix:
  * x(:, j) -> x(:, j) / norm(x(:, j)) */
 static double *
-normalizing (const int size1, const int size2, double *x)
+normalizing_mm_mtx_real (mm_mtx *x)
 {
 	int		j;
-	double	*nrm = (double *) malloc (size2 * sizeof (double));
-	for (j = 0; j < size2; j++) {
+	double	*nrm = (double *) malloc (x->n * sizeof (double));
+	for (j = 0; j < x->n; j++) {
 		double	alpha;
 		double	nrmj;
-		double	*xj = x + LINREG_INDEX_OF_MATRIX (0, j, size1);
-		nrmj = dnrm2_ (&size1, xj, &ione);
+		int		size = (mm_is_sparse (x->typecode)) ? x->p[j + 1] - x->p[j] : x->m;
+		double	*xj = x->data + ((mm_is_sparse (x->typecode)) ? x->p[j] : j * x->m);
+		nrmj = dnrm2_ (&size, xj, &ione);
 		alpha = 1. / nrmj;
-		dscal_ (&size1, &alpha, xj, &ione);
+		dscal_ (&size, &alpha, xj, &ione);
 		nrm[j] = nrmj;
 	}
 	return nrm;
@@ -125,7 +149,7 @@ normalizing (const int size1, const int size2, double *x)
 void
 linreg_centering_y (linreg *lreg)
 {
-	lreg->meany = centering (lreg->n, 1, lreg->y);
+	lreg->meany = centering_mm_mtx_real (lreg->y);
 	lreg->ycentered = true;
 	return;
 }
@@ -135,7 +159,7 @@ linreg_centering_y (linreg *lreg)
 void
 linreg_centering_x (linreg *lreg)
 {
-	lreg->meanx = centering (lreg->n, lreg->p, lreg->x);
+	lreg->meanx = centering_mm_mtx_real (lreg->x);
 	lreg->xcentered = true;
 	return;
 }
@@ -145,7 +169,7 @@ linreg_centering_x (linreg *lreg)
 void
 linreg_normalizing_x (linreg *lreg)
 {
-	lreg->normx = normalizing (lreg->n, lreg->p, lreg->x);
+	lreg->normx = normalizing_mm_mtx_real (lreg->x);
 	lreg->xnormalized = true;
 	return;
 }
@@ -186,11 +210,7 @@ linreg_set_penalty (linreg *lreg, const double lambda2, const penalty *pen)
 	if (pen && lreg->p != pen->p)
 		linreg_error ("linreg_set_penalty", "penalty *pen->p must be same as linreg *lreg->p.", __FILE__, __LINE__);
 
-	if (lambda2 > linreg_double_eps ()) {
-		lreg->lambda2 = lambda2;
-		if (pen == NULL) lreg->pentype = PENALTY_RIDGE;
-		else lreg->pentype = PENALTY_USERDEF;
-	}
+	if (lambda2 > linreg_double_eps ()) lreg->lambda2 = lambda2;
 	lreg->pen = pen;
 	return;
 }

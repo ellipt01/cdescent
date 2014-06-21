@@ -15,12 +15,7 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
-
-typedef enum {
-	NO_PENALTY			= 0,
-	PENALTY_RIDGE		= 1,
-	PENALTY_USERDEF	= 2
-} LinRegPenaltyType;
+#include <mm_mtx.h>
 
 #ifndef LINREG_INDEX_OF_MATRIX
 #define LINREG_INDEX_OF_MATRIX(i, j, lda) ((i) + (j) * (lda))
@@ -38,8 +33,11 @@ struct s_linreg {
 	int					n;	// number of data
 	int					p;	// number of variables
 
-	double				*y;		// data
-	double				*x;		// variables
+	mm_mtx				*x;
+	mm_mtx				*y;
+
+	double				*y1;		// data
+	double				*x1;		// variables
 
 	bool				ycentered;
 	bool				xcentered;
@@ -48,9 +46,6 @@ struct s_linreg {
 	double				*meany;	// mean(y)
 	double				*meanx;	// meanx[j] = mean( X(:,j) )
 	double				*normx;	// normx[j] = norm( X(:,j) )
-
-	/* penalty type */
-	LinRegPenaltyType	pentype;
 
 	/* threshold for L2 penalty */
 	double				lambda2;

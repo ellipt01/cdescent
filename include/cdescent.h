@@ -24,8 +24,7 @@ struct s_cdescent {
 
 	double			tolerance;	// tolerance of convergence
 
-	double			camax;		// max ( abs(c) )
-	double			*c;			// correlation: c = X' * y
+	mm_mtx			*c;
 
 	double			b;			// intercept
 	double			nrm1;
@@ -53,8 +52,6 @@ cdescent	*cdescent_alloc (const linreg *lreg, const double lambda1, const double
 void		cdescent_free (cdescent *cd);
 
 bool		cdescent_is_regtype_lasso (const cdescent *cd);
-bool		cdescent_is_regtype_ridge (const cdescent *cd);
-bool		cdescent_is_regtype_userdef (const cdescent *cd);
 
 /* update.c */
 double		cdescent_update_intercept (const cdescent *cd);

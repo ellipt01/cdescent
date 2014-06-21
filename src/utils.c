@@ -21,6 +21,7 @@ array_set_all (int n, double *x, const double val)
 cdescent *
 cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
 {
+	double		camax;
 	cdescent	*cd;
 
 	if (!lreg) linreg_error ("cdescent_alloc", "linreg *lreg is empty.", __FILE__, __LINE__);
@@ -32,12 +33,10 @@ cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
 	cd->tolerance = tol;
 
 	// c = X' * y
-	cd->c = (double *) malloc (lreg->p * sizeof (double));
-	dgemv_ ("T", &lreg->n, &lreg->p, &done, lreg->x, &lreg->n, lreg->y, &ione, &dzero, cd->c, &ione);
+	cd->c = mm_mtx_real_x_dot_y (true, 1., lreg->x, lreg->y, 0.);
 
-	cd->camax = fabs (cd->c[idamax_ (&lreg->p, cd->c, &ione) - 1]);
-
-	cd->lambda1 = (cd->camax < lambda1) ? floor (cd->camax) + 1. : lambda1;
+	camax = fabs (cd->c->data[idamax_ (&cd->c->nz, cd->c->data, &ione) - 1]);
+	cd->lambda1 = (camax < lambda1) ? floor (camax) + 1. : lambda1;
 
 	cd->b = 0.;
 	cd->nrm1 = 0.;
@@ -48,7 +47,7 @@ cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
 	cd->mu = (double *) malloc (lreg->n * sizeof (double));
 	array_set_all (lreg->n, cd->mu, 0.);
 	// nu = D * beta
-	if (lreg->pentype == PENALTY_USERDEF) {
+	if (!cdescent_is_regtype_lasso (cd)) {
 		cd->nu = (double *) malloc (lreg->pen->pj * sizeof (double));
 		array_set_all (lreg->pen->pj, cd->nu, 0.);
 	} else cd->nu = NULL;
@@ -57,8 +56,8 @@ cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
 	cd->sy = 0.;
 	if (!lreg->ycentered) {
 		int		i;
-		for (i = 0; i < cd->lreg->n; i++) cd->sy += cd->lreg->y[i];
-		cd->b = cd->sy / (double) lreg->n;
+		for (i = 0; i < lreg->y->m; i++) cd->sy += lreg->y->data[i];
+		cd->b = cd->sy / (double) lreg->y->m;
 	}
 
 	/* sx(j) = sum X(:,j) */
@@ -67,7 +66,7 @@ cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
 		cd->sx = (double *) malloc (lreg->p * sizeof (double));
 		for (j = 0; j < lreg->p; j++) {
 			int				i;
-			const double	*xj = lreg->x + LINREG_INDEX_OF_MATRIX (0, j, lreg->n);
+			const double	*xj = lreg->x1 + LINREG_INDEX_OF_MATRIX (0, j, lreg->n);
 			cd->sx[j] = 0.;
 			for (i = 0; i < lreg->n; i++) cd->sx[j] += xj[i];
 		}
@@ -77,15 +76,12 @@ cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
 	/* xtx = diag (X' * X) */
 	if (!lreg->xnormalized) {
 		int				j;
-		cd->xtx = (double *) malloc (lreg->p * sizeof (double));
-		for (j = 0; j < lreg->p; j++) {
-			const double	*xj = lreg->x + LINREG_INDEX_OF_MATRIX (0, j, lreg->n);
-			cd->xtx[j] = ddot_ (&lreg->n, xj, &ione, xj, &ione);
-		}
+		cd->xtx = (double *) malloc (lreg->x->n * sizeof (double));
+		for (j = 0; j < lreg->x->n; j++) cd->xtx[j] = mm_mtx_real_xj_dot_xj (j, lreg->x);
 	} else cd->xtx = NULL;
 
 	/* dtd = diag (D' * D) */
-	if (lreg->pentype == PENALTY_USERDEF) {
+	if (!cdescent_is_regtype_lasso (cd)) {
 		int				j;
 		int				p = lreg->p;
 		int				pj = lreg->pen->pj;
@@ -122,18 +118,5 @@ cdescent_free (cdescent *cd)
 bool
 cdescent_is_regtype_lasso (const cdescent *cd)
 {
-	return (cd->lreg->pentype == NO_PENALTY);
-}
-
-/* lambda2 > eps && l->lreg->pen == NULL, regression type = Ridge */
-bool
-cdescent_is_regtype_ridge (const cdescent *cd)
-{
-	return (cd->lreg->pentype == PENALTY_RIDGE);
-}
-
-bool
-cdescent_is_regtype_userdef (const cdescent *cd)
-{
-	return (cd->lreg->pentype == PENALTY_USERDEF);
+	return (cd->lreg->lambda2 < linreg_double_eps () || cd->lreg->pen == NULL);
 }

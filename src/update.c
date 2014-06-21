@@ -47,8 +47,8 @@ static double
 cdescent_gradient (const cdescent *cd, const int j)
 {
 	int				n = cd->lreg->n;
-	double			cj = cd->c[j];	// X' * y
-	const double	*x = cd->lreg->x;
+	double			cj = cd->c->data[j];	// X' * y
+	const double	*x = cd->lreg->x1;
 	const double	*xj = x + LINREG_INDEX_OF_MATRIX (0, j, n);	// X(:,j)
 	double			xjtmu = ddot_ (&n, xj, &ione, cd->mu, &ione);	// X(:,j)' * mu
 
@@ -60,12 +60,7 @@ cdescent_gradient (const cdescent *cd, const int j)
 	// if X is not centered, z -= sum(X(:,j)) * b
 	if (!cd->lreg->xcentered) z -= cd->sx[j] * cd->b;
 
-	if (cdescent_is_regtype_ridge (cd)) {	// ridge
-		// z -= lambda2 * E(:,j)' * E * beta
-		z -= lambda2 * cd->beta[j];
-	} else if (cdescent_is_regtype_userdef (cd)) {	// not lasso nor ridge
-		// z -= lambda2 * D(:,j)' * D * beta
-/* todo: MatrixMarket形式に変更した際に変更が必要 */
+	if (!cdescent_is_regtype_lasso (cd)) {	// ridge
 		int				pj = cd->lreg->pen->pj;
 		const double	*d = cd->lreg->pen->d;
 		const double	*dj = d + LINREG_INDEX_OF_MATRIX (0, j, pj);

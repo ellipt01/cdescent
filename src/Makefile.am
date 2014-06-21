@@ -9,6 +9,8 @@ AM_CFLAGS =\
 lib_LTLIBRARIES = libcdescent.la
 
 libcdescent_la_SOURCES =\
+	mmio.c\
+	mm_mtx.c\
 	linreg.c\
 	utils.c\
 	update.c\

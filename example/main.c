@@ -144,12 +144,13 @@ main (int argc, char **argv)
 	/* penalty term: S-Lasso */
 	{
 		int		i;
-		pj = p - 1;
+		pj = p;
+		//		pj = p - 1;
 		r = (double *) malloc (pj * p * sizeof (double));
 		for (i = 0; i < pj * p; i++) r[i] = 0.;
 		for (i = 0; i < pj; i++) {
 			r[LINREG_INDEX_OF_MATRIX (i, i, pj)] = 1.;
-			r[LINREG_INDEX_OF_MATRIX (i, i + 1, pj)] = -1.;
+//			r[LINREG_INDEX_OF_MATRIX (i, i + 1, pj)] = -1.;
 		}
 		pen = penalty_alloc (pj, p, r);
 		linreg_set_penalty (lreg, lambda2, pen);

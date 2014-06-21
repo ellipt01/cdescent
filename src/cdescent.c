@@ -45,7 +45,7 @@ cdescent_cyclic_once_cycle (cdescent *cd)
 
 		if (fabs (etaj) > 0.) {
 			int				n = cd->lreg->n;
-			const double	*x = cd->lreg->x;
+			const double	*x = cd->lreg->x1;
 			// update mu : mu += X(:, j) * (beta[j] - beta_prev[j])
 			update_partially (j, etaj, n, x, cd->mu);
 
