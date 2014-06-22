@@ -116,6 +116,52 @@ fprintf_params (void)
 	return;
 }
 
+mm_mtx *
+mm_mtx_real_penalty_smooth (const int n)
+{
+	int		i, j, k;
+	int		nz = 2 * (n - 1);
+
+	mm_mtx	*d = mm_mtx_real_new (true, false, n - 1, n, nz);
+	d->i = (int *) malloc (nz * sizeof (int));
+	d->j = (int *) malloc (nz * sizeof (int));
+	d->p = (int *) malloc ((n + 1) * sizeof (int));
+	d->data = (double *) malloc (nz * sizeof (double));
+
+	k = 0;
+	d->p[0] = 0;
+	for (j = 0; j < n; j++) {
+		if (j > 0) {
+			d->i[k] = j - 1;
+			d->j[k] = j;
+			d->data[k++] = -1.;
+		}
+		if (j < n - 1) {
+			d->i[k] = j;
+			d->j[k] = j;
+			d->data[k++] = 1.;
+		}
+		d->p[j + 1] = k;
+	}
+	return d;
+}
+
+mm_mtx *
+mm_mtx_real_penalty_smooth2 (const int n)
+{
+	int		j;
+	int		nz = (n - 1) * n;
+
+	mm_mtx	*d = mm_mtx_real_new (false, false, n - 1, n, nz);
+	d->data = (double *) malloc (nz * sizeof (double));
+
+	for (j = 0; j < n - 1; j++) {
+		d->data[j + j * d->m] = 1.;
+		d->data[j + (j + 1) * d->m] = -1.;
+	}
+	return d;
+}
+
 #include <time.h>
 
 int
@@ -127,9 +173,7 @@ main (int argc, char **argv)
 	double		*x;
 	linreg		*lreg;
 
-	int			pj;
-	double		*r;
-	penalty	*pen;
+	mm_mtx		*d;
 
 	if (!read_params (argc, argv)) usage (argv[0]);
 	fprintf_params ();
@@ -142,20 +186,9 @@ main (int argc, char **argv)
 	linreg_normalizing_x (lreg);
 
 	/* penalty term: S-Lasso */
-	{
-		int		i;
-		pj = p;
-		//		pj = p - 1;
-		r = (double *) malloc (pj * p * sizeof (double));
-		for (i = 0; i < pj * p; i++) r[i] = 0.;
-		for (i = 0; i < pj; i++) {
-			r[LINREG_INDEX_OF_MATRIX (i, i, pj)] = 1.;
-//			r[LINREG_INDEX_OF_MATRIX (i, i + 1, pj)] = -1.;
-		}
-		pen = penalty_alloc (pj, p, r);
-		linreg_set_penalty (lreg, lambda2, pen);
-//		linreg_set_penalty (lreg, lambda2, NULL);
-	}
+//	d = mm_mtx_real_eye (p);
+	d = mm_mtx_real_penalty_smooth2 (p);
+	linreg_set_penalty (lreg, lambda2, d);
 
 	{
 		clock_t	t1, t2;
@@ -166,10 +199,8 @@ main (int argc, char **argv)
 	}
 
 	linreg_free (lreg);
-	penalty_free (pen);
 	free (x);
 	free (y);
-	free (r);
 
 	return EXIT_SUCCESS;
 }

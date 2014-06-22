@@ -10,21 +10,11 @@
 
 #include "linreg_private.h"
 
-/*** y += x(:, j) * delta ***/
-static void
-update_partially  (const int j, const double delta, int n, const double *x, double *y)
-{
-	const double	*xj = x + LINREG_INDEX_OF_MATRIX (0, j, n);	// X(:,j)
-	daxpy_ (&n, &delta, xj, &ione, y, &ione);
-	return;
-}
-
 /*** progress coordinate descent update for one full cycle ***/
 bool
 cdescent_cyclic_once_cycle (cdescent *cd)
 {
 	int			j;
-	int			p = cd->lreg->p;
 	double		nrm2;
 
 	/* b = (sum(y) - sum(X) * beta) / n.
@@ -36,33 +26,25 @@ cdescent_cyclic_once_cycle (cdescent *cd)
 	nrm2 = 0.;
 
 	/*** single "one-at-a-time" update of cyclic coordinate descent ***/
-	for (j = 0; j < p; j++) {
+	for (j = 0; j < cd->lreg->x->n; j++) {
 		// era[j] = beta[j] - beta_prev[j]
 		double	etaj = cdescent_beta_stepsize (cd, j);
 
-		// update beta[j]
-		cd->beta[j] += etaj;
-
 		if (fabs (etaj) > 0.) {
-			int				n = cd->lreg->n;
-			const double	*x = cd->lreg->x1;
-			// update mu : mu += X(:, j) * (beta[j] - beta_prev[j])
-			update_partially (j, etaj, n, x, cd->mu->data);
+			// update beta[j]
+			cd->beta[j] += etaj;
+			mm_mtx_real_axjpy (etaj, j, cd->lreg->x, cd->mu);
 
 			/* user defined penalty (not lasso nor ridge) */
-			if (cd->nu) {
-/* todo: MatrixMarket形式に変更した際に変更が必要 */
-				int			pj = cd->lreg->pen->pj;
-				const double	*d = cd->lreg->pen->d;
-				// update nu : nu += D(:,j) * (beta[j] - beta_prev[j])
-				update_partially (j, etaj, pj, d, cd->nu);
+			if (!cdescent_is_regtype_lasso (cd)) {
+				mm_mtx_real_axjpy (etaj, j, cd->lreg->d, cd->nu);
 			}
 
 			nrm2 += pow (etaj, 2.);
 		}
 
 	}
-	cd->nrm1 = dasum_ (&p, cd->beta, &ione);
+	cd->nrm1 = dasum_ (&cd->lreg->x->n, cd->beta, &ione);
 
 	return (sqrt (nrm2) < cd->tolerance);
 }

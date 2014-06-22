@@ -57,10 +57,7 @@ cdescent_gradient (const cdescent *cd, const int j)
 	if (!cd->lreg->xcentered) z -= cd->sx[j] * cd->b;
 
 	if (!cdescent_is_regtype_lasso (cd)) {	// ridge
-		int				pj = cd->lreg->pen->pj;
-		const double	*d = cd->lreg->pen->d;
-		const double	*dj = d + LINREG_INDEX_OF_MATRIX (0, j, pj);
-		z -= lambda2 * ddot_ (&pj, dj, &ione, cd->nu, &ione);
+		z -= lambda2 * mm_mtx_real_xj_dot_y (j, cd->lreg->d, cd->nu);
 	}
 	return z;
 }
@@ -69,16 +66,14 @@ cdescent_gradient (const cdescent *cd, const int j)
 double
 cdescent_update_intercept (const cdescent *cd)
 {
-	int			n = cd->lreg->n;
-	int			p = cd->lreg->p;
 	double		nb = 0.;	// n * b
 
 	if (cd->lreg->ycentered && cd->lreg->xcentered) return 0.;
 	// b += bar(y)
 	if (!cd->lreg->ycentered) nb += cd->sy;
 	// b -= bar(X) * beta
-	if (!cd->lreg->xcentered) nb -= ddot_ (&p, cd->sx, &ione, cd->beta, &ione);
-	return nb / (double) n;	// return b
+	if (!cd->lreg->xcentered) nb -= ddot_ (&cd->lreg->x->n, cd->sx, &ione, cd->beta, &ione);
+	return nb / (double) cd->lreg->x->m;	// return b
 }
 
 /*** return step-size for updating beta ***/

@@ -36,13 +36,11 @@ mm_mtx		*mm_mtx_real_new (bool sparse, bool symmetric, const int m, const int n,
 void		mm_array_set_all (int n, double *data, const double val);
 void		mm_mtx_real_set_all (mm_mtx *mm, const double val);
 mm_mtx		*mm_mtx_real_eye (const int n);
-mm_mtx		*mm_mtx_real_s_dot_d (bool trans, const double alpha, const mm_mtx *a, const mm_mtx *x, const double beta);
-double		mm_mtx_real_sj_dot_d (const int j, const mm_mtx *s, const mm_mtx *d);
-double		mm_mtx_real_sj_nrm (const int j, const mm_mtx *s);
-
+double		mm_mtx_real_xj_sum (const int j, const mm_mtx *x);
 mm_mtx		*mm_mtx_real_x_dot_y (bool trans, const double alpha, const mm_mtx *x, const mm_mtx *y, const double beta);
 double		mm_mtx_real_xj_dot_y (const int j, const mm_mtx *x, const mm_mtx *y);
 double		mm_mtx_real_xj_dot_xj (const int j, const mm_mtx *x);
+void		mm_mtx_real_axjpy (const double alpha, const int j, const mm_mtx *x, mm_mtx *y);
 
 #ifdef __cplusplus
 }

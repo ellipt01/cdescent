@@ -16,9 +16,8 @@ output_solutionpath_cdescent (int iter, const cdescent *cd)
 	int			i;
 	char		fn[80];
 	FILE		*fp;
-	int			p = cd->lreg->p;
 
-	for (i = 0; i < p; i++) {
+	for (i = 0; i < cd->lreg->x->n; i++) {
 
 		sprintf (fn, "beta%03d.res", i);
 

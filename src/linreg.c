@@ -47,8 +47,6 @@ linreg_alloc (const int n, const int p, double *y, double *x)
 
 	lreg = (linreg *) malloc (sizeof (linreg));
 
-	lreg->n = n;
-	lreg->p = p;
 	nz = n * p;
 
 	lreg->y = mm_mtx_real_new (false, false, n, 1, n);
@@ -70,8 +68,6 @@ linreg_alloc (const int n, const int p, double *y, double *x)
 		lreg->x->p[j + 1] = k;
 	}
 
-	lreg->x1 = lreg->x->data;
-
 	/* By default, data is assumed to be not centered or standardized */
 	lreg->meany = NULL;
 	lreg->meanx = NULL;
@@ -81,7 +77,7 @@ linreg_alloc (const int n, const int p, double *y, double *x)
 	lreg->xnormalized = false;
 
 	lreg->lambda2 = 0.;
-	lreg->pen = NULL;
+	lreg->d = NULL;
 
 	return lreg;
 }
@@ -101,22 +97,16 @@ linreg_free (linreg *lreg)
 /* centering each column of matrix:
  * x(:, j) -> x(:, j) - mean(x(:, j)) */
 static double *
-centering_mm_mtx_real (mm_mtx *x)
+centering (mm_mtx *x)
 {
 	int		i, j;
 	double	*mean = (double *) malloc (x->n * sizeof (double));
 	for (j = 0; j < x->n; j++) {
-		double	meanj = 0.;
-		if (mm_is_sparse (x->typecode)) {
-			for (i = x->p[j]; i < x->p[j + 1]; i++) meanj += x->data[i];
-		} else {
-			for (i = 0; i < x->n; i++) meanj += x->data[i + j * x->m];
-		}
-		meanj /= (double) x->m;
+		double	meanj = mm_mtx_real_xj_sum (j, x) / (double) x->m;
 		if (mm_is_sparse (x->typecode)) {
 			for (i = x->p[j]; i < x->p[j + 1]; i++) x->data[i] -= meanj;
 		} else {
-			for (i = 0; i < x->n; i++) x->data[i + j * x->m] -= meanj;
+			for (i = 0; i < x->m; i++) x->data[i + j * x->m] -= meanj;
 		}
 		mean[j] = meanj;
 	}
@@ -126,7 +116,7 @@ centering_mm_mtx_real (mm_mtx *x)
 /* normalizing each column of matrix:
  * x(:, j) -> x(:, j) / norm(x(:, j)) */
 static double *
-normalizing_mm_mtx_real (mm_mtx *x)
+normalizing (mm_mtx *x)
 {
 	int		j;
 	double	*nrm = (double *) malloc (x->n * sizeof (double));
@@ -148,7 +138,7 @@ normalizing_mm_mtx_real (mm_mtx *x)
 void
 linreg_centering_y (linreg *lreg)
 {
-	lreg->meany = centering_mm_mtx_real (lreg->y);
+	lreg->meany = centering (lreg->y);
 	lreg->ycentered = true;
 	return;
 }
@@ -158,7 +148,7 @@ linreg_centering_y (linreg *lreg)
 void
 linreg_centering_x (linreg *lreg)
 {
-	lreg->meanx = centering_mm_mtx_real (lreg->x);
+	lreg->meanx = centering (lreg->x);
 	lreg->xcentered = true;
 	return;
 }
@@ -168,7 +158,7 @@ linreg_centering_x (linreg *lreg)
 void
 linreg_normalizing_x (linreg *lreg)
 {
-	lreg->normx = normalizing_mm_mtx_real (lreg->x);
+	lreg->normx = normalizing (lreg->x);
 	lreg->xnormalized = true;
 	return;
 }
@@ -182,34 +172,13 @@ linreg_standardizing_x (linreg *lreg)
 	return;
 }
 
-penalty *
-penalty_alloc (const int pj, const int p, const double *d)
-{
-	penalty	*pen;
-
-	if (!d) linreg_error ("penalty_alloc", "matrix *d is empty.", __FILE__, __LINE__);
-	pen = (penalty *) malloc (sizeof (penalty));
-	pen->pj = pj;
-	pen->p = p;
-	pen->d = d;
-	return pen;
-}
-
-void
-penalty_free (penalty *pen)
-{
-	if (pen) free (pen);
-	return;
-}
-
 /* set lreg->pen = pen, and set lreg->scale2 = 1 / (a + b * lambda2) */
 void
-linreg_set_penalty (linreg *lreg, const double lambda2, const penalty *pen)
+linreg_set_penalty (linreg *lreg, const double lambda2, const mm_mtx *d)
 {
-	if (pen && lreg->p != pen->p)
+	if (d && lreg->x->n != d->n)
 		linreg_error ("linreg_set_penalty", "penalty *pen->p must be same as linreg *lreg->p.", __FILE__, __LINE__);
-
 	if (lambda2 > linreg_double_eps ()) lreg->lambda2 = lambda2;
-	lreg->pen = pen;
+	lreg->d = d;
 	return;
 }

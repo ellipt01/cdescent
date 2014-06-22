@@ -30,14 +30,15 @@ typedef struct s_penalty		penalty;
  *   Z = scale * [X; sqrt(lambda2) * J]
  */
 struct s_linreg {
-	int					n;	// number of data
-	int					p;	// number of variables
 
 	mm_mtx				*x;
 	mm_mtx				*y;
 
-//	double				*y1;		// data
-	double				*x1;		// variables
+	/* threshold for L2 penalty */
+	double				lambda2;
+
+	/* penalty term. */
+	const mm_mtx		*d;
 
 	bool				ycentered;
 	bool				xcentered;
@@ -47,21 +48,6 @@ struct s_linreg {
 	double				*meanx;	// meanx[j] = mean( X(:,j) )
 	double				*normx;	// normx[j] = norm( X(:,j) )
 
-	/* threshold for L2 penalty */
-	double				lambda2;
-
-	/* penalty term.
-	 * if pen == NULL && lambda2 > 0, ridge regression is assumed. */
-	const mm_mtx		*d;
-	const penalty		*pen;
-
-};
-
-/* penalty term */
-struct s_penalty {
-	int					pj;		// rows of D
-	int					p;		// columns of D
-	const double		*d;		// pj x p penalty matrix D
 };
 
 /* linreg.c */
@@ -73,10 +59,7 @@ void			linreg_centering_x (linreg *lreg);
 void			linreg_normalizing_x (linreg *lreg);
 void			linreg_standardizing_x (linreg *lreg);
 
-penalty		*penalty_alloc (const int p1, const int p, const double *d);
-void			penalty_free (penalty *pen);
-
-void			linreg_set_penalty (linreg *lreg, const double lambda2, const penalty *pen);
+void			linreg_set_penalty (linreg *lreg, const double lambda2, const mm_mtx *d);
 
 #ifdef __cplusplus
 }

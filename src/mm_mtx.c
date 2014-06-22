@@ -88,7 +88,30 @@ mm_mtx_real_eye (const int n)
 	return mm;
 }
 
-mm_mtx *
+static double
+mm_mtx_real_sj_sum (const int j, const mm_mtx *s)
+{
+	int		k;
+	double	sum = 0.;
+	if (j < 0 || s->n <= j)
+		linreg_error ("mm_mtx_real_sj_sum", "specified index is invalid", __FILE__, __LINE__);
+	for (k = s->p[j]; k < s->p[j + 1]; k++) sum += s->data[k];
+	return sum;
+}
+
+double
+mm_mtx_real_xj_sum (const int j, const mm_mtx *x)
+{
+	double	sum = 0.;
+	if (mm_is_sparse (x->typecode)) sum = mm_mtx_real_sj_sum (j, x);
+	else {
+		int		k;
+		for (k = 0; k < x->m; k++) sum += x->data[k + j * x->m];
+	}
+	return sum;
+}
+
+static mm_mtx *
 mm_mtx_real_s_dot_d (bool trans, const double alpha, const mm_mtx *s, const mm_mtx *d, const double beta)
 {
 	int		j, k, l;
@@ -119,18 +142,33 @@ mm_mtx_real_s_dot_d (bool trans, const double alpha, const mm_mtx *s, const mm_m
 			for (k = s->p[j]; k < s->p[j + 1]; k++) {
 				int		si = (trans) ? s->i[k] : s->j[k];
 				int		sj = (trans) ? s->j[k] : s->i[k];
-				double	*ml = mm->data + l * lda;
-				double	*dl = d->data + l * d->m;
-				*(ml + sj) += alpha * s->data[k] * (*(dl + si));
-				if (symmetric && j != sj) *(ml + si) += alpha * s->data[k] * (*(dl + sj));
+				mm->data[sj + l * lda] += alpha * s->data[k] * d->data[si + l * d->m];
+				if (symmetric && j != sj) mm->data[si + l * lda] += alpha * s->data[k] * d->data[sj + l * d->m];
 			}
 		}
 	}
-
 	return mm;
 }
 
-double
+mm_mtx *
+mm_mtx_real_x_dot_y (bool trans, const double alpha, const mm_mtx *x, const mm_mtx *y, const double beta)
+{
+	int		m = (trans) ? x->n : x->m;
+	int		n = (trans) ? x->m : x->n;
+	mm_mtx	*c;
+
+	if (n != y->m) linreg_error ("mm_mtx_real_x_dot_y", "matrix size mismatch.", __FILE__, __LINE__);
+
+	c = mm_mtx_real_new (false, false, m, y->n, m * y->n);
+	if (mm_is_sparse (x->typecode)) c = mm_mtx_real_s_dot_d (trans, alpha, x, y, beta);
+	else {
+		c->data = (double *) malloc (m * y->n * sizeof (double));
+		dgemv_ ((trans) ? "T" : "N", &x->m, &x->n, &alpha, x->data, &x->m, y->data, &ione, &beta, c->data, &ione);
+	}
+	return c;
+}
+
+static double
 mm_mtx_real_sj_dot_d (const int j, const mm_mtx *s, const mm_mtx *d)
 {
 	int		k;
@@ -147,34 +185,6 @@ mm_mtx_real_sj_dot_d (const int j, const mm_mtx *s, const mm_mtx *d)
 }
 
 double
-mm_mtx_real_sj_nrm (const int j, const mm_mtx *s)
-{
-	int		size;
-	if (!mm_is_sparse (s->typecode))
-		linreg_error ("mm_mtx_real_sj_nrm", "matrix *s must be sparse.", __FILE__, __LINE__);
-	size = s->p[j + 1] - s->p[j];
-	return dnrm2_ (&size, s->data + s->p[j], &ione);
-}
-
-mm_mtx *
-mm_mtx_real_x_dot_y (bool trans, const double alpha, const mm_mtx *x, const mm_mtx *y, const double beta)
-{
-	int		m = (trans) ? x->n : x->m;
-	int		n = (trans) ? x->m : x->n;
-	mm_mtx	*c;
-
-	if (n != y->m) linreg_error ("mm_mtx_real_x_dot_y", "matrix size mismatch.", __FILE__, __LINE__);
-
-	c = mm_mtx_real_new (false, false, m, y->n, m * y->n);
-	if (mm_is_sparse (x->typecode)) c = mm_mtx_real_s_dot_d (trans, alpha, x, y, beta);
-	else {
-		c->data = (double *) malloc (m * y->n * sizeof (double));
-		dgemv_ ((trans) ? "T" : "N", &m, &n, &alpha, x->data, &y->m, y->data, &ione, &beta, c->data, &ione);
-	}
-	return c;
-}
-
-double
 mm_mtx_real_xj_dot_y (const int j, const mm_mtx *x, const mm_mtx *y)
 {
 	double	val;
@@ -185,6 +195,16 @@ mm_mtx_real_xj_dot_y (const int j, const mm_mtx *x, const mm_mtx *y)
 	else val = ddot_ (&x->m, x->data + j * x->m, &ione, y->data, &ione);
 
 	return val;
+}
+
+static double
+mm_mtx_real_sj_nrm (const int j, const mm_mtx *s)
+{
+	int		size;
+	if (!mm_is_sparse (s->typecode))
+		linreg_error ("mm_mtx_real_sj_nrm", "matrix *s must be sparse.", __FILE__, __LINE__);
+	size = s->p[j + 1] - s->p[j];
+	return dnrm2_ (&size, s->data + s->p[j], &ione);
 }
 
 double
@@ -198,4 +218,24 @@ mm_mtx_real_xj_dot_xj (const int j, const mm_mtx *x)
 	else val = dnrm2_ (&x->m, x->data + j * x->m, &ione);
 
 	return pow (val, 2.);
+}
+
+static void
+mm_mtx_real_asjpd (const double alpha, const int j, const mm_mtx *s, mm_mtx *d)
+{
+	int		k;
+	for (k = s->p[j]; k < s->p[j + 1]; k++) d->data[s->i[k]] += alpha * s->data[k];
+	return;
+}
+
+void
+mm_mtx_real_axjpy (const double alpha, const int j, const mm_mtx *x, mm_mtx *y)
+{
+	if (!mm_is_dense (y->typecode))
+		linreg_error ("mm_mtx_real_axjpy", "matrix *y must be dense.", __FILE__, __LINE__);
+
+	if (mm_is_sparse (x->typecode)) mm_mtx_real_asjpd (alpha, j, x, y);
+	else daxpy_ (&y->m, &alpha, x->data + j * x->m, &ione, y->data, &ione);
+
+	return;
 }
