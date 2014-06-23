@@ -79,11 +79,11 @@ mm_mtx_real_set_all (mm_mtx *mm, const double val)
 	mm_array_set_all (mm->nz, mm->data, val);
 }
 
-mm_mtx *
-mm_mtx_real_eye (const int n)
+static mm_mtx *
+mm_mtx_real_speye (const int n)
 {
 	int		k;
-	mm_mtx	*mm = mm_mtx_real_new (true, true, n, n, n);
+	mm_mtx	*mm = mm_mtx_real_new (MM_MTX_SPARSE, MM_MTX_SYMMETRIC, n, n, n);
 
 	mm->i = (int *) malloc (n * sizeof (int));
 	mm->j = (int *) malloc (n * sizeof (int));
@@ -96,6 +96,23 @@ mm_mtx_real_eye (const int n)
 		mm->j[k] = k;
 		mm->data[k] = 1.;
 		mm->p[k + 1] = k + 1;
+	}
+
+	return mm;
+}
+
+mm_mtx *
+mm_mtx_real_eye (MM_MtxType type, const int n)
+{
+	mm_mtx	*mm;
+
+	if (type == MM_MTX_SPARSE) mm = mm_mtx_real_speye (n);
+	else {
+		int		k;
+		mm = mm_mtx_real_new (MM_MTX_DENSE, MM_MTX_UNSYMMETRIC, n, n, n * n);
+		mm->data = (double *) malloc (mm->nz * sizeof (double));
+		mm_mtx_real_set_all (mm, 0.);
+		for (k = 0; k < n; k++) mm->data[k + k * n] = 1.;
 	}
 
 	return mm;
@@ -120,7 +137,7 @@ mm_mtx_real_asum (const mm_mtx *x)
 
 /* sum_i S(i,j) */
 static double
-mm_mtx_real_sj_sum (const int j, const mm_mtx *s)
+mm_mtx_real_sj_sum (const int j, const mm_mtx_sparse *s)
 {
 	int		k;
 	double	sum = 0.;
@@ -152,7 +169,7 @@ mm_mtx_real_nrm2 (const mm_mtx *x)
 
 /* ||S(:,j)|| */
 static double
-mm_mtx_real_sj_nrm2 (const int j, const mm_mtx *s)
+mm_mtx_real_sj_nrm2 (const int j, const mm_mtx_sparse *s)
 {
 	int		size = s->p[j + 1] - s->p[j];
 	return dnrm2_ (&size, s->data + s->p[j], &ione);
@@ -168,7 +185,7 @@ mm_mtx_real_xj_nrm2 (const int j, const mm_mtx *x)
 
 /* S * D or S' * D */
 static mm_mtx *
-mm_mtx_real_s_dot_d (bool trans, const double alpha, const mm_mtx *s, const mm_mtx *d, const double beta)
+mm_mtx_real_s_dot_d (bool trans, const double alpha, const mm_mtx_sparse *s, const mm_mtx_dense *d, const double beta)
 {
 	int		j, k, l;
 	int		m, n, lda;
@@ -208,7 +225,7 @@ mm_mtx_real_s_dot_d (bool trans, const double alpha, const mm_mtx *s, const mm_m
 
 /* X * y or X' * y */
 mm_mtx *
-mm_mtx_real_x_dot_y (bool trans, const double alpha, const mm_mtx *x, const mm_mtx *y, const double beta)
+mm_mtx_real_x_dot_y (bool trans, const double alpha, const mm_mtx *x, const mm_mtx_dense *y, const double beta)
 {
 	int		m = (trans) ? x->n : x->m;
 	int		n = (trans) ? x->m : x->n;
@@ -227,7 +244,7 @@ mm_mtx_real_x_dot_y (bool trans, const double alpha, const mm_mtx *x, const mm_m
 
 /* S(:,j)' * D */
 static double
-mm_mtx_real_sj_trans_dot_d (const int j, const mm_mtx *s, const mm_mtx *d)
+mm_mtx_real_sj_trans_dot_d (const int j, const mm_mtx_sparse *s, const mm_mtx_dense *d)
 {
 	int		k;
 	double	val;
@@ -244,7 +261,7 @@ mm_mtx_real_sj_trans_dot_d (const int j, const mm_mtx *s, const mm_mtx *d)
 
 /* X(:,j)' * y */
 double
-mm_mtx_real_xj_trans_dot_y (const int j, const mm_mtx *x, const mm_mtx *y)
+mm_mtx_real_xj_trans_dot_y (const int j, const mm_mtx *x, const mm_mtx_dense *y)
 {
 	double	val;
 
@@ -258,7 +275,7 @@ mm_mtx_real_xj_trans_dot_y (const int j, const mm_mtx *x, const mm_mtx *y)
 
 /* d += a * S(:,j) */
 static void
-mm_mtx_real_asjpd (const double alpha, const int j, const mm_mtx *s, mm_mtx *d)
+mm_mtx_real_asjpd (const double alpha, const int j, const mm_mtx_sparse *s, mm_mtx_dense *d)
 {
 	int		k;
 	for (k = s->p[j]; k < s->p[j + 1]; k++) d->data[s->i[k]] += alpha * s->data[k];
@@ -267,7 +284,7 @@ mm_mtx_real_asjpd (const double alpha, const int j, const mm_mtx *s, mm_mtx *d)
 
 /* y += a * X(:,j) */
 void
-mm_mtx_real_axjpy (const double alpha, const int j, const mm_mtx *x, mm_mtx *y)
+mm_mtx_real_axjpy (const double alpha, const int j, const mm_mtx *x, mm_mtx_dense *y)
 {
 	if (!mm_is_dense (y->typecode))
 		linreg_error ("mm_mtx_real_axjpy", "matrix *y must be dense.", __FILE__, __LINE__);

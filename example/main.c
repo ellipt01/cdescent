@@ -116,8 +116,8 @@ fprintf_params (FILE *stream)
 	return;
 }
 
-mm_mtx *
-mm_mtx_real_penalty_smooth_sparse (const int n)
+static mm_mtx *
+mm_mtx_real_penalty_spsmooth (const int n)
 {
 	int		i, j, k;
 	int		nz = 2 * (n - 1);
@@ -147,17 +147,19 @@ mm_mtx_real_penalty_smooth_sparse (const int n)
 }
 
 mm_mtx *
-mm_mtx_real_penalty_smooth_dense (const int n)
+mm_mtx_real_penalty_smooth (MM_MtxType type, const int n)
 {
-	int		j;
-	int		nz = (n - 1) * n;
+	mm_mtx	*d;
 
-	mm_mtx	*d = mm_mtx_real_new (MM_MTX_DENSE, MM_MTX_UNSYMMETRIC, n - 1, n, nz);
-	d->data = (double *) malloc (nz * sizeof (double));
-
-	for (j = 0; j < n - 1; j++) {
-		d->data[j + j * d->m] = 1.;
-		d->data[j + (j + 1) * d->m] = -1.;
+	if (type == MM_MTX_SPARSE) d = mm_mtx_real_penalty_spsmooth (n);
+	else {
+		int		j;
+		d = mm_mtx_real_new (MM_MTX_DENSE, MM_MTX_UNSYMMETRIC, n - 1, n, (n - 1) * n);
+		d->data = (double *) malloc (d->nz * sizeof (double));
+		for (j = 0; j < n - 1; j++) {
+			d->data[j + j * d->m] = 1.;
+			d->data[j + (j + 1) * d->m] = -1.;
+		}
 	}
 	return d;
 }
@@ -198,10 +200,6 @@ create_mm_mtx_real_dense (int m, int n, double *data)
 int
 main (int argc, char **argv)
 {
-	int			m;
-	int			n;
-	double		*datax;
-	double		*datay;
 	linreg		*lreg;
 
 	mm_mtx		*x;
@@ -212,13 +210,22 @@ main (int argc, char **argv)
 	fprintf_params (stderr);
 
 	/* linear system */
-	read_data (fn, skipheaders, &m, &n, &datay, &datax);
-	y = create_mm_mtx_real_dense (m, 1, datay);
-	x = create_mm_mtx_real_sparse (m, n, datax);
+	{
+		int			m;
+		int			n;
+		double		*datax;
+		double		*datay;
+		read_data (fn, skipheaders, &m, &n, &datay, &datax);
+		y = create_mm_mtx_real_dense (m, 1, datay);
+//		free (datay);
+		x = create_mm_mtx_real_dense (m, n, datax);
+//		free (datax);
+	}
 //	d = NULL;
-//	d = mm_mtx_real_eye (n);
-	d = mm_mtx_real_penalty_smooth_dense (n);
-//	d = mm_mtx_real_penalty_smooth_sparse (n);
+//	d = mm_mtx_real_eye (MM_MTX_DENSE, x->n);
+//	d = mm_mtx_real_eye (MM_MTX_SPARSE, x->n);
+	d = mm_mtx_real_penalty_smooth (MM_MTX_DENSE, x->n);
+//	d = mm_mtx_real_penalty_smooth (MM_MTX_SPARSE, x->n);
 
 	lreg = linreg_alloc (y, x, lambda2, d);
 	linreg_centering_y (lreg);
