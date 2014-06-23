@@ -25,7 +25,7 @@ output_solutionpath_cdescent (int iter, const cdescent *cd)
 		else fp = fopen (fn, "aw");
 		if (fp == NULL) continue;
 
-		fprintf (fp, "%d\t%.4e\t%.4e\n", iter, cd->nrm1, cd->beta[i]);
+		fprintf (fp, "%d\t%.4e\t%.4e\n", iter, cd->nrm1, cd->beta->data[i]);
 		fclose (fp);
 	}
 	return;

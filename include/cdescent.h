@@ -28,7 +28,7 @@ struct s_cdescent {
 
 	double			b;			// intercept
 	double			nrm1;
-	double			*beta;		// solution
+	mm_mtx			*beta;		// solution
 
 	mm_mtx			*mu;		// mu = X * beta, estimate of y
 	mm_mtx			*nu;		// nu = D * beta.

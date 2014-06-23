@@ -51,7 +51,7 @@ struct s_linreg {
 };
 
 /* linreg.c */
-linreg			*linreg_alloc (const int n, const int p, double *y, double *x);
+linreg			*linreg_alloc (mm_mtx *y, mm_mtx *x, const double lambda2, const mm_mtx *d);
 void			linreg_free (linreg *l);
 
 void			linreg_centering_y (linreg *lreg);

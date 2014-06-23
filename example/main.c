@@ -105,24 +105,24 @@ read_params (int argc, char **argv)
 }
 
 void
-fprintf_params (void)
+fprintf_params (FILE *stream)
 {
-	fprintf (stderr, "###########################################################\n\n");
-	fprintf (stderr, "read file: \t\"%s\" (skip headers = %d)\n", fn, (int) skipheaders);
-	fprintf (stderr, "lambda1 :\t[%.2f : %.2f : %.2f]\n", start, dt, stop);
-	fprintf (stderr, "lambda2 :\t%.2f\n", lambda2);
-	fprintf (stderr, "maxiter :\t%d\n", maxiter);
-	fprintf (stderr, "\n###########################################################\n");
+	fprintf (stream, "###########################################################\n\n");
+	fprintf (stream, "read file: \t\"%s\" (skip headers = %d)\n", fn, (int) skipheaders);
+	fprintf (stream, "lambda1 :\t[%.2f : %.2f : %.2f]\n", start, dt, stop);
+	fprintf (stream, "lambda2 :\t%.2f\n", lambda2);
+	fprintf (stream, "maxiter :\t%d\n", maxiter);
+	fprintf (stream, "\n###########################################################\n");
 	return;
 }
 
 mm_mtx *
-mm_mtx_real_penalty_smooth (const int n)
+mm_mtx_real_penalty_smooth_sparse (const int n)
 {
 	int		i, j, k;
 	int		nz = 2 * (n - 1);
 
-	mm_mtx	*d = mm_mtx_real_new (true, false, n - 1, n, nz);
+	mm_mtx	*d = mm_mtx_real_new (MM_MTX_SPARSE, MM_MTX_UNSYMMETRIC, n - 1, n, nz);
 	d->i = (int *) malloc (nz * sizeof (int));
 	d->j = (int *) malloc (nz * sizeof (int));
 	d->p = (int *) malloc ((n + 1) * sizeof (int));
@@ -147,12 +147,12 @@ mm_mtx_real_penalty_smooth (const int n)
 }
 
 mm_mtx *
-mm_mtx_real_penalty_smooth2 (const int n)
+mm_mtx_real_penalty_smooth_dense (const int n)
 {
 	int		j;
 	int		nz = (n - 1) * n;
 
-	mm_mtx	*d = mm_mtx_real_new (false, false, n - 1, n, nz);
+	mm_mtx	*d = mm_mtx_real_new (MM_MTX_DENSE, MM_MTX_UNSYMMETRIC, n - 1, n, nz);
 	d->data = (double *) malloc (nz * sizeof (double));
 
 	for (j = 0; j < n - 1; j++) {
@@ -162,33 +162,68 @@ mm_mtx_real_penalty_smooth2 (const int n)
 	return d;
 }
 
+mm_mtx *
+create_mm_mtx_real_sparse (int m, int n, double *data)
+{
+	int		i, j, k = 0;
+	mm_mtx	*x = mm_mtx_real_new (MM_MTX_SPARSE, MM_MTX_UNSYMMETRIC, m, n, m * n);
+	x->i = (int *) malloc (x->nz * sizeof (int));
+	x->j = (int *) malloc (x->nz * sizeof (int));
+	x->p = (int *) malloc ((n + 1) * sizeof (int));
+	x->data = data;
+
+	x->p[0] = 0;
+	for (j = 0; j < n; j++) {
+		for (i = 0; i < m; i++) {
+			x->i[k] = i;
+			x->j[k] = j;
+			k++;
+		}
+		x->p[j + 1] = k;
+	}
+	return x;
+}
+
+mm_mtx *
+create_mm_mtx_real_dense (int m, int n, double *data)
+{
+	int		k;
+	mm_mtx	*x = mm_mtx_real_new (MM_MTX_DENSE, MM_MTX_UNSYMMETRIC, m, n, m * n);
+	x->data = data;
+	return x;
+}
+
 #include <time.h>
 
 int
 main (int argc, char **argv)
 {
+	int			m;
 	int			n;
-	int			p;
-	double		*y;
-	double		*x;
+	double		*datax;
+	double		*datay;
 	linreg		*lreg;
 
+	mm_mtx		*x;
+	mm_mtx		*y;
 	mm_mtx		*d;
 
 	if (!read_params (argc, argv)) usage (argv[0]);
-	fprintf_params ();
+	fprintf_params (stderr);
 
 	/* linear system */
-	read_data (fn, skipheaders, &n, &p, &y, &x);
-	lreg = linreg_alloc (n, p, y, x);
+	read_data (fn, skipheaders, &m, &n, &datay, &datax);
+	y = create_mm_mtx_real_dense (m, 1, datay);
+	x = create_mm_mtx_real_sparse (m, n, datax);
+//	d = NULL;
+//	d = mm_mtx_real_eye (n);
+	d = mm_mtx_real_penalty_smooth_dense (n);
+//	d = mm_mtx_real_penalty_smooth_sparse (n);
+
+	lreg = linreg_alloc (y, x, lambda2, d);
 	linreg_centering_y (lreg);
 	linreg_centering_x (lreg);
 	linreg_normalizing_x (lreg);
-
-	/* penalty term: S-Lasso */
-//	d = mm_mtx_real_eye (p);
-	d = mm_mtx_real_penalty_smooth2 (p);
-	linreg_set_penalty (lreg, lambda2, d);
 
 	{
 		clock_t	t1, t2;
@@ -199,8 +234,9 @@ main (int argc, char **argv)
 	}
 
 	linreg_free (lreg);
-	free (x);
-	free (y);
+	mm_mtx_free (x);
+	mm_mtx_free (y);
+	if (d) mm_mtx_free (d);
 
 	return EXIT_SUCCESS;
 }

@@ -27,7 +27,7 @@ mm_mtx_real_alloc (void)
 }
 
 mm_mtx *
-mm_mtx_real_new (bool sparse, bool symmetric, const int m, const int n, const int nz)
+mm_mtx_real_new (MM_MtxType type, MM_MtxSymmetric symmetric, const int m, const int n, const int nz)
 {
 	mm_mtx	*mm = mm_mtx_real_alloc ();
 
@@ -42,16 +42,29 @@ mm_mtx_real_new (bool sparse, bool symmetric, const int m, const int n, const in
 	mm_set_matrix (&mm->typecode);
 
 	// typecode[1] = 'C' or 'A'
-	if (sparse) mm_set_coordinate (&mm->typecode);
+	if (type == MM_MTX_SPARSE) mm_set_coordinate (&mm->typecode);
 	else mm_set_array (&mm->typecode);
 
 	// typecode[2] = 'R'
 	mm_set_real (&mm->typecode);
 
 	// typecode[3] = 'S'
-	if (symmetric) mm_set_symmetric (&mm->typecode);
+	if (symmetric == MM_MTX_SYMMETRIC) mm_set_symmetric (&mm->typecode);
 
 	return mm;
+}
+
+void
+mm_mtx_free (mm_mtx *mm)
+{
+	if (mm) {
+		if (mm->i) free (mm->i);
+		if (mm->j) free (mm->j);
+		if (mm->p) free (mm->p);
+		if (mm->data) free (mm->data);
+		free (mm);
+	}
+	return;
 }
 
 void
@@ -88,6 +101,24 @@ mm_mtx_real_eye (const int n)
 	return mm;
 }
 
+/* sum_i S(i) */
+double
+mm_mtx_real_sum (const mm_mtx *x)
+{
+	int		k;
+	double	sum = 0.;
+	for (k = 0; k < x->nz; k++) sum += x->data[k];
+	return sum;
+}
+
+/* |S| */
+double
+mm_mtx_real_asum (const mm_mtx *x)
+{
+	return dasum_ (&x->nz, x->data, &ione);
+}
+
+/* sum_i S(i,j) */
 static double
 mm_mtx_real_sj_sum (const int j, const mm_mtx *s)
 {
@@ -99,6 +130,7 @@ mm_mtx_real_sj_sum (const int j, const mm_mtx *s)
 	return sum;
 }
 
+/* sum_i X(i,j) */
 double
 mm_mtx_real_xj_sum (const int j, const mm_mtx *x)
 {
@@ -111,6 +143,30 @@ mm_mtx_real_xj_sum (const int j, const mm_mtx *x)
 	return sum;
 }
 
+/* ||S|| */
+double
+mm_mtx_real_nrm2 (const mm_mtx *x)
+{
+	return dnrm2_ (&x->nz, x->data, &ione);
+}
+
+/* ||S(:,j)|| */
+static double
+mm_mtx_real_sj_nrm2 (const int j, const mm_mtx *s)
+{
+	int		size = s->p[j + 1] - s->p[j];
+	return dnrm2_ (&size, s->data + s->p[j], &ione);
+}
+
+/* ||X(:,j)|| */
+double
+mm_mtx_real_xj_nrm2 (const int j, const mm_mtx *x)
+{
+	if (j < 0 || x->n <= j) linreg_error ("mm_mtx_real_nrm2", "index out of range.", __FILE__, __LINE__);
+	return (mm_is_sparse (x->typecode)) ? mm_mtx_real_sj_nrm2 (j, x) : dnrm2_ (&x->m, x->data + j * x->m, &ione);
+}
+
+/* S * D or S' * D */
 static mm_mtx *
 mm_mtx_real_s_dot_d (bool trans, const double alpha, const mm_mtx *s, const mm_mtx *d, const double beta)
 {
@@ -150,6 +206,7 @@ mm_mtx_real_s_dot_d (bool trans, const double alpha, const mm_mtx *s, const mm_m
 	return mm;
 }
 
+/* X * y or X' * y */
 mm_mtx *
 mm_mtx_real_x_dot_y (bool trans, const double alpha, const mm_mtx *x, const mm_mtx *y, const double beta)
 {
@@ -168,8 +225,9 @@ mm_mtx_real_x_dot_y (bool trans, const double alpha, const mm_mtx *x, const mm_m
 	return c;
 }
 
+/* S(:,j)' * D */
 static double
-mm_mtx_real_sj_dot_d (const int j, const mm_mtx *s, const mm_mtx *d)
+mm_mtx_real_sj_trans_dot_d (const int j, const mm_mtx *s, const mm_mtx *d)
 {
 	int		k;
 	double	val;
@@ -184,42 +242,21 @@ mm_mtx_real_sj_dot_d (const int j, const mm_mtx *s, const mm_mtx *d)
 	return val;
 }
 
+/* X(:,j)' * y */
 double
-mm_mtx_real_xj_dot_y (const int j, const mm_mtx *x, const mm_mtx *y)
+mm_mtx_real_xj_trans_dot_y (const int j, const mm_mtx *x, const mm_mtx *y)
 {
 	double	val;
 
 	if (j < 0 || x->n <= j) linreg_error ("mm_mtx_real_xj_dot_y", "index out of range.", __FILE__, __LINE__);
 
-	if (mm_is_sparse (x->typecode)) val = mm_mtx_real_sj_dot_d (j, x, y);
+	if (mm_is_sparse (x->typecode)) val = mm_mtx_real_sj_trans_dot_d (j, x, y);
 	else val = ddot_ (&x->m, x->data + j * x->m, &ione, y->data, &ione);
 
 	return val;
 }
 
-static double
-mm_mtx_real_sj_nrm (const int j, const mm_mtx *s)
-{
-	int		size;
-	if (!mm_is_sparse (s->typecode))
-		linreg_error ("mm_mtx_real_sj_nrm", "matrix *s must be sparse.", __FILE__, __LINE__);
-	size = s->p[j + 1] - s->p[j];
-	return dnrm2_ (&size, s->data + s->p[j], &ione);
-}
-
-double
-mm_mtx_real_xj_dot_xj (const int j, const mm_mtx *x)
-{
-	double	val;
-
-	if (j < 0 || x->n <= j) linreg_error ("mm_mtx_real_xj_dot_xj", "index out of range.", __FILE__, __LINE__);
-
-	if (mm_is_sparse (x->typecode)) val = mm_mtx_real_sj_nrm (j, x);
-	else val = dnrm2_ (&x->m, x->data + j * x->m, &ione);
-
-	return pow (val, 2.);
-}
-
+/* d += a * S(:,j) */
 static void
 mm_mtx_real_asjpd (const double alpha, const int j, const mm_mtx *s, mm_mtx *d)
 {
@@ -228,6 +265,7 @@ mm_mtx_real_asjpd (const double alpha, const int j, const mm_mtx *s, mm_mtx *d)
 	return;
 }
 
+/* y += a * X(:,j) */
 void
 mm_mtx_real_axjpy (const double alpha, const int j, const mm_mtx *x, mm_mtx *y)
 {

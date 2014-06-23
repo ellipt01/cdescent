@@ -35,38 +35,23 @@ linreg_error (const char * function_name, const char *error_msg, const char *fil
 }
 
 linreg *
-linreg_alloc (const int n, const int p, double *y, double *x)
+linreg_alloc (mm_mtx *y, mm_mtx *x, const double lambda2, const mm_mtx *d)
 {
-	int			nz;
 	linreg		*lreg;
 
-	if (!y) linreg_error ("lisys_alloc", "vector *y is empty.", __FILE__, __LINE__);
-	if (!x) linreg_error ("lisys_alloc", "matrix *x is empty.", __FILE__, __LINE__);
-	if (n <= 0) linreg_error ("lisys_alloc", "n must be > 0.", __FILE__, __LINE__);
-	if (p <= 0) linreg_error ("lisys_alloc", "p must be > 0.", __FILE__, __LINE__);
+	if (!y) linreg_error ("linreg_alloc", "vector *y is empty.", __FILE__, __LINE__);
+	if (!x) linreg_error ("linreg_alloc", "matrix *x is empty.", __FILE__, __LINE__);
+	if (!mm_is_dense (y->typecode)) linreg_error ("linreg_alloc", "vector *y must be dense.", __FILE__, __LINE__);
+	if (y->m != x->m) linreg_error ("linreg_alloc", "size of matrix *x and vector *y are incompatible.", __FILE__, __LINE__);
+	if (d && x->n != d->n) linreg_error ("linreg_alloc", "size of matrix *x and *d incompatible.", __FILE__, __LINE__);
 
 	lreg = (linreg *) malloc (sizeof (linreg));
 
-	nz = n * p;
+	lreg->y = y;
+	lreg->x = x;
 
-	lreg->y = mm_mtx_real_new (false, false, n, 1, n);
-	lreg->y->data = y;
-
-	lreg->x = mm_mtx_real_new (true, false, n, p, nz);
-	lreg->x->i = (int *) malloc (nz * sizeof (int));
-	lreg->x->j = (int *) malloc (nz * sizeof (int));
-	lreg->x->p = (int *) malloc ((p + 1) * sizeof (int));
-	lreg->x->data = x;
-	int		i, j, k = 0;
-	lreg->x->p[0] = 0;
-	for (j = 0; j < p; j++) {
-		for (i = 0; i < n; i++) {
-			lreg->x->i[k] = i;
-			lreg->x->j[k] = j;
-			k++;
-		}
-		lreg->x->p[j + 1] = k;
-	}
+	lreg->lambda2 = (lambda2 > linreg_double_eps ()) ? lambda2 : 0.;
+	lreg->d = (d) ? d : NULL;
 
 	/* By default, data is assumed to be not centered or standardized */
 	lreg->meany = NULL;
@@ -75,9 +60,6 @@ linreg_alloc (const int n, const int p, double *y, double *x)
 	lreg->ycentered = false;
 	lreg->xcentered = false;
 	lreg->xnormalized = false;
-
-	lreg->lambda2 = 0.;
-	lreg->d = NULL;
 
 	return lreg;
 }

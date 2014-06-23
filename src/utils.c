@@ -33,8 +33,9 @@ cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
 
 	cd->b = 0.;
 	cd->nrm1 = 0.;
-	cd->beta = (double *) malloc (lreg->x->n * sizeof (double));
-	mm_array_set_all (lreg->x->n, cd->beta, 0.);
+	cd->beta = mm_mtx_real_new (MM_MTX_DENSE, MM_MTX_UNSYMMETRIC, lreg->x->n, 1, lreg->x->n);
+	cd->beta->data = (double *) malloc (cd->beta->nz * sizeof (double));
+	mm_mtx_real_set_all (cd->beta, 0.);
 
 	// mu = X * beta
 	cd->mu = mm_mtx_real_new (false, false, lreg->x->m, 1, lreg->x->m);
@@ -51,7 +52,7 @@ cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
 	/* sum y */
 	cd->sy = 0.;
 	if (!lreg->ycentered) {
-		cd->sy = mm_mtx_real_xj_sum (0, lreg->y);
+		cd->sy = mm_mtx_real_sum (lreg->y);
 		cd->b = cd->sy / (double) lreg->y->m;
 	}
 
@@ -67,14 +68,14 @@ cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
 	if (!lreg->xnormalized) {
 		int		j;
 		cd->xtx = (double *) malloc (lreg->x->n * sizeof (double));
-		for (j = 0; j < lreg->x->n; j++) cd->xtx[j] = mm_mtx_real_xj_dot_xj (j, lreg->x);
+		for (j = 0; j < lreg->x->n; j++) cd->xtx[j] = pow (mm_mtx_real_xj_nrm2 (j, lreg->x), 2.);
 	} else cd->xtx = NULL;
 
 	/* dtd = diag (D' * D) */
 	if (!cdescent_is_regtype_lasso (cd)) {
 		int				j;
 		cd->dtd = (double *) malloc (lreg->d->n * sizeof (double));
-		for (j = 0; j < lreg->d->n; j++) cd->dtd[j] = mm_mtx_real_xj_dot_xj (j, lreg->d);
+		for (j = 0; j < lreg->d->n; j++) cd->dtd[j] = pow (mm_mtx_real_xj_nrm2 (j, lreg->d), 2.);
 	} else cd->dtd = NULL;
 
 	return cd;
@@ -84,10 +85,10 @@ void
 cdescent_free (cdescent *cd)
 {
 	if (cd) {
-		if (cd->c) free (cd->c);
-		if (cd->beta) free (cd->beta);
-		if (cd->mu) free (cd->mu);
-		if (cd->nu) free (cd->nu);
+		if (cd->c) mm_mtx_free (cd->c);
+		if (cd->beta) mm_mtx_free (cd->beta);
+		if (cd->mu) mm_mtx_free (cd->mu);
+		if (cd->nu) mm_mtx_free (cd->nu);
 
 		if (cd->sx) free (cd->sx);
 		if (cd->xtx) free (cd->xtx);

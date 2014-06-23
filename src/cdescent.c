@@ -32,7 +32,7 @@ cdescent_cyclic_once_cycle (cdescent *cd)
 
 		if (fabs (etaj) > 0.) {
 			// update beta[j]
-			cd->beta[j] += etaj;
+			cd->beta->data[j] += etaj;
 			mm_mtx_real_axjpy (etaj, j, cd->lreg->x, cd->mu);
 
 			/* user defined penalty (not lasso nor ridge) */
@@ -44,7 +44,7 @@ cdescent_cyclic_once_cycle (cdescent *cd)
 		}
 
 	}
-	cd->nrm1 = dasum_ (&cd->lreg->x->n, cd->beta, &ione);
+	cd->nrm1 = mm_mtx_real_asum (cd->beta);
 
 	return (sqrt (nrm2) < cd->tolerance);
 }

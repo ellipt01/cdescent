@@ -47,7 +47,7 @@ static double
 cdescent_gradient (const cdescent *cd, const int j)
 {
 	double			cj = cd->c->data[j];	// X' * y
-	double			xjmu = mm_mtx_real_xj_dot_y (j, cd->lreg->x, cd->mu);	// X(:,j)' * mu
+	double			xjmu = mm_mtx_real_xj_trans_dot_y (j, cd->lreg->x, cd->mu);	// X(:,j)' * mu
 	double			lambda2 = cd->lreg->lambda2;
 
 	//	z = c(j) - X(:,j)' * mu
@@ -56,9 +56,9 @@ cdescent_gradient (const cdescent *cd, const int j)
 	// if X is not centered, z -= sum(X(:,j)) * b
 	if (!cd->lreg->xcentered) z -= cd->sx[j] * cd->b;
 
-	if (!cdescent_is_regtype_lasso (cd)) {	// ridge
-		z -= lambda2 * mm_mtx_real_xj_dot_y (j, cd->lreg->d, cd->nu);
-	}
+	// not lasso
+	if (!cdescent_is_regtype_lasso (cd)) z -= lambda2 * mm_mtx_real_xj_trans_dot_y (j, cd->lreg->d, cd->nu);
+
 	return z;
 }
 
@@ -72,7 +72,7 @@ cdescent_update_intercept (const cdescent *cd)
 	// b += bar(y)
 	if (!cd->lreg->ycentered) nb += cd->sy;
 	// b -= bar(X) * beta
-	if (!cd->lreg->xcentered) nb -= ddot_ (&cd->lreg->x->n, cd->sx, &ione, cd->beta, &ione);
+	if (!cd->lreg->xcentered) nb -= ddot_ (&cd->lreg->x->n, cd->sx, &ione, cd->beta->data, &ione);
 	return nb / (double) cd->lreg->x->m;	// return b
 }
 
@@ -84,5 +84,5 @@ cdescent_beta_stepsize (const cdescent *cd, const int j)
 	double		z = cdescent_gradient (cd, j) / scale2;
 	double		gamma = cd->lambda1 / scale2;
 	/* eta = S(z / scale2 + beta, lambda1 / scale2) - beta */
-	return soft_threshold (z + cd->beta[j], gamma) - cd->beta[j];
+	return soft_threshold (z + cd->beta->data[j], gamma) - cd->beta->data[j];
 }
