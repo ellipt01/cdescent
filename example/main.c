@@ -224,12 +224,12 @@ main (int argc, char **argv)
 //	d = NULL;
 //	d = mm_mtx_real_eye (MM_MTX_DENSE, x->n);
 //	d = mm_mtx_real_eye (MM_MTX_SPARSE, x->n);
-	d = mm_mtx_real_penalty_smooth (MM_MTX_DENSE, x->n);
-//	d = mm_mtx_real_penalty_smooth (MM_MTX_SPARSE, x->n);
+//	d = mm_mtx_real_penalty_smooth (MM_MTX_DENSE, x->n);
+	d = mm_mtx_real_penalty_smooth (MM_MTX_SPARSE, x->n);
 
 	lreg = linreg_alloc (y, x, lambda2, d);
-	linreg_centering_y (lreg);
-	linreg_centering_x (lreg);
+//	linreg_centering_y (lreg);
+//	linreg_centering_x (lreg);
 	linreg_normalizing_x (lreg);
 
 	{

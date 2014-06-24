@@ -27,20 +27,14 @@ soft_threshold (const double z, const double gamma)
 static double
 cdescent_scale2 (const cdescent *cd, const int j)
 {
-	double		scale2;
-	double		xtxj = (cd->xtx) ? cd->xtx[j] : 1.;
-	if (cdescent_is_regtype_lasso (cd)) scale2 = xtxj;
-	else {
-		double	lambda2 = cd->lreg->lambda2;
-		double	dtdj = (cd->dtd) ? cd->dtd[j] : 1.;
-		scale2 = xtxj + dtdj * lambda2;
-	}
+	double		scale2 = (cd->lreg->xnormalized) ? 1. : cd->xtx[j];
+	if (!cdescent_is_regtype_lasso (cd)) scale2 += cd->dtd[j] * cd->lreg->lambda2;
 	return scale2;
 }
 
 /*** return gradient of objective function with respect to beta_j ***/
 /* z = d L_j
- *   = c(j) - X(:,j)' * mu - lambda2 * D(:,j)' * D * beta
+ *   = c(j) - X(:,j)' * mu - X(:,j)' * b - lambda2 * D(:,j)' * D * beta
  *     + scale2 * beta_j,
  * however, the last term scale2 * beta_j is omitted */
 static double
@@ -56,7 +50,7 @@ cdescent_gradient (const cdescent *cd, const int j)
 	// if X is not centered, z -= sum(X(:,j)) * b
 	if (!cd->lreg->xcentered) z -= cd->sx[j] * cd->b;
 
-	// not lasso
+	// not lasso, z -= lambda2 * D(:,j)' * nu (nu = D * beta)
 	if (!cdescent_is_regtype_lasso (cd)) z -= lambda2 * mm_mtx_real_xj_trans_dot_y (j, cd->lreg->d, cd->nu);
 
 	return z;
