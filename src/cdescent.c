@@ -31,11 +31,13 @@ cdescent_cyclic_once_cycle (cdescent *cd)
 		double	etaj = cdescent_beta_stepsize (cd, j);
 
 		if (fabs (etaj) > 0.) {
-			// update beta[j]
+			// update beta[j]: beta[j] += eta[j]
 			cd->beta->data[j] += etaj;
+
+			// mu += eta[j] * X(:, j)
 			mm_mtx_real_axjpy (etaj, j, cd->lreg->x, cd->mu);
 
-			/* user defined penalty (not lasso nor ridge) */
+			/* not lasso, nu += eta[j] * D(:,j) */
 			if (!cdescent_is_regtype_lasso (cd)) {
 				mm_mtx_real_axjpy (etaj, j, cd->lreg->d, cd->nu);
 			}
