@@ -8,7 +8,7 @@
 #include <math.h>
 #include <cdescent.h>
 
-#include "linreg_private.h"
+#include "private.h"
 
 /*** soft thresholding ***/
 /* S(z, gamma) = sign(z)(|z| - gamma)+
@@ -41,7 +41,7 @@ static double
 cdescent_gradient (const cdescent *cd, const int j)
 {
 	double			cj = cd->c->data[j];	// X' * y
-	double			xjmu = mm_mtx_real_xj_trans_dot_y (j, cd->lreg->x, cd->mu);	// X(:,j)' * mu
+	double			xjmu = mm_mtx_xj_trans_dot_y (j, cd->lreg->x, cd->mu);	// X(:,j)' * mu
 	double			lambda2 = cd->lreg->lambda2;
 
 	//	z = c(j) - X(:,j)' * mu
@@ -51,7 +51,7 @@ cdescent_gradient (const cdescent *cd, const int j)
 	if (!cd->lreg->xcentered) z -= cd->sx[j] * cd->b;
 
 	// not lasso, z -= lambda2 * D(:,j)' * nu (nu = D * beta)
-	if (!cdescent_is_regtype_lasso (cd)) z -= lambda2 * mm_mtx_real_xj_trans_dot_y (j, cd->lreg->d, cd->nu);
+	if (!cdescent_is_regtype_lasso (cd)) z -= lambda2 * mm_mtx_xj_trans_dot_y (j, cd->lreg->d, cd->nu);
 
 	return z;
 }

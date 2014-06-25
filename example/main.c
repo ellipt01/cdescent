@@ -20,7 +20,7 @@ double		start = 0.;
 double		stop = 100.;
 double		dt = 0.1;
 double		gamma_bic = 0.;	// traditional BIC
-int			maxiter = 100;
+int			maxiter = 10000;
 
 void
 usage (char *toolname)
@@ -122,7 +122,7 @@ mm_mtx_real_penalty_spsmooth (const int n)
 	int		i, j, k;
 	int		nz = 2 * (n - 1);
 
-	mm_mtx	*d = mm_mtx_real_new (MM_MTX_SPARSE, MM_MTX_UNSYMMETRIC, n - 1, n, nz);
+	mm_mtx	*d = mm_mtx_new (MM_MTX_SPARSE, MM_MTX_UNSYMMETRIC, n - 1, n, nz);
 	d->i = (int *) malloc (nz * sizeof (int));
 	d->j = (int *) malloc (nz * sizeof (int));
 	d->p = (int *) malloc ((n + 1) * sizeof (int));
@@ -154,7 +154,7 @@ mm_mtx_real_penalty_smooth (MM_MtxType type, const int n)
 	if (type == MM_MTX_SPARSE) d = mm_mtx_real_penalty_spsmooth (n);
 	else {
 		int		j;
-		d = mm_mtx_real_new (MM_MTX_DENSE, MM_MTX_UNSYMMETRIC, n - 1, n, (n - 1) * n);
+		d = mm_mtx_new (MM_MTX_DENSE, MM_MTX_UNSYMMETRIC, n - 1, n, (n - 1) * n);
 		d->data = (double *) malloc (d->nz * sizeof (double));
 		for (j = 0; j < n - 1; j++) {
 			d->data[j + j * d->m] = 1.;
@@ -164,11 +164,11 @@ mm_mtx_real_penalty_smooth (MM_MtxType type, const int n)
 	return d;
 }
 
-mm_mtx *
-create_mm_mtx_real_sparse (int m, int n, double *data)
+mm_sparse *
+create_mm_sparse (int m, int n, double *data)
 {
-	int		i, j, k = 0;
-	mm_mtx	*x = mm_mtx_real_new (MM_MTX_SPARSE, MM_MTX_UNSYMMETRIC, m, n, m * n);
+	int			i, j, k = 0;
+	mm_sparse	*x = mm_mtx_new (MM_MTX_SPARSE, MM_MTX_UNSYMMETRIC, m, n, m * n);
 	x->i = (int *) malloc (x->nz * sizeof (int));
 	x->j = (int *) malloc (x->nz * sizeof (int));
 	x->p = (int *) malloc ((n + 1) * sizeof (int));
@@ -186,11 +186,11 @@ create_mm_mtx_real_sparse (int m, int n, double *data)
 	return x;
 }
 
-mm_mtx *
-create_mm_mtx_real_dense (int m, int n, double *data)
+mm_dense *
+create_mm_dense (int m, int n, double *data)
 {
-	int		k;
-	mm_mtx	*x = mm_mtx_real_new (MM_MTX_DENSE, MM_MTX_UNSYMMETRIC, m, n, m * n);
+	int			k;
+	mm_dense	*x = mm_mtx_new (MM_MTX_DENSE, MM_MTX_UNSYMMETRIC, m, n, m * n);
 	x->data = data;
 	return x;
 }
@@ -216,20 +216,24 @@ main (int argc, char **argv)
 		double		*datax;
 		double		*datay;
 		read_data (fn, skipheaders, &m, &n, &datay, &datax);
-		y = create_mm_mtx_real_dense (m, 1, datay);
+		y = create_mm_dense (m, 1, datay);
 //		free (datay);
-		x = create_mm_mtx_real_dense (m, n, datax);
+		x = create_mm_dense (m, n, datax);
 //		free (datax);
 	}
 //	d = NULL;
-//	d = mm_mtx_real_eye (MM_MTX_DENSE, x->n);
-//	d = mm_mtx_real_eye (MM_MTX_SPARSE, x->n);
-//	d = mm_mtx_real_penalty_smooth (MM_MTX_DENSE, x->n);
-	d = mm_mtx_real_penalty_smooth (MM_MTX_SPARSE, x->n);
+	d = mm_mtx_eye (MM_MTX_DENSE, x->n);
+//	d = mm_mtx_eye (MM_MTX_SPARSE, x->n);
+//	d = mm_mtx_penalty_smooth (MM_MTX_DENSE, x->n);
+//	d = mm_mtx_penalty_smooth (MM_MTX_SPARSE, x->n);
 
 	lreg = linreg_alloc (y, x, lambda2, d);
-//	linreg_centering_y (lreg);
-//	linreg_centering_x (lreg);
+	mm_mtx_free (x);
+	mm_mtx_free (y);
+	if (d) mm_mtx_free (d);
+
+	linreg_centering_y (lreg);
+	linreg_centering_x (lreg);
 	linreg_normalizing_x (lreg);
 
 	{
@@ -241,9 +245,6 @@ main (int argc, char **argv)
 	}
 
 	linreg_free (lreg);
-	mm_mtx_free (x);
-	mm_mtx_free (y);
-	if (d) mm_mtx_free (d);
 
 	return EXIT_SUCCESS;
 }

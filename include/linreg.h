@@ -17,10 +17,6 @@ extern "C" {
 #include <stdbool.h>
 #include <mm_mtx.h>
 
-#ifndef LINREG_INDEX_OF_MATRIX
-#define LINREG_INDEX_OF_MATRIX(i, j, lda) ((i) + (j) * (lda))
-#endif
-
 typedef struct s_linreg		linreg;
 typedef struct s_penalty		penalty;
 
@@ -31,35 +27,33 @@ typedef struct s_penalty		penalty;
  */
 struct s_linreg {
 
-	mm_mtx				*x;
-	mm_mtx				*y;
+	mm_mtx		*x;
+	mm_mtx		*y;
 
 	/* threshold for L2 penalty */
-	double				lambda2;
+	double		lambda2;
 
 	/* penalty term. */
-	const mm_mtx		*d;
+	mm_mtx		*d;
 
-	bool				ycentered;
-	bool				xcentered;
-	bool				xnormalized;
+	bool		ycentered;
+	bool		xcentered;
+	bool		xnormalized;
 
-	double				*meany;	// mean(y)
-	double				*meanx;	// meanx[j] = mean( X(:,j) )
-	double				*normx;	// normx[j] = norm( X(:,j) )
+	double		*meany;	// mean(y)
+	double		*meanx;	// meanx[j] = mean( X(:,j) )
+	double		*normx;	// normx[j] = norm( X(:,j) )
 
 };
 
 /* linreg.c */
-linreg			*linreg_alloc (mm_mtx *y, mm_mtx *x, const double lambda2, const mm_mtx *d);
+linreg			*linreg_alloc (mm_mtx *y, mm_mtx *x, const double lambda2, mm_mtx *d);
 void			linreg_free (linreg *l);
 
 void			linreg_centering_y (linreg *lreg);
 void			linreg_centering_x (linreg *lreg);
 void			linreg_normalizing_x (linreg *lreg);
 void			linreg_standardizing_x (linreg *lreg);
-
-void			linreg_set_penalty (linreg *lreg, const double lambda2, const mm_mtx *d);
 
 #ifdef __cplusplus
 }
