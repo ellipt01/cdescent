@@ -13,24 +13,14 @@
 #include "private.h"
 
 linreg *
-linreg_alloc (mm_mtx *y, mm_mtx *x, const double lambda2, mm_mtx *d)
+linreg_alloc (void)
 {
-	linreg		*lreg;
-
-	if (!y) cdescent_error ("linreg_alloc", "vector *y is empty.", __FILE__, __LINE__);
-	if (!x) cdescent_error ("linreg_alloc", "matrix *x is empty.", __FILE__, __LINE__);
-	if (!mm_is_dense (y->typecode)) cdescent_error ("linreg_alloc", "vector *y must be dense.", __FILE__, __LINE__);
-	if (y->m != x->m) cdescent_error ("linreg_alloc", "size of matrix *x and vector *y are not match.", __FILE__, __LINE__);
-	if (d && x->n != d->n) cdescent_error ("linreg_alloc", "size of matrix *x and *d are not match.", __FILE__, __LINE__);
-
-	lreg = (linreg *) malloc (sizeof (linreg));
-
-	lreg->y = mm_mtx_copy (y);
-	lreg->x = mm_mtx_copy (x);
-
-	lreg->lambda2 = (lambda2 > cdescent_double_eps ()) ? lambda2 : 0.;
-	lreg->d = (d) ? mm_mtx_copy (d) : NULL;
-
+	linreg	*lreg = (linreg *) malloc (sizeof (linreg));
+	lreg->has_copy = false;
+	lreg->y = NULL;
+	lreg->x = NULL;
+	lreg->d = NULL;
+	lreg->lambda2 = 0.;
 	/* By default, data is assumed to be not centered or standardized */
 	lreg->meany = NULL;
 	lreg->meanx = NULL;
@@ -38,6 +28,33 @@ linreg_alloc (mm_mtx *y, mm_mtx *x, const double lambda2, mm_mtx *d)
 	lreg->ycentered = false;
 	lreg->xcentered = false;
 	lreg->xnormalized = false;
+	return lreg;
+}
+
+linreg *
+linreg_new (mm_real *y, mm_real *x, const double lambda2, mm_real *d, bool has_copy)
+{
+	linreg	*lreg;
+
+	if (!y) cdescent_error ("linreg_alloc", "vector *y is empty.", __FILE__, __LINE__);
+	if (!x) cdescent_error ("linreg_alloc", "matrix *x is empty.", __FILE__, __LINE__);
+	if (!mm_is_dense (y->typecode)) cdescent_error ("linreg_alloc", "vector *y must be dense.", __FILE__, __LINE__);
+	if (y->m != x->m) cdescent_error ("linreg_alloc", "size of matrix *x and vector *y are not match.", __FILE__, __LINE__);
+	if (d && x->n != d->n) cdescent_error ("linreg_alloc", "size of matrix *x and *d are not match.", __FILE__, __LINE__);
+
+	lreg = linreg_alloc ();
+
+	lreg->has_copy = has_copy;
+	if (has_copy) {
+		lreg->y = mm_real_copy (y);
+		lreg->x = mm_real_copy (x);
+		lreg->d = (d) ? mm_real_copy (d) : NULL;
+	} else {
+		lreg->x = x;
+		lreg->y = y;
+		lreg->d = d;
+	}
+	lreg->lambda2 = (lambda2 > cdescent_double_eps ()) ? lambda2 : 0.;
 
 	return lreg;
 }
@@ -46,10 +63,11 @@ void
 linreg_free (linreg *lreg)
 {
 	if (lreg) {
-		if (lreg->y) mm_mtx_free (lreg->y);
-		if (lreg->x) mm_mtx_free (lreg->x);
-		if (lreg->d) mm_mtx_free (lreg->d);
-
+		if (lreg->has_copy) {
+			if (lreg->y) mm_real_free (lreg->y);
+			if (lreg->x) mm_real_free (lreg->x);
+			if (lreg->d) mm_real_free (lreg->d);
+		}
 		if (lreg->meany) free (lreg->meany);
 		if (lreg->meanx) free (lreg->meanx);
 		if (lreg->normx) free (lreg->normx);
@@ -65,7 +83,6 @@ centering (mm_dense *x)
 {
 	int		i, j;
 	double	*mean;
-	if (mm_is_sparse (x->typecode)) return NULL;
 	mean = (double *) malloc (x->n * sizeof (double));
 	for (j = 0; j < x->n; j++) {
 		double	meanj = 0.;
@@ -80,7 +97,7 @@ centering (mm_dense *x)
 /* normalizing each column of matrix:
  * x(:, j) -> x(:, j) / norm(x(:, j)) */
 static double *
-normalizing (mm_mtx *x)
+normalizing (mm_real *x)
 {
 	int		j;
 	double	*nrm = (double *) malloc (x->n * sizeof (double));
@@ -102,11 +119,6 @@ normalizing (mm_mtx *x)
 void
 linreg_centering_y (linreg *lreg)
 {
-	if (mm_is_sparse (lreg->y->typecode)) {
-		mm_dense	*d = mm_mtx_sparse_to_dense (lreg->y);
-		mm_mtx_free (lreg->y);
-		lreg->y = d;
-	}
 	lreg->meany = centering (lreg->y);
 	lreg->ycentered = true;
 	return;
@@ -117,11 +129,7 @@ linreg_centering_y (linreg *lreg)
 void
 linreg_centering_x (linreg *lreg)
 {
-	if (mm_is_sparse (lreg->x->typecode)) {
-		mm_dense	*d = mm_mtx_sparse_to_dense (lreg->x);
-		mm_mtx_free (lreg->x);
-		lreg->x = d;
-	}
+	if (mm_is_sparse (lreg->x->typecode)) 	mm_real_replace_sparse_to_dense (lreg->x);
 	lreg->meanx = centering (lreg->x);
 	lreg->xcentered = true;
 	return;

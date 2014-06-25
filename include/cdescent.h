@@ -22,7 +22,7 @@ struct s_cdescent {
 
 	double			tolerance;		// tolerance of convergence
 
-	mm_mtx			*c;
+	mm_real		*c;
 	double			logcamax;		// log10 ( amax(c) )
 
 	double			lambda1;		// L-1 regularization parameter
@@ -30,10 +30,10 @@ struct s_cdescent {
 
 	double			b;				// intercept
 	double			nrm1;
-	mm_mtx			*beta;			// solution
+	mm_real		*beta;			// solution
 
-	mm_mtx			*mu;			// mu = X * beta, estimate of y
-	mm_mtx			*nu;			// nu = D * beta.
+	mm_real		*mu;			// mu = X * beta, estimate of y
+	mm_real		*nu;			// nu = D * beta.
 
 	/* sum of y. If y is centered, sy = 0. */
 	double			sy;
@@ -50,7 +50,8 @@ struct s_cdescent {
 };
 
 /* utils.c */
-cdescent	*cdescent_alloc (const linreg *lreg, const double tol);
+cdescent	*cdescent_alloc (void);
+cdescent	*cdescent_new (const linreg *lreg, const double tol);
 void		cdescent_free (cdescent *cd);
 void		cdescent_set_lambda1 (cdescent *cd, const double lambda1);
 void		cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1);

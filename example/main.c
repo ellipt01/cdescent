@@ -117,12 +117,12 @@ fprintf_params (FILE *stream)
 }
 
 static mm_sparse *
-mm_mtx_real_penalty_spsmooth (const int n)
+mm_real_real_penalty_spsmooth (const int n)
 {
 	int		i, j, k;
 	int		nz = 2 * (n - 1);
 
-	mm_mtx	*d = mm_mtx_new (MM_MTX_SPARSE, MM_MTX_UNSYMMETRIC, n - 1, n, nz);
+	mm_real	*d = mm_real_new (MM_REAL_SPARSE, MM_REAL_UNSYMMETRIC, n - 1, n, nz);
 	d->i = (int *) malloc (nz * sizeof (int));
 	d->j = (int *) malloc (nz * sizeof (int));
 	d->p = (int *) malloc ((n + 1) * sizeof (int));
@@ -146,15 +146,15 @@ mm_mtx_real_penalty_spsmooth (const int n)
 	return d;
 }
 
-mm_mtx *
-mm_mtx_real_penalty_smooth (MM_MtxType type, const int n)
+mm_real *
+mm_real_real_penalty_smooth (MM_RealType type, const int n)
 {
-	mm_mtx	*d;
+	mm_real	*d;
 
-	if (type == MM_MTX_SPARSE) d = mm_mtx_real_penalty_spsmooth (n);
+	if (type == MM_REAL_SPARSE) d = mm_real_real_penalty_spsmooth (n);
 	else {
 		int		j;
-		d = mm_mtx_new (MM_MTX_DENSE, MM_MTX_UNSYMMETRIC, n - 1, n, (n - 1) * n);
+		d = mm_real_new (MM_REAL_DENSE, MM_REAL_UNSYMMETRIC, n - 1, n, (n - 1) * n);
 		d->data = (double *) malloc (d->nz * sizeof (double));
 		for (j = 0; j < n - 1; j++) {
 			d->data[j + j * d->m] = 1.;
@@ -165,24 +165,32 @@ mm_mtx_real_penalty_smooth (MM_MtxType type, const int n)
 }
 
 mm_sparse *
-create_mm_sparse (int m, int n, double *data)
+create_mm_sparse (int m, int n, double *data, double threshold)
 {
-	int			i, j, k = 0;
-	mm_sparse	*x = mm_mtx_new (MM_MTX_SPARSE, MM_MTX_UNSYMMETRIC, m, n, m * n);
+	int			i, j, k, l;
+	mm_sparse	*x = mm_real_new (MM_REAL_SPARSE, MM_REAL_UNSYMMETRIC, m, n, m * n);
 	x->i = (int *) malloc (x->nz * sizeof (int));
 	x->j = (int *) malloc (x->nz * sizeof (int));
 	x->p = (int *) malloc ((n + 1) * sizeof (int));
-	x->data = data;
+	x->data = (double *) malloc (x->nz * sizeof (double));
 
+	k = 0;
+	l = 0;
 	x->p[0] = 0;
 	for (j = 0; j < n; j++) {
 		for (i = 0; i < m; i++) {
-			x->i[k] = i;
-			x->j[k] = j;
-			k++;
+			if (fabs (data[l++]) > threshold) {
+				x->i[k] = i;
+				x->j[k] = j;
+				x->data[k] = data[k];
+				k++;
+			}
 		}
 		x->p[j + 1] = k;
 	}
+	fprintf (stderr, "x->nz = %d -> ", x->nz);
+	mm_real_realloc (x, k);
+	fprintf (stderr, "x->nz = %d\n", x->nz);
 	return x;
 }
 
@@ -190,8 +198,9 @@ mm_dense *
 create_mm_dense (int m, int n, double *data)
 {
 	int			k;
-	mm_dense	*x = mm_mtx_new (MM_MTX_DENSE, MM_MTX_UNSYMMETRIC, m, n, m * n);
-	x->data = data;
+	mm_dense	*x = mm_real_new (MM_REAL_DENSE, MM_REAL_UNSYMMETRIC, m, n, m * n);
+	x->data = (double *) malloc (x->nz * sizeof (double));
+	for (k = 0; k < m * n; k++) x->data[k] = data[k];
 	return x;
 }
 
@@ -202,40 +211,36 @@ main (int argc, char **argv)
 {
 	linreg		*lreg;
 
-	mm_mtx		*x;
-	mm_mtx		*y;
-	mm_mtx		*d;
+	mm_real	*x;
+	mm_real	*y;
+	mm_real	*d;
 
 	if (!read_params (argc, argv)) usage (argv[0]);
 	fprintf_params (stderr);
 
 	/* linear system */
 	{
-		int			m;
-		int			n;
-		double		*datax;
-		double		*datay;
+		int		m;
+		int		n;
+		double	*datax;
+		double	*datay;
 		read_data (fn, skipheaders, &m, &n, &datay, &datax);
 		y = create_mm_dense (m, 1, datay);
-//		free (datay);
-		x = create_mm_dense (m, n, datax);
-//		free (datax);
+		free (datay);
+		x = create_mm_sparse (m, n, datax, 0.);
+		free (datax);
 	}
 //	d = NULL;
-	d = mm_mtx_eye (MM_MTX_DENSE, x->n);
-//	d = mm_mtx_eye (MM_MTX_SPARSE, x->n);
-//	d = mm_mtx_penalty_smooth (MM_MTX_DENSE, x->n);
-//	d = mm_mtx_penalty_smooth (MM_MTX_SPARSE, x->n);
+//	d = mm_real_eye (MM_REAL_DENSE, x->n);
+	d = mm_real_eye (MM_REAL_SPARSE, x->n);
+//	d = mm_real_penalty_smooth (MM_REAL_DENSE, x->n);
+//	d = mm_real_penalty_smooth (MM_REAL_SPARSE, x->n);
 
-	lreg = linreg_alloc (y, x, lambda2, d);
-	mm_mtx_free (x);
-	mm_mtx_free (y);
-	if (d) mm_mtx_free (d);
-/*
+	lreg = linreg_new (y, x, lambda2, d, false);
 	linreg_centering_y (lreg);
 	linreg_centering_x (lreg);
 	linreg_normalizing_x (lreg);
-*/
+
 	{
 		clock_t	t1, t2;
 		t1 = clock ();
@@ -245,6 +250,9 @@ main (int argc, char **argv)
 	}
 
 	linreg_free (lreg);
+	mm_real_free (x);
+	mm_real_free (y);
+	if (d) mm_real_free (d);
 
 	return EXIT_SUCCESS;
 }

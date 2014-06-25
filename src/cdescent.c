@@ -14,8 +14,8 @@
 bool
 cdescent_cyclic_once_cycle (cdescent *cd)
 {
-	int			j;
-	double		nrm2;
+	int		j;
+	double	nrm2;
 
 	/* b = (sum(y) - sum(X) * beta) / n.
 	 * so, if y or X are not centered,
@@ -35,18 +35,18 @@ cdescent_cyclic_once_cycle (cdescent *cd)
 			cd->beta->data[j] += etaj;
 
 			// mu += eta[j] * X(:, j)
-			mm_mtx_axjpy (etaj, j, cd->lreg->x, cd->mu);
+			mm_real_axjpy (etaj, j, cd->lreg->x, cd->mu);
 
 			/* not lasso, nu += eta[j] * D(:,j) */
 			if (!cdescent_is_regtype_lasso (cd)) {
-				mm_mtx_axjpy (etaj, j, cd->lreg->d, cd->nu);
+				mm_real_axjpy (etaj, j, cd->lreg->d, cd->nu);
 			}
 
 			nrm2 += pow (etaj, 2.);
 		}
 
 	}
-	cd->nrm1 = mm_mtx_asum (cd->beta);
+	cd->nrm1 = mm_real_asum (cd->beta);
 
 	return (sqrt (nrm2) < cd->tolerance);
 }

@@ -15,10 +15,9 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
-#include <mm_mtx.h>
+#include <mmreal.h>
 
-typedef struct s_linreg		linreg;
-typedef struct s_penalty		penalty;
+typedef struct s_linreg	linreg;
 
 /* structure of linear regression model
  *   b = Z * beta,
@@ -26,15 +25,16 @@ typedef struct s_penalty		penalty;
  *   Z = scale * [X; sqrt(lambda2) * J]
  */
 struct s_linreg {
+	bool		has_copy;	// has copy of x, y and d
 
-	mm_mtx		*x;
-	mm_mtx		*y;
+	mm_real	*x;
+	mm_real	*y;
 
 	/* threshold for L2 penalty */
 	double		lambda2;
 
 	/* penalty term. */
-	mm_mtx		*d;
+	mm_real	*d;
 
 	bool		ycentered;
 	bool		xcentered;
@@ -47,13 +47,14 @@ struct s_linreg {
 };
 
 /* linreg.c */
-linreg			*linreg_alloc (mm_mtx *y, mm_mtx *x, const double lambda2, mm_mtx *d);
-void			linreg_free (linreg *l);
+linreg		*linreg_alloc (void);
+linreg		*linreg_new (mm_real *y, mm_real *x, const double lambda2, mm_real *d, bool has_copy);
+void		linreg_free (linreg *l);
 
-void			linreg_centering_y (linreg *lreg);
-void			linreg_centering_x (linreg *lreg);
-void			linreg_normalizing_x (linreg *lreg);
-void			linreg_standardizing_x (linreg *lreg);
+void		linreg_centering_y (linreg *lreg);
+void		linreg_centering_x (linreg *lreg);
+void		linreg_normalizing_x (linreg *lreg);
+void		linreg_standardizing_x (linreg *lreg);
 
 #ifdef __cplusplus
 }

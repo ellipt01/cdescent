@@ -11,7 +11,7 @@ lib_LTLIBRARIES = libcdescent.la
 libcdescent_la_SOURCES =\
 	private.c\
 	mmio.c\
-	mm_mtx.c\
+	mmreal.c\
 	linreg.c\
 	utils.c\
 	update.c\

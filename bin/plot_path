@@ -24,7 +24,7 @@ j=1
 for i in `seq -f %03g 0 $1`; do
 	fn=beta"$i".res
 
-	echo -n "\"$fn\" using 2:3 with lines linecolor $j linetype 1 linewidth 1" >> tmp.gnuplot
+	echo -n "\"$fn\" using 2:3 with linespoints linecolor $j linetype 1 linewidth 1" >> tmp.gnuplot
 	if [ $i -lt $1 ]; then
 		echo -n ", " >> tmp.gnuplot
 	fi

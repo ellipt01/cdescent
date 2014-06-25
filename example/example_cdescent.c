@@ -39,12 +39,12 @@ example_cdescent_pathwise (const linreg *lreg, double logtmin, double dlogt, dou
 	cdescent	*cd;
 
 	/* warm start */
-	cd = cdescent_alloc (lreg, tol);
+	cd = cdescent_new (lreg, tol);
 	logt = (cd->logcamax <= logtmax) ? cd->logcamax : logtmax;
 
 	while (logtmin <= logt) {
 
-		fprintf (stdout, "t = %.4e\n", cd->lambda1);
+		fprintf (stdout, "t = %.4e, intercept = %.4e\n", cd->lambda1, cd->b);
 		if (!cdescent_cyclic (cd, maxiter)) break;
 		output_solutionpath_cdescent (iter, cd);
 

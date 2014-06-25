@@ -27,7 +27,7 @@ soft_threshold (const double z, const double gamma)
 static double
 cdescent_scale2 (const cdescent *cd, const int j)
 {
-	double		scale2 = (cd->lreg->xnormalized) ? 1. : cd->xtx[j];
+	double	scale2 = (cd->lreg->xnormalized) ? 1. : cd->xtx[j];
 	if (!cdescent_is_regtype_lasso (cd)) scale2 += cd->dtd[j] * cd->lreg->lambda2;
 	return scale2;
 }
@@ -40,18 +40,18 @@ cdescent_scale2 (const cdescent *cd, const int j)
 static double
 cdescent_gradient (const cdescent *cd, const int j)
 {
-	double			cj = cd->c->data[j];	// X' * y
-	double			xjmu = mm_mtx_xj_trans_dot_y (j, cd->lreg->x, cd->mu);	// X(:,j)' * mu
-	double			lambda2 = cd->lreg->lambda2;
+	double	cj = cd->c->data[j];	// X' * y
+	double	xjmu = mm_real_xj_trans_dot_y (j, cd->lreg->x, cd->mu);	// X(:,j)' * mu
+	double	lambda2 = cd->lreg->lambda2;
 
 	//	z = c(j) - X(:,j)' * mu
-	double			z = cj - xjmu;
+	double	z = cj - xjmu;
 
 	// if X is not centered, z -= sum(X(:,j)) * b
 	if (!cd->lreg->xcentered) z -= cd->sx[j] * cd->b;
 
 	// not lasso, z -= lambda2 * D(:,j)' * nu (nu = D * beta)
-	if (!cdescent_is_regtype_lasso (cd)) z -= lambda2 * mm_mtx_xj_trans_dot_y (j, cd->lreg->d, cd->nu);
+	if (!cdescent_is_regtype_lasso (cd)) z -= lambda2 * mm_real_xj_trans_dot_y (j, cd->lreg->d, cd->nu);
 
 	return z;
 }
@@ -60,7 +60,7 @@ cdescent_gradient (const cdescent *cd, const int j)
 double
 cdescent_update_intercept (const cdescent *cd)
 {
-	double		nb = 0.;	// n * b
+	double	nb = 0.;	// n * b
 
 	if (cd->lreg->ycentered && cd->lreg->xcentered) return 0.;
 	// b += bar(y)
@@ -74,9 +74,9 @@ cdescent_update_intercept (const cdescent *cd)
 double
 cdescent_beta_stepsize (const cdescent *cd, const int j)
 {
-	double		scale2 = cdescent_scale2 (cd, j);
-	double		z = cdescent_gradient (cd, j) / scale2;
-	double		gamma = cd->lambda1 / scale2;
+	double	scale2 = cdescent_scale2 (cd, j);
+	double	z = cdescent_gradient (cd, j) / scale2;
+	double	gamma = cd->lambda1 / scale2;
 	/* eta = S(z / scale2 + beta, lambda1 / scale2) - beta */
 	return soft_threshold (z + cd->beta->data[j], gamma) - cd->beta->data[j];
 }
