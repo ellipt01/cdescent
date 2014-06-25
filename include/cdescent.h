@@ -18,20 +18,22 @@ typedef struct s_cdescent	cdescent;
 
 struct s_cdescent {
 
-	const linreg	*lreg;		// linear regression equations
+	const linreg	*lreg;			// linear regression equations
 
-	double			lambda1;	// L-1 regularization parameter
-
-	double			tolerance;	// tolerance of convergence
+	double			tolerance;		// tolerance of convergence
 
 	mm_mtx			*c;
+	double			logcamax;		// log10 ( amax(c) )
 
-	double			b;			// intercept
+	double			lambda1;		// L-1 regularization parameter
+	double			lambda1_max;	// maximum value of lambda1
+
+	double			b;				// intercept
 	double			nrm1;
-	mm_mtx			*beta;		// solution
+	mm_mtx			*beta;			// solution
 
-	mm_mtx			*mu;		// mu = X * beta, estimate of y
-	mm_mtx			*nu;		// nu = D * beta.
+	mm_mtx			*mu;			// mu = X * beta, estimate of y
+	mm_mtx			*nu;			// nu = D * beta.
 
 	/* sum of y. If y is centered, sy = 0. */
 	double			sy;
@@ -48,8 +50,10 @@ struct s_cdescent {
 };
 
 /* utils.c */
-cdescent	*cdescent_alloc (const linreg *lreg, const double lambda1, const double tol);
+cdescent	*cdescent_alloc (const linreg *lreg, const double tol);
 void		cdescent_free (cdescent *cd);
+void		cdescent_set_lambda1 (cdescent *cd, const double lambda1);
+void		cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1);
 
 bool		cdescent_is_regtype_lasso (const cdescent *cd);
 

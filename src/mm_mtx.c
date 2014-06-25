@@ -68,7 +68,7 @@ mm_mtx_free (mm_mtx *mm)
 }
 
 bool
-mm_mtxloc (mm_mtx *mm, const int nz)
+mm_mtx_realloc (mm_mtx *mm, const int nz)
 {
 	if (!mm) cdescent_error ("mm_mtxloc", "input matrix is empty.", __FILE__, __LINE__);
 	if (mm->nz == nz) return true;
@@ -84,7 +84,7 @@ mm_mtxloc (mm_mtx *mm, const int nz)
 }
 
 static mm_mtx *
-mm_mtx_copy_sparse (mm_mtx *orig)
+mm_mtx_copy_sparse (const mm_mtx *orig)
 {
 	int					k;
 	MM_MtxSymmetric	symmetric = (mm_is_symmetric (orig->typecode)) ? MM_MTX_SYMMETRIC : MM_MTX_UNSYMMETRIC;
@@ -106,7 +106,7 @@ mm_mtx_copy_sparse (mm_mtx *orig)
 }
 
 static mm_mtx *
-mm_mtx_copy_dense (mm_mtx *orig)
+mm_mtx_copy_dense (const mm_mtx *orig)
 {
 	int		k;
 	mm_mtx	*dest = mm_mtx_new (MM_MTX_DENSE, MM_MTX_UNSYMMETRIC, orig->m, orig->n, orig->nz);
@@ -116,7 +116,7 @@ mm_mtx_copy_dense (mm_mtx *orig)
 }
 
 mm_mtx *
-mm_mtx_copy (mm_mtx *mm)
+mm_mtx_copy (const mm_mtx *mm)
 {
 	if (!mm) cdescent_error ("mm_mtx_copy", "input matrix is empty.", __FILE__, __LINE__);
 	return (mm_is_sparse (mm->typecode)) ? mm_mtx_copy_sparse (mm) : mm_mtx_copy_dense (mm);
@@ -135,12 +135,14 @@ mm_mtx_set_all (mm_mtx *mm, const double val)
 }
 
 mm_dense *
-mm_mtx_sparse_to_dense (mm_sparse *s)
+mm_mtx_sparse_to_dense (const mm_sparse *s)
 {
 	int			k;
 	mm_dense	*d;
-	if (!mm_is_sparse (s->typecode))
-		cdescent_error ("mm_sparse_to_dense", "input matrix is not sparse.", __FILE__, __LINE__);
+	if (!mm_is_sparse (s->typecode)) {
+		cdescent_warning ("mm_sparse_to_dense", "input matrix is not sparse.", __FILE__, __LINE__);
+		return mm_mtx_copy (s);
+	}
 
 	d = mm_mtx_new (MM_MTX_DENSE, MM_MTX_UNSYMMETRIC, s->m, s->n, s->m * s->n);
 	mm_mtx_set_all (d, 0.);
@@ -154,12 +156,14 @@ mm_mtx_sparse_to_dense (mm_sparse *s)
 }
 
 mm_sparse *
-mm_mtx_dense_to_sparse (mm_dense *d, const double threshold)
+mm_mtx_dense_to_sparse (const mm_dense *d, const double threshold)
 {
 	int			i, j, k;
 	mm_sparse	*s;
-	if (!mm_is_dense (d->typecode))
-		cdescent_error ("mm_dense_to_sparse", "input matrix is not dense.", __FILE__, __LINE__);
+	if (!mm_is_dense (d->typecode)) {
+		cdescent_warning ("mm_dense_to_sparse", "input matrix is not dense.", __FILE__, __LINE__);
+		return mm_mtx_copy (d);
+	}
 
 	s = mm_mtx_new (MM_MTX_SPARSE, MM_MTX_UNSYMMETRIC, d->m, d->n, d->m * d->n);
 	s->i = (int *) malloc (s->nz * sizeof (int));
@@ -246,8 +250,7 @@ mm_mtx_sj_sum (const int j, const mm_sparse *s)
 {
 	int		k;
 	double	sum = 0.;
-	if (j < 0 || s->n <= j)
-		cdescent_error ("mm_mtx_sj_sum", "specified index is invalid", __FILE__, __LINE__);
+	if (j < 0 || s->n <= j) cdescent_error ("mm_mtx_sj_sum", "specified index is invalid", __FILE__, __LINE__);
 	for (k = s->p[j]; k < s->p[j + 1]; k++) sum += s->data[k];
 	return sum;
 }
@@ -297,14 +300,9 @@ mm_mtx_s_dot_d (bool trans, const double alpha, const mm_sparse *s, const mm_den
 	bool	symmetric;
 	mm_mtx	*mm;
 
-	if (!mm_is_sparse (s->typecode))
-		cdescent_error ("mm_mtx_s_dot_d", "matrix *s must be sparse.", __FILE__, __LINE__);
-	if (!mm_is_dense (d->typecode))
-		cdescent_error ("mm_mtx_s_dot_d", "matrix *d must be dense.", __FILE__, __LINE__);
-
 	m = (trans) ? s->n : s->m;
 	n = (trans) ? s->m : s->n;
-	if (n != d->m) cdescent_error ("mm_mtx_s_dot_d", "matrix size mismatch.", __FILE__, __LINE__);
+	if (n != d->m) cdescent_error ("mm_mtx_s_dot_d", "matrix size not match.", __FILE__, __LINE__);
 
 	lda = (trans) ? s->n : s->m;
 
@@ -336,9 +334,10 @@ mm_mtx_x_dot_y (bool trans, const double alpha, const mm_mtx *x, const mm_dense 
 	int		n = (trans) ? x->m : x->n;
 	mm_mtx	*c;
 
-	if (n != y->m) cdescent_error ("mm_mtx_x_dot_y", "matrix size mismatch.", __FILE__, __LINE__);
+	if (n != y->m) cdescent_error ("mm_mtx_x_dot_y", "matrix size not match.", __FILE__, __LINE__);
+	if (!mm_is_dense (y->typecode)) cdescent_error ("mm_mtx_x_dot_y", "matrix *y must be dense.", __FILE__, __LINE__);
 
-	c = mm_mtx_new (false, false, m, y->n, m * y->n);
+	c = mm_mtx_new (MM_MTX_DENSE, MM_MTX_UNSYMMETRIC, m, y->n, m * y->n);
 	if (mm_is_sparse (x->typecode)) c = mm_mtx_s_dot_d (trans, alpha, x, y, beta);
 	else {
 		c->data = (double *) malloc (m * y->n * sizeof (double));
@@ -354,11 +353,6 @@ mm_mtx_sj_trans_dot_d (const int j, const mm_sparse *s, const mm_dense *d)
 	int		k;
 	double	val;
 
-	if (!mm_is_sparse (s->typecode))
-		cdescent_error ("mm_mtx_sj_dot_d", "matrix *s must be sparse.", __FILE__, __LINE__);
-	if (!mm_is_dense (d->typecode))
-		cdescent_error ("mm_mtx_sj_dot_d", "matrix *d must be dense.", __FILE__, __LINE__);
-
 	val = 0;
 	for (k = s->p[j]; k < s->p[j + 1]; k++) val += s->data[k] * d->data[s->i[k]];
 	return val;
@@ -370,7 +364,8 @@ mm_mtx_xj_trans_dot_y (const int j, const mm_mtx *x, const mm_dense *y)
 {
 	double	val;
 
-	if (j < 0 || x->n <= j) cdescent_error ("mm_mtx_xj_dot_y", "index out of range.", __FILE__, __LINE__);
+	if (j < 0 || x->n <= j) cdescent_error ("mm_mtx_xj_trans_dot_y", "index out of range.", __FILE__, __LINE__);
+	if (!mm_is_dense (y->typecode)) cdescent_error ("mm_mtx_xj_trans_dot_y", "matrix *y must be dense.", __FILE__, __LINE__);
 
 	if (mm_is_sparse (x->typecode)) val = mm_mtx_sj_trans_dot_d (j, x, y);
 	else val = ddot_ (&x->m, x->data + j * x->m, &ione, y->data, &ione);
@@ -391,8 +386,7 @@ mm_mtx_asjpd (const double alpha, const int j, const mm_sparse *s, mm_dense *d)
 void
 mm_mtx_axjpy (const double alpha, const int j, const mm_mtx *x, mm_dense *y)
 {
-	if (!mm_is_dense (y->typecode))
-		cdescent_error ("mm_mtx_axjpy", "matrix *y must be dense.", __FILE__, __LINE__);
+	if (!mm_is_dense (y->typecode)) cdescent_error ("mm_mtx_axjpy", "matrix *y must be dense.", __FILE__, __LINE__);
 
 	if (mm_is_sparse (x->typecode)) mm_mtx_asjpd (alpha, j, x, y);
 	else daxpy_ (&y->m, &alpha, x->data + j * x->m, &ione, y->data, &ione);

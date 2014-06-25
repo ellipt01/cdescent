@@ -12,7 +12,7 @@
 #include "private.h"
 
 cdescent *
-cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
+cdescent_alloc (const linreg *lreg, const double tol)
 {
 	double		camax;
 	cdescent	*cd;
@@ -28,8 +28,11 @@ cdescent_alloc (const linreg *lreg, const double lambda1, const double tol)
 	// c = X' * y
 	cd->c = mm_mtx_x_dot_y (true, 1., lreg->x, lreg->y, 0.);
 
+	// camax = max ( abs (c) )
 	camax = fabs (cd->c->data[idamax_ (&cd->c->nz, cd->c->data, &ione) - 1]);
-	cd->lambda1 = (camax < lambda1) ? floor (camax) + 1. : lambda1;
+	cd->logcamax = floor (log10 (camax)) + 1.;
+	cd->lambda1_max = pow (10., cd->logcamax);
+	cd->lambda1 = cd->lambda1_max;
 
 	cd->b = 0.;
 	cd->nrm1 = 0.;
@@ -99,7 +102,21 @@ cdescent_free (cdescent *cd)
 	return;
 }
 
-/* lambda2 <= eps, regression type = lasso */
+void
+cdescent_set_lambda1 (cdescent *cd, const double lambda1)
+{
+	cd->lambda1 = (cd->lambda1_max <= lambda1) ? cd->lambda1_max : lambda1;
+	return;
+}
+
+void
+cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1)
+{
+	cdescent_set_lambda1 (cd, pow (10., log10_lambda1));
+	return;
+}
+
+/* if lambda2 < eps || d == NULL, regression type = lasso */
 bool
 cdescent_is_regtype_lasso (const cdescent *cd)
 {

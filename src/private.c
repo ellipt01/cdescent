@@ -25,6 +25,14 @@ cdescent_error (const char * function_name, const char *error_msg, const char *f
 	exit (1);
 }
 
+/* print warning message */
+void
+cdescent_warning (const char * function_name, const char *error_msg, const char *file, const int line)
+{
+	fprintf (stderr, "WARNING: %s: %s:%d: %s\n", function_name, file, line, error_msg);
+	return;
+}
+
 /* double_eps of machine precision */
 double
 cdescent_double_eps (void)

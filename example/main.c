@@ -20,7 +20,7 @@ double		start = 0.;
 double		stop = 100.;
 double		dt = 0.1;
 double		gamma_bic = 0.;	// traditional BIC
-int			maxiter = 10000;
+int			maxiter = 100000;
 
 void
 usage (char *toolname)
@@ -108,15 +108,15 @@ void
 fprintf_params (FILE *stream)
 {
 	fprintf (stream, "###########################################################\n\n");
-	fprintf (stream, "read file: \t\"%s\" (skip headers = %d)\n", fn, (int) skipheaders);
-	fprintf (stream, "lambda1 :\t[%.2f : %.2f : %.2f]\n", start, dt, stop);
-	fprintf (stream, "lambda2 :\t%.2f\n", lambda2);
-	fprintf (stream, "maxiter :\t%d\n", maxiter);
+	fprintf (stream, "read file:\t\"%s\" (skip headers = %d)\n", fn, (int) skipheaders);
+	fprintf (stream, "log10(lambda1):\t[%.2f : %.2f : %.2f]\n", start, dt, stop);
+	fprintf (stream, "lambda2:\t%.2f\n", lambda2);
+	fprintf (stream, "maxiter:\t%d\n", maxiter);
 	fprintf (stream, "\n###########################################################\n");
 	return;
 }
 
-static mm_mtx *
+static mm_sparse *
 mm_mtx_real_penalty_spsmooth (const int n)
 {
 	int		i, j, k;
@@ -231,15 +231,15 @@ main (int argc, char **argv)
 	mm_mtx_free (x);
 	mm_mtx_free (y);
 	if (d) mm_mtx_free (d);
-
+/*
 	linreg_centering_y (lreg);
 	linreg_centering_x (lreg);
 	linreg_normalizing_x (lreg);
-
+*/
 	{
 		clock_t	t1, t2;
 		t1 = clock ();
-		example_cdescent_pathwise (lreg, start, dt, stop, 1.e-3, 1000);
+		example_cdescent_pathwise (lreg, start, dt, stop, 1.e-3, maxiter);
 		t2 = clock ();
 		fprintf (stderr, "time = %.2e\n", (double) (t2 - t1) / CLOCKS_PER_SEC);
 	}

@@ -20,8 +20,8 @@ linreg_alloc (mm_mtx *y, mm_mtx *x, const double lambda2, mm_mtx *d)
 	if (!y) cdescent_error ("linreg_alloc", "vector *y is empty.", __FILE__, __LINE__);
 	if (!x) cdescent_error ("linreg_alloc", "matrix *x is empty.", __FILE__, __LINE__);
 	if (!mm_is_dense (y->typecode)) cdescent_error ("linreg_alloc", "vector *y must be dense.", __FILE__, __LINE__);
-	if (y->m != x->m) cdescent_error ("linreg_alloc", "size of matrix *x and vector *y are incompatible.", __FILE__, __LINE__);
-	if (d && x->n != d->n) cdescent_error ("linreg_alloc", "size of matrix *x and *d incompatible.", __FILE__, __LINE__);
+	if (y->m != x->m) cdescent_error ("linreg_alloc", "size of matrix *x and vector *y are not match.", __FILE__, __LINE__);
+	if (d && x->n != d->n) cdescent_error ("linreg_alloc", "size of matrix *x and *d are not match.", __FILE__, __LINE__);
 
 	lreg = (linreg *) malloc (sizeof (linreg));
 
