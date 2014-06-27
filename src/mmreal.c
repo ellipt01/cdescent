@@ -316,7 +316,7 @@ mm_real_s_dot_d (bool trans, const double alpha, const mm_sparse *s, const mm_de
 
 	lda = (trans) ? s->n : s->m;
 
-	mm = mm_real_new (false, false, m, d->n, m * d->n);
+	mm = mm_real_new (MM_REAL_DENSE, MM_REAL_UNSYMMETRIC, m, d->n, m * d->n);
 
 	symmetric = mm_is_symmetric (s->typecode);
 

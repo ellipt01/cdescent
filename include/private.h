@@ -1,5 +1,5 @@
 /*
- * linreg_private.h
+ * private.h
  *
  *  Created on: 2014/05/14
  *      Author: utsugi

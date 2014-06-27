@@ -26,6 +26,7 @@ cdescent_update_intercept (cdescent *cd)
 	return;
 }
 
+/* update beta: beta[j] += etaj, etaj = beta[j] - beta_prev[j] */
 void
 cdescent_update_beta (cdescent *cd, const int j, const double etaj)
 {
@@ -34,6 +35,7 @@ cdescent_update_beta (cdescent *cd, const int j, const double etaj)
 	return;
 }
 
+/* update mu = X * beta: mu += X(:,j) * etaj */
 void
 cdescent_update_mu (cdescent *cd, const int j, const double etaj)
 {
@@ -42,6 +44,7 @@ cdescent_update_mu (cdescent *cd, const int j, const double etaj)
 	return;
 }
 
+/* update nu = D * beta: nu += D(:,j) * etaj */
 void
 cdescent_update_nu (cdescent *cd, const int j, const double etaj)
 {
@@ -82,38 +85,6 @@ cdescent_update_cyclic_once_cycle (cdescent *cd)
 
 	return (sqrt (nrm2) < cd->tolerance);
 }
-
-/*
-bool
-cdescent_update_cyclic_once_cycle (cdescent *cd)
-{
-	int		n = 3;
-	int		j;
-	double	nrm2;
-
-	cdescent_update_intercept (cd);
-
-	nrm2 = 0.;
-
-	for (j = 0; j < cd->lreg->x->n - n; j += n) {
-		int		k;
-		double	eta[n];
-		// do parallel
-		for (k = 0; k < n; k++) eta[k] = cdescent_beta_stepsize (cd, j + k);
-		for (k = 0; k < n; k++) {
-			if (fabs (eta[k]) > 0.) {
-				cdescent_update_beta (cd, j + k, eta[k]);
-				cdescent_update_mu (cd, j + k, eta[k]);
-				cdescent_update_nu (cd, j + k, eta[k]);
-				nrm2 += pow (eta[k], 2.);
-			}
-		}
-	}
-	cd->nrm1 = mm_real_asum (cd->beta);
-
-	return (sqrt (nrm2) < cd->tolerance);
-}
-*/
 
 /*** cyclic coordinate descent ***/
 /* repeat coordinate descent until solution is converged */
