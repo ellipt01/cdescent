@@ -1,7 +1,7 @@
 /*
- * update.c
+ * cdescent.c
  *
- *  Created on: 2014/06/02
+ *  Created on: 2014/05/27
  *      Author: utsugi
  */
 
@@ -10,73 +10,128 @@
 
 #include "private.h"
 
-/*** soft thresholding ***/
-/* S(z, gamma) = sign(z)(|z| - gamma)+
- *             = 0, -gamma <= z <= gamma,
- *               z - gamma, z >  gamma (> 0)
- *               z + gamma, z < -gamma (< 0) */
-static double
-soft_threshold (const double z, const double gamma)
-{
-	double	val = 0.;
-	if (gamma < fabs (z)) val = (z > 0.) ? z - gamma : z + gamma;
-	return val;
-}
-
-/*** return X(:,j)' * X(:,j) + D(:,j)' * D(:,j) * lambda2 ***/
-static double
-cdescent_scale2 (const cdescent *cd, const int j)
-{
-	double	scale2 = (cd->lreg->xnormalized) ? 1. : cd->xtx[j];
-	if (!cdescent_is_regtype_lasso (cd)) scale2 += cd->dtd[j] * cd->lreg->lambda2;
-	return scale2;
-}
-
-/*** return gradient of objective function with respect to beta_j ***/
-/* z = d L_j
- *   = c(j) - X(:,j)' * mu - X(:,j)' * b - lambda2 * D(:,j)' * D * beta
- *     + scale2 * beta_j,
- * however, the last term scale2 * beta_j is omitted */
-static double
-cdescent_gradient (const cdescent *cd, const int j)
-{
-	double	cj = cd->c->data[j];	// X' * y
-	double	xjmu = mm_real_xj_trans_dot_y (j, cd->lreg->x, cd->mu);	// X(:,j)' * mu
-	double	lambda2 = cd->lreg->lambda2;
-
-	//	z = c(j) - X(:,j)' * mu
-	double	z = cj - xjmu;
-
-	// if X is not centered, z -= sum(X(:,j)) * b
-	if (!cd->lreg->xcentered) z -= cd->sx[j] * cd->b;
-
-	// not lasso, z -= lambda2 * D(:,j)' * nu (nu = D * beta)
-	if (!cdescent_is_regtype_lasso (cd)) z -= lambda2 * mm_real_xj_trans_dot_y (j, cd->lreg->d, cd->nu);
-
-	return z;
-}
-
 /*** updater of intercept: (sum (y) - sum(X) * beta) / n ***/
-double
-cdescent_update_intercept (const cdescent *cd)
+void
+cdescent_update_intercept (cdescent *cd)
 {
-	double	nb = 0.;	// n * b
-
-	if (cd->lreg->ycentered && cd->lreg->xcentered) return 0.;
-	// b += bar(y)
-	if (!cd->lreg->ycentered) nb += cd->sy;
-	// b -= bar(X) * beta
-	if (!cd->lreg->xcentered) nb -= ddot_ (&cd->lreg->x->n, cd->sx, &ione, cd->beta->data, &ione);
-	return nb / (double) cd->lreg->x->m;	// return b
+	if (cd->lreg->ycentered && cd->lreg->xcentered) cd->b = 0.;
+	else {
+		double	nb = 0.;	// n * b
+		// b += bar(y)
+		if (!cd->lreg->ycentered) nb += cd->lreg->sy;
+		// b -= bar(X) * beta
+		if (!cd->lreg->xcentered) nb -= ddot_ (&cd->lreg->x->n, cd->lreg->sx, &ione, cd->beta->data, &ione);
+		cd->b = nb / (double) cd->lreg->x->m;
+	}
+	return;
 }
 
-/*** return step-size for updating beta ***/
-double
-cdescent_beta_stepsize (const cdescent *cd, const int j)
+void
+cdescent_update_beta (cdescent *cd, const int j, const double etaj)
 {
-	double	scale2 = cdescent_scale2 (cd, j);
-	double	z = cdescent_gradient (cd, j) / scale2;
-	double	gamma = cd->lambda1 / scale2;
-	/* eta = S(z / scale2 + beta, lambda1 / scale2) - beta */
-	return soft_threshold (z + cd->beta->data[j], gamma) - cd->beta->data[j];
+	// beta[j] += eta[j]
+	cd->beta->data[j] += etaj;
+	return;
+}
+
+void
+cdescent_update_mu (cdescent *cd, const int j, const double etaj)
+{
+	// mu += etaj * X(:,j)
+	mm_real_axjpy (etaj, j, cd->lreg->x, cd->mu);
+	return;
+}
+
+void
+cdescent_update_nu (cdescent *cd, const int j, const double etaj)
+{
+	// nu += etaj * D(:,j)
+	if (linregmodel_is_regtype_lasso (cd->lreg)) return;
+	mm_real_axjpy (etaj, j, cd->lreg->d, cd->nu);
+	return;
+}
+
+/*** progress coordinate descent update for one full cycle ***/
+bool
+cdescent_update_cyclic_once_cycle (cdescent *cd)
+{
+	int		j;
+	double	nrm2;
+
+	/* b = (sum(y) - sum(X) * beta) / n.
+	 * so, if y or X are not centered,
+	 * i.e. sum(y) != 0 or sum(X) != 0,
+	 * b must be updated on each cycle. */
+	if (!cd->lreg->xcentered) cdescent_update_intercept (cd);
+
+	nrm2 = 0.;
+	/*** single "one-at-a-time" update of cyclic coordinate descent ***/
+	for (j = 0; j < cd->lreg->x->n; j++) {
+		// era[j] = beta[j] - beta_prev[j]
+		double	etaj = cdescent_beta_stepsize (cd, j);
+
+		if (fabs (etaj) > 0.) {
+			cdescent_update_beta (cd, j, etaj);
+			cdescent_update_mu (cd, j, etaj);
+			cdescent_update_nu (cd, j, etaj);
+			nrm2 += pow (etaj, 2.);
+		}
+
+	}
+	cd->nrm1 = mm_real_asum (cd->beta);
+
+	return (sqrt (nrm2) < cd->tolerance);
+}
+
+/*
+bool
+cdescent_update_cyclic_once_cycle (cdescent *cd)
+{
+	int		n = 3;
+	int		j;
+	double	nrm2;
+
+	cdescent_update_intercept (cd);
+
+	nrm2 = 0.;
+
+	for (j = 0; j < cd->lreg->x->n - n; j += n) {
+		int		k;
+		double	eta[n];
+		// do parallel
+		for (k = 0; k < n; k++) eta[k] = cdescent_beta_stepsize (cd, j + k);
+		for (k = 0; k < n; k++) {
+			if (fabs (eta[k]) > 0.) {
+				cdescent_update_beta (cd, j + k, eta[k]);
+				cdescent_update_mu (cd, j + k, eta[k]);
+				cdescent_update_nu (cd, j + k, eta[k]);
+				nrm2 += pow (eta[k], 2.);
+			}
+		}
+	}
+	cd->nrm1 = mm_real_asum (cd->beta);
+
+	return (sqrt (nrm2) < cd->tolerance);
+}
+*/
+
+/*** cyclic coordinate descent ***/
+/* repeat coordinate descent until solution is converged */
+bool
+cdescent_update_cyclic (cdescent *cd, const int maxiter)
+{
+	int		iter = 0;
+	bool	converged = false;
+
+	while (!converged) {
+
+		converged = cdescent_update_cyclic_once_cycle (cd);
+
+		if (++iter >= maxiter) {
+			cdescent_warning ("cdescent_cyclic", "reaching max number of iterations.", __FILE__, __LINE__);
+			break;
+		}
+	}
+
+	return converged;
 }

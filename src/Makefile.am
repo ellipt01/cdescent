@@ -12,10 +12,10 @@ libcdescent_la_SOURCES =\
 	private.c\
 	mmio.c\
 	mmreal.c\
-	linreg.c\
-	utils.c\
-	update.c\
-	cdescent.c
+	linregmodel.c\
+	cdescent.c\
+	stepsize.c\
+	update.c
 
 libcdescent_la_CPPFLAGS = -I$(top_srcdir)/include
 

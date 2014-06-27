@@ -209,11 +209,11 @@ create_mm_dense (int m, int n, double *data)
 int
 main (int argc, char **argv)
 {
-	linreg		*lreg;
+	linregmodel	*lreg;
 
-	mm_real	*x;
-	mm_real	*y;
-	mm_real	*d;
+	mm_real		*x;
+	mm_real		*y;
+	mm_real		*d;
 
 	if (!read_params (argc, argv)) usage (argv[0]);
 	fprintf_params (stderr);
@@ -236,10 +236,7 @@ main (int argc, char **argv)
 //	d = mm_real_penalty_smooth (MM_REAL_DENSE, x->n);
 //	d = mm_real_penalty_smooth (MM_REAL_SPARSE, x->n);
 
-	lreg = linreg_new (y, x, lambda2, d, false);
-	linreg_centering_y (lreg);
-	linreg_centering_x (lreg);
-	linreg_normalizing_x (lreg);
+	lreg = linregmodel_new (y, x, lambda2, d, false, true, true, true);
 
 	{
 		clock_t	t1, t2;
@@ -249,7 +246,7 @@ main (int argc, char **argv)
 		fprintf (stderr, "time = %.2e\n", (double) (t2 - t1) / CLOCKS_PER_SEC);
 	}
 
-	linreg_free (lreg);
+	linregmodel_free (lreg);
 	mm_real_free (x);
 	mm_real_free (y);
 	if (d) mm_real_free (d);

@@ -12,59 +12,47 @@
 extern "C" {
 #endif
 
-#include <linreg.h>
+#include <linregmodel.h>
 
 typedef struct s_cdescent	cdescent;
 
 struct s_cdescent {
 
-	const linreg	*lreg;			// linear regression equations
+	const linregmodel	*lreg;			// linear regression equations
 
-	double			tolerance;		// tolerance of convergence
+	double				tolerance;		// tolerance of convergence
 
-	mm_real		*c;
-	double			logcamax;		// log10 ( amax(c) )
+	double				lambda1;		// L-1 regularization parameter
+	double				lambda1_max;	// maximum value of lambda1
 
-	double			lambda1;		// L-1 regularization parameter
-	double			lambda1_max;	// maximum value of lambda1
+	double				b;				// intercept
+	double				nrm1;
+	mm_real			*beta;			// solution
 
-	double			b;				// intercept
-	double			nrm1;
-	mm_real		*beta;			// solution
+	mm_real			*mu;			// mu = X * beta, estimate of y
+	mm_real			*nu;			// nu = D * beta.
 
-	mm_real		*mu;			// mu = X * beta, estimate of y
-	mm_real		*nu;			// nu = D * beta.
-
-	/* sum of y. If y is centered, sy = 0. */
-	double			sy;
-
-	/* sum of X(:, j). If X is centered, sx = NULL. */
-	double			*sx;
-
-	/* norm of X(:, j). If X is normalized, xtx = NULL. */
-	double			*xtx;
-
-	/* dtd = diag(D' * D), D = lreg->pen->d */
-	double			*dtd;
 
 };
 
-/* utils.c */
+/* cdescent.c */
 cdescent	*cdescent_alloc (void);
-cdescent	*cdescent_new (const linreg *lreg, const double tol);
+cdescent	*cdescent_new (const linregmodel *lreg, const double tol);
 void		cdescent_free (cdescent *cd);
 void		cdescent_set_lambda1 (cdescent *cd, const double lambda1);
 void		cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1);
 
-bool		cdescent_is_regtype_lasso (const cdescent *cd);
-
 /* update.c */
-double		cdescent_update_intercept (const cdescent *cd);
 double		cdescent_beta_stepsize (const cdescent *cd, const int j);
 
 /* cdescent.c */
-bool		cdescent_cyclic_once_cycle (cdescent *cd);
-bool		cdescent_cyclic (cdescent *cd, const int maxiter);
+void		cdescent_update_intercept (cdescent *cd);
+void		cdescent_update_beta (cdescent *cd, const int j, const double etaj);
+void		cdescent_update_mu (cdescent *cd, const int j, const double etaj);
+void		cdescent_update_nu (cdescent *cd, const int j, const double etaj);
+
+bool		cdescent_update_cyclic_once_cycle (cdescent *cd);
+bool		cdescent_update_cyclic (cdescent *cd, const int maxiter);
 
 #ifdef __cplusplus
 }
