@@ -6,6 +6,7 @@
 #include <mmreal.h>
 #include "private.h"
 
+/* allocate mm_real */
 mm_real *
 mm_real_alloc (void)
 {
@@ -67,22 +68,24 @@ mm_real_free (mm_real *mm)
 	return;
 }
 
+/* reallocate mm_real */
 bool
 mm_real_realloc (mm_real *mm, const int nz)
 {
 	if (!mm) cdescent_error ("mm_realloc", "input matrix is empty.", __FILE__, __LINE__);
 	if (mm->nz == nz) return true;
 	mm->nz = nz;
-	mm->data = (double *) realloc (mm->data, mm->nz * sizeof (double));
+	mm->data = (double *) realloc (mm->data, nz * sizeof (double));
 	if (mm->data == NULL) return false;
 	if (mm_is_sparse (mm->typecode)) {
-		mm->i = (int *) realloc (mm->i, mm->nz * sizeof (int));
-		mm->j = (int *) realloc (mm->j, mm->nz * sizeof (int));
+		mm->i = (int *) realloc (mm->i, nz * sizeof (int));
+		mm->j = (int *) realloc (mm->j, nz * sizeof (int));
 		if (mm->i == NULL || mm->j == NULL) return false;
 	}
 	return true;
 }
 
+/*** copy ***/
 static mm_real *
 mm_real_copy_sparse (const mm_real *src)
 {
@@ -100,7 +103,7 @@ mm_real_copy_sparse (const mm_real *src)
 		dest->j[k] = src->j[k];
 		dest->data[k] = src->data[k];
 	}
-	for (k = 0; k <= src->n; k++)	dest->p[k] = src->p[k];
+	for (k = 0; k <= src->n; k++) dest->p[k] = src->p[k];
 
 	return dest;
 }
@@ -115,6 +118,7 @@ mm_real_copy_dense (const mm_real *src)
 	return dest;
 }
 
+/* return copy of mm_real */
 mm_real *
 mm_real_copy (const mm_real *src)
 {
@@ -122,10 +126,12 @@ mm_real_copy (const mm_real *src)
 	return (mm_is_sparse (src->typecode)) ? mm_real_copy_sparse (src) : mm_real_copy_dense (src);
 }
 
+/* set all */
 void
 mm_array_set_all (int n, double *data, const double val)
 {
-	while (n-- >= 0) *data++ = val;
+	int		k;
+	for (k = 0; k < n; k++) data[k] = val;
 }
 
 void
@@ -134,6 +140,7 @@ mm_real_set_all (mm_real *mm, const double val)
 	mm_array_set_all (mm->nz, mm->data, val);
 }
 
+/* replace sparse -> dense */
 void
 mm_real_replace_sparse_to_dense (mm_real *x)
 {
@@ -163,6 +170,8 @@ mm_real_replace_sparse_to_dense (mm_real *x)
 	return;
 }
 
+/* replace dense -> sparse
+ * the elements of x->data that fabs (x->data[j]) < threshold are set to 0 */
 void
 mm_real_replace_dense_to_sparse (mm_real *x, const double threshold)
 {
@@ -198,12 +207,12 @@ mm_real_replace_dense_to_sparse (mm_real *x, const double threshold)
 	return;
 }
 
+/*** identical matrix ***/
 static mm_real *
-mm_real_speye (const int n)
+mm_real_seye (const int n)
 {
-	int		k;
-	mm_real	*mm = mm_real_new (MM_REAL_SPARSE, MM_REAL_SYMMETRIC, n, n, n);
-
+	int			k;
+	mm_sparse	*mm = mm_real_new (MM_REAL_SPARSE, MM_REAL_SYMMETRIC, n, n, n);
 	mm->i = (int *) malloc (n * sizeof (int));
 	mm->j = (int *) malloc (n * sizeof (int));
 	mm->data = (double *) malloc (n * sizeof (double));
@@ -220,24 +229,26 @@ mm_real_speye (const int n)
 	return mm;
 }
 
-mm_real *
-mm_real_eye (MM_RealType type, const int n)
+static mm_real *
+mm_real_deye (const int n)
 {
-	mm_real	*mm;
-
-	if (type == MM_REAL_SPARSE) mm = mm_real_speye (n);
-	else {
-		int		k;
-		mm = mm_real_new (MM_REAL_DENSE, MM_REAL_UNSYMMETRIC, n, n, n * n);
-		mm->data = (double *) malloc (mm->nz * sizeof (double));
-		mm_real_set_all (mm, 0.);
-		for (k = 0; k < n; k++) mm->data[k + k * n] = 1.;
-	}
-
+	int			k;
+	mm_dense	*mm = mm_real_new (MM_REAL_DENSE, MM_REAL_SYMMETRIC, n, n, n);
+	mm->data = (double *) malloc (n * sizeof (double));
+	mm_real_set_all (mm, 0.);
+	for (k = 0; k < n; k++) mm->data[k + k * n] = 1.;
 	return mm;
 }
 
-/* sum_i S(i) */
+/* n x n identical matrix */
+mm_real *
+mm_real_eye (MM_RealType type, const int n)
+{
+	if (n <= 0) cdescent_error ("mm_real_eye", "n must be > 0.", __FILE__, __LINE__);
+	return (type == MM_REAL_SPARSE) ? mm_real_seye (n) : mm_real_deye (n);
+}
+
+/*** sum of x->data ***/
 double
 mm_real_sum (const mm_real *x)
 {
@@ -247,45 +258,48 @@ mm_real_sum (const mm_real *x)
 	return sum;
 }
 
-/* |S| */
+/*** sum of |x->data| ***/
 double
 mm_real_asum (const mm_real *x)
 {
 	return dasum_ (&x->nz, x->data, &ione);
 }
 
-/* sum_i S(i,j) */
+/*** sum of x(:,j) ***/
 static double
 mm_real_sj_sum (const int j, const mm_sparse *s)
 {
 	int		k;
 	double	sum = 0.;
-	if (j < 0 || s->n <= j) cdescent_error ("mm_real_sj_sum", "specified index is invalid", __FILE__, __LINE__);
 	for (k = s->p[j]; k < s->p[j + 1]; k++) sum += s->data[k];
 	return sum;
 }
 
-/* sum_i X(i,j) */
-double
-mm_real_xj_sum (const int j, const mm_real *x)
+static double
+mm_real_dj_sum (const int j, const mm_sparse *d)
 {
+	int		k;
 	double	sum = 0.;
-	if (mm_is_sparse (x->typecode)) sum = mm_real_sj_sum (j, x);
-	else {
-		int		k;
-		for (k = 0; k < x->m; k++) sum += x->data[k + j * x->m];
-	}
+	for (k = 0; k < d->m; k++) sum += d->data[k];
 	return sum;
 }
 
-/* ||S|| */
+/* sum of x(:,j) */
+double
+mm_real_xj_sum (const int j, const mm_real *x)
+{
+	if (j < 0 || x->n <= j) cdescent_error ("mm_real_xj_sum", "specified index is invalid", __FILE__, __LINE__);
+	return (mm_is_sparse (x->typecode)) ? mm_real_sj_sum (j, x) : mm_real_dj_sum (j, x);
+}
+
+/*** norm of x ***/
 double
 mm_real_nrm2 (const mm_real *x)
 {
 	return dnrm2_ (&x->nz, x->data, &ione);
 }
 
-/* ||S(:,j)|| */
+/*** norm of x(:,j) ***/
 static double
 mm_real_sj_nrm2 (const int j, const mm_sparse *s)
 {
@@ -293,113 +307,139 @@ mm_real_sj_nrm2 (const int j, const mm_sparse *s)
 	return dnrm2_ (&size, s->data + s->p[j], &ione);
 }
 
-/* ||X(:,j)|| */
+static double
+mm_real_dj_nrm2 (const int j, const mm_dense *d)
+{
+	return dnrm2_ (&d->m, d->data + j * d->m, &ione);
+}
+
+/* norm of x(:,j) */
 double
 mm_real_xj_nrm2 (const int j, const mm_real *x)
 {
-	if (j < 0 || x->n <= j) cdescent_error ("mm_real_nrm2", "index out of range.", __FILE__, __LINE__);
-	return (mm_is_sparse (x->typecode)) ? mm_real_sj_nrm2 (j, x) : dnrm2_ (&x->m, x->data + j * x->m, &ione);
+	if (j < 0 || x->n <= j) cdescent_error ("mm_real_xj_nrm2", "index out of range.", __FILE__, __LINE__);
+	return (mm_is_sparse (x->typecode)) ? mm_real_sj_nrm2 (j, x) : mm_real_dj_nrm2 (j, x);
 }
 
-/* S * D or S' * D */
-static mm_real *
-mm_real_s_dot_d (bool trans, const double alpha, const mm_sparse *s, const mm_dense *d, const double beta)
+/*** x * y, where x is matrix and y is vector ***/
+static mm_dense *
+mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_dense *y, const double beta)
 {
-	int		j, k, l;
-	int		m, n, lda;
-	bool	symmetric;
-	mm_real	*mm;
+	int			j, k;
+	int			m, n;
+	bool		symmetric;
+	mm_dense	*c;
 
 	m = (trans) ? s->n : s->m;
 	n = (trans) ? s->m : s->n;
-	if (n != d->m) cdescent_error ("mm_real_s_dot_d", "matrix size not match.", __FILE__, __LINE__);
+	if (n != y->m) cdescent_error ("mm_real_s_dot_v", "matrix size not match.", __FILE__, __LINE__);
 
-	lda = (trans) ? s->n : s->m;
-
-	mm = mm_real_new (MM_REAL_DENSE, MM_REAL_UNSYMMETRIC, m, d->n, m * d->n);
+	c = mm_real_new (MM_REAL_DENSE, MM_REAL_UNSYMMETRIC, m, 1, m);
 
 	symmetric = mm_is_symmetric (s->typecode);
 
-	mm->data = (double *) malloc (mm->nz * sizeof (double));
-	mm_real_set_all (mm, beta);
+	c->data = (double *) malloc (c->nz * sizeof (double));
+	mm_real_set_all (c, beta);
 
-	for (l = 0; l < d->n; l++) {
-		for (j = 0; j < s->n; j++) {
-			for (k = s->p[j]; k < s->p[j + 1]; k++) {
-				int		si = (trans) ? s->i[k] : s->j[k];
-				int		sj = (trans) ? s->j[k] : s->i[k];
-				mm->data[sj + l * lda] += alpha * s->data[k] * d->data[si + l * d->m];
-				if (symmetric && j != sj) mm->data[si + l * lda] += alpha * s->data[k] * d->data[sj + l * d->m];
-			}
+	for (j = 0; j < s->n; j++) {
+		for (k = s->p[j]; k < s->p[j + 1]; k++) {
+			int		si = (trans) ? s->j[k] : s->i[k];
+			int		sj = (trans) ? s->i[k] : s->j[k];
+			c->data[si] += alpha * s->data[k] * y->data[sj];
+			if (symmetric && j != sj) c->data[sj] += alpha * s->data[k] * y->data[si];
 		}
 	}
-	return mm;
-}
 
-/* X * y or X' * y */
-mm_real *
-mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dense *y, const double beta)
-{
-	int		m = (trans) ? x->n : x->m;
-	int		n = (trans) ? x->m : x->n;
-	mm_real	*c;
-
-	if (n != y->m) cdescent_error ("mm_real_x_dot_y", "matrix size not match.", __FILE__, __LINE__);
-	if (!mm_is_dense (y->typecode)) cdescent_error ("mm_real_x_dot_y", "matrix *y must be dense.", __FILE__, __LINE__);
-
-	c = mm_real_new (MM_REAL_DENSE, MM_REAL_UNSYMMETRIC, m, y->n, m * y->n);
-	if (mm_is_sparse (x->typecode)) c = mm_real_s_dot_d (trans, alpha, x, y, beta);
-	else {
-		c->data = (double *) malloc (m * y->n * sizeof (double));
-		dgemv_ ((trans) ? "T" : "N", &x->m, &x->n, &alpha, x->data, &x->m, y->data, &ione, &beta, c->data, &ione);
-	}
 	return c;
 }
 
-/* S(:,j)' * D */
+static mm_dense *
+mm_real_d_dot_y (bool trans, const double alpha, const mm_dense *d, const mm_dense *y, const double beta)
+{
+	int			m, n;
+	mm_dense	*c;
+	m = (trans) ? d->n : d->m;
+	n = (trans) ? d->m : d->n;
+
+	c = mm_real_new (MM_REAL_DENSE, MM_REAL_UNSYMMETRIC, m, 1, m);
+	c->data = (double *) malloc (c->nz * sizeof (double));
+
+	dgemv_ ((trans) ? "T" : "N", &d->m, &d->n, &alpha, d->data, &d->m, y->data, &ione, &beta, c->data, &ione);
+
+	return c;
+}
+
+/* x * y or x' * y */
+mm_real *
+mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dense *y, const double beta)
+{
+	mm_dense	*c;
+
+	if (!mm_is_dense (y->typecode)) cdescent_error ("mm_real_x_dot_v", "vector *v must be dense.", __FILE__, __LINE__);
+
+	if (mm_is_sparse (x->typecode)) c = mm_real_s_dot_y (trans, alpha, x, y, beta);
+	else c = mm_real_d_dot_y (trans, alpha, x, y, beta);
+
+	return c;
+}
+
+/*** x(:,j)' * y ***/
 static double
-mm_real_sj_trans_dot_d (const int j, const mm_sparse *s, const mm_dense *d)
+mm_real_sj_trans_dot_y (const int j, const mm_sparse *s, const mm_dense *y)
 {
 	int		k;
 	double	val;
 
 	val = 0;
-	for (k = s->p[j]; k < s->p[j + 1]; k++) val += s->data[k] * d->data[s->i[k]];
+	for (k = s->p[j]; k < s->p[j + 1]; k++) val += s->data[k] * y->data[s->i[k]];
 	return val;
 }
 
-/* X(:,j)' * y */
+static double
+mm_real_dj_trans_dot_y (const int j, const mm_dense *d, const mm_dense *y)
+{
+	return ddot_ (&d->m, d->data + j * d->m, &ione, y->data, &ione);
+}
+
+/* x(:,j)' * y */
 double
 mm_real_xj_trans_dot_y (const int j, const mm_real *x, const mm_dense *y)
 {
 	double	val;
 
-	if (j < 0 || x->n <= j) cdescent_error ("mm_real_xj_trans_dot_y", "index out of range.", __FILE__, __LINE__);
-	if (!mm_is_dense (y->typecode)) cdescent_error ("mm_real_xj_trans_dot_y", "matrix *y must be dense.", __FILE__, __LINE__);
+	if (j < 0 || x->n <= j) cdescent_error ("mm_real_xj_trans_dot_v", "index out of range.", __FILE__, __LINE__);
+	if (!mm_is_dense (y->typecode)) cdescent_error ("mm_real_xj_trans_dot_v", "vector *v must be dense.", __FILE__, __LINE__);
 
-	if (mm_is_sparse (x->typecode)) val = mm_real_sj_trans_dot_d (j, x, y);
-	else val = ddot_ (&x->m, x->data + j * x->m, &ione, y->data, &ione);
+	if (mm_is_sparse (x->typecode)) val = mm_real_sj_trans_dot_y (j, x, y);
+	else val = mm_real_dj_trans_dot_y (j, x, y);
 
 	return val;
 }
 
-/* d += a * S(:,j) */
+/*** y = alpha * x(:,j) + y ***/
 static void
-mm_real_asjpd (const double alpha, const int j, const mm_sparse *s, mm_dense *d)
+mm_real_asjpy (const double alpha, const int j, const mm_sparse *s, mm_dense *y)
 {
 	int		k;
-	for (k = s->p[j]; k < s->p[j + 1]; k++) d->data[s->i[k]] += alpha * s->data[k];
+	for (k = s->p[j]; k < s->p[j + 1]; k++) y->data[s->i[k]] += alpha * s->data[k];
 	return;
 }
 
-/* y += a * X(:,j) */
+static void
+mm_real_adjpy (const double alpha, const int j, const mm_dense *d, mm_dense *y)
+{
+	daxpy_ (&d->m, &alpha, d->data + j * d->m, &ione, y->data, &ione);
+	return;
+}
+
+/* y += a * x(:,j) */
 void
 mm_real_axjpy (const double alpha, const int j, const mm_real *x, mm_dense *y)
 {
-	if (!mm_is_dense (y->typecode)) cdescent_error ("mm_real_axjpy", "matrix *y must be dense.", __FILE__, __LINE__);
+	if (!mm_is_dense (y->typecode)) cdescent_error ("mm_real_axjpy", "vector *y must be dense.", __FILE__, __LINE__);
 
-	if (mm_is_sparse (x->typecode)) mm_real_asjpd (alpha, j, x, y);
-	else daxpy_ (&y->m, &alpha, x->data + j * x->m, &ione, y->data, &ione);
+	if (mm_is_sparse (x->typecode)) mm_real_asjpy (alpha, j, x, y);
+	else mm_real_adjpy (alpha, j, x, y);
 
 	return;
 }
