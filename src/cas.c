@@ -54,9 +54,11 @@ cas_add (double *data, int idx, double delta)
 	volatile union dlval	newval;
 	volatile union dlptr	ptr;
 	ptr.dp = data;
-	do {
+	while (1) {
 		oldval.dv = ptr.dp[idx];
 		newval.dv = oldval.dv + delta;
-	} while (!compare_and_swap (ptr.lp + idx, *(volatile long *) &oldval.lv, *(volatile long *) &newval.lv));
+		if (compare_and_swap (ptr.lp + idx, (volatile long) oldval.lv, (volatile long) newval.lv))
+			break;
+	}
 	return;
 }

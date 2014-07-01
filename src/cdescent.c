@@ -27,11 +27,14 @@ cdescent_alloc (void)
 	cd->mu = NULL;
 	cd->nu = NULL;
 
+	cd->parallel = false;
+	cd->total_iter = 0;
+
 	return cd;
 }
 
 cdescent *
-cdescent_new (const linregmodel *lreg, const double tol)
+cdescent_new (const linregmodel *lreg, const double tol, bool parallel)
 {
 	cdescent	*cd;
 
@@ -63,6 +66,8 @@ cdescent_new (const linregmodel *lreg, const double tol)
 		cd->nu->data = (double *) malloc (lreg->d->nz * sizeof (double));
 		mm_real_set_all (cd->nu, 0.);
 	}
+
+	cd->parallel = parallel;
 
 	return cd;
 }

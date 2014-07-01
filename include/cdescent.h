@@ -30,14 +30,15 @@ struct s_cdescent {
 	mm_real			*beta;			// solution
 
 	mm_real			*mu;			// mu = X * beta, estimate of y
-	mm_real			*nu;			// nu = D * beta.
+	mm_real			*nu;			// nu = D * beta
 
-
+	bool				parallel;		// enable parallel calculation
+	int					total_iter;	// total number of iterations
 };
 
 /* cdescent.c */
 cdescent	*cdescent_alloc (void);
-cdescent	*cdescent_new (const linregmodel *lreg, const double tol);
+cdescent	*cdescent_new (const linregmodel *lreg, const double tol, bool parallel);
 void		cdescent_free (cdescent *cd);
 void		cdescent_set_lambda1 (cdescent *cd, const double lambda1);
 void		cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1);
@@ -48,7 +49,7 @@ double		cdescent_beta_stepsize (const cdescent *cd, const int j);
 /* cdescent.c */
 bool		cdescent_update_cyclic_once_cycle (cdescent *cd);
 bool		cdescent_update_cyclic_once_cycle_mp (cdescent *cd);
-bool		cdescent_update_cyclic (cdescent *cd, const int maxiter, bool enable_mp);
+bool		cdescent_update_cyclic (cdescent *cd, const int maxiter);
 
 #ifdef __cplusplus
 }

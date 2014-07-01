@@ -16,13 +16,13 @@ extern "C" {
 #include <mmio.h>
 
 typedef enum {
-	MM_REAL_DENSE = 0,
+	MM_REAL_DENSE  = 0,
 	MM_REAL_SPARSE = 1
 } MM_RealType;
 
 typedef enum {
 	MM_REAL_UNSYMMETRIC = 0,
-	MM_REAL_SYMMETRIC
+	MM_REAL_SYMMETRIC   = 1
 } MM_RealSymmetric;
 
 // matrix market format matrix
@@ -38,7 +38,6 @@ struct s_mm_real {
 	int				nz;
 
 	int				*i;
-	int				*j;
 	int				*p;
 	double			*data;
 };

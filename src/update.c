@@ -44,7 +44,7 @@ cdescent_update_mu (cdescent *cd, const int j, const double etaj)
 	return;
 }
 
-/* update mu = X * beta: mu += X(:,j) * etaj */
+/* update mu based on compare and swap */
 static void
 cdescent_update_mu_cas (cdescent *cd, const int j, const double etaj)
 {
@@ -63,7 +63,7 @@ cdescent_update_nu (cdescent *cd, const int j, const double etaj)
 	return;
 }
 
-/* update nu = D * beta: nu += D(:,j) * etaj */
+/* update nu based on compare and swap */
 void
 cdescent_update_nu_cas (cdescent *cd, const int j, const double etaj)
 {
@@ -77,7 +77,6 @@ cdescent_update_nu_cas (cdescent *cd, const int j, const double etaj)
 bool
 cdescent_update_cyclic_once_cycle (cdescent *cd)
 {
-	int		j;
 	double	nrm2;
 
 	/* b = (sum(y) - sum(X) * beta) / n.
@@ -89,55 +88,37 @@ cdescent_update_cyclic_once_cycle (cdescent *cd)
 	nrm2 = 0.;
 	/*** single "one-at-a-time" update of cyclic coordinate descent ***/
 
-	for (j = 0; j < cd->lreg->x->n; j++) {
-		// era[j] = beta[j] - beta_prev[j]
-		double	etaj = cdescent_beta_stepsize (cd, j);
+	if (cd->parallel) {	// do parallel
+		#pragma omp parallel
+		{
+			int		j;
+			#pragma omp for reduction (+:nrm2)
+			for (j = 0; j < cd->lreg->x->n; j++) {
+				// era[j] = beta[j] - beta_prev[j]
+				double	etaj = cdescent_beta_stepsize (cd, j);
 
-		if (fabs (etaj) > 0.) {
-			cdescent_update_beta (cd, j, etaj);
-			cdescent_update_mu (cd, j, etaj);
-			cdescent_update_nu (cd, j, etaj);
-			nrm2 += pow (etaj, 2.);
+				if (fabs (etaj) > 0.) {
+					cdescent_update_beta (cd, j, etaj);
+					cdescent_update_mu_cas (cd, j, etaj);
+					cdescent_update_nu_cas (cd, j, etaj);
+					nrm2 += pow (etaj, 2.);
+				}
+			}
 		}
-	}
-
-	cd->nrm1 = mm_real_asum (cd->beta);
-
-	return (sqrt (nrm2) < cd->tolerance);
-}
-
-/*** progress coordinate descent update for one full cycle ***/
-bool
-cdescent_update_cyclic_once_cycle_mp (cdescent *cd)
-{
-	int		j;
-	double	nrm2;
-
-	/* b = (sum(y) - sum(X) * beta) / n.
-	 * so, if y or X are not centered,
-	 * i.e. sum(y) != 0 or sum(X) != 0,
-	 * b must be updated on each cycle. */
-	if (!cd->lreg->xcentered) cdescent_update_intercept (cd);
-
-	nrm2 = 0.;
-	/*** single "one-at-a-time" update of cyclic coordinate descent ***/
-
-	#pragma omp parallel private (j)
-	{
-		#pragma omp for reduction (+:nrm2)
+	} else {	// single thread
+		int		j;
 		for (j = 0; j < cd->lreg->x->n; j++) {
 			// era[j] = beta[j] - beta_prev[j]
 			double	etaj = cdescent_beta_stepsize (cd, j);
 
 			if (fabs (etaj) > 0.) {
 				cdescent_update_beta (cd, j, etaj);
-				cdescent_update_mu_cas (cd, j, etaj);
-				cdescent_update_nu_cas (cd, j, etaj);
+				cdescent_update_mu (cd, j, etaj);
+				cdescent_update_nu (cd, j, etaj);
 				nrm2 += pow (etaj, 2.);
 			}
 		}
 	}
-
 	cd->nrm1 = mm_real_asum (cd->beta);
 
 	return (sqrt (nrm2) < cd->tolerance);
@@ -146,20 +127,20 @@ cdescent_update_cyclic_once_cycle_mp (cdescent *cd)
 /*** cyclic coordinate descent ***/
 /* repeat coordinate descent until solution is converged */
 bool
-cdescent_update_cyclic (cdescent *cd, const int maxiter, bool enable_mp)
+cdescent_update_cyclic (cdescent *cd, const int maxiter)
 {
 	int		iter = 0;
 	bool	converged = false;
 
 	while (!converged) {
 
-		converged = (enable_mp) ? cdescent_update_cyclic_once_cycle_mp (cd) : cdescent_update_cyclic_once_cycle (cd);
+		converged = cdescent_update_cyclic_once_cycle (cd);
 
 		if (++iter >= maxiter) {
 			cdescent_warning ("cdescent_cyclic", "reaching max number of iterations.", __FILE__, __LINE__);
 			break;
 		}
 	}
-
+	cd->total_iter += iter;
 	return converged;
 }

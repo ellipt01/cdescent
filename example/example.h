@@ -12,6 +12,6 @@
 void	read_data (char *fn, int skip_header, int *n, int *p, double **y, double **x);
 
 /* example_cdescent.c */
-void	example_cdescent_pathwise (const linregmodel *lreg, double start, double dt, double stop, double tol, int maxiter, bool enable_mp);
+void	example_cdescent_pathwise (const linregmodel *lreg, double start, double dt, double stop, double tol, int maxiter, bool parallel);
 
 #endif /* EXAMPLE_H_ */

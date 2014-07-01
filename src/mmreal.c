@@ -17,7 +17,6 @@ mm_real_alloc (void)
 	mm->n = 0;
 	mm->nz = 0;
 	mm->i = NULL;
-	mm->j = NULL;
 	mm->p = NULL;
 	mm->data = NULL;
 
@@ -62,7 +61,6 @@ mm_real_free (mm_real *mm)
 {
 	if (mm) {
 		if (mm->i) free (mm->i);
-		if (mm->j) free (mm->j);
 		if (mm->p) free (mm->p);
 		if (mm->data) free (mm->data);
 		free (mm);
@@ -81,8 +79,7 @@ mm_real_realloc (mm_real *mm, const int nz)
 	if (mm->data == NULL) return false;
 	if (mm_is_sparse (mm->typecode)) {
 		mm->i = (int *) realloc (mm->i, nz * sizeof (int));
-		mm->j = (int *) realloc (mm->j, nz * sizeof (int));
-		if (mm->i == NULL || mm->j == NULL) return false;
+		if (mm->i == NULL) return false;
 	}
 	return true;
 }
@@ -96,13 +93,11 @@ mm_real_copy_sparse (const mm_real *src)
 	mm_real			*dest = mm_real_new (MM_REAL_SPARSE, symmetric, src->m, src->n, src->nz);
 
 	dest->i = (int *) malloc (src->nz * sizeof (int));
-	dest->j = (int *) malloc (src->nz * sizeof (int));
 	dest->p = (int *) malloc ((src->n + 1) * sizeof (int));
 	dest->data = (double *) malloc (src->nz * sizeof (double));
 
 	for (k = 0; k < src->nz; k++) {
 		dest->i[k] = src->i[k];
-		dest->j[k] = src->j[k];
 		dest->data[k] = src->data[k];
 	}
 	for (k = 0; k <= src->n; k++) dest->p[k] = src->p[k];
@@ -134,19 +129,21 @@ mm_array_set_all (int n, double *data, const double val)
 {
 	int		k;
 	for (k = 0; k < n; k++) data[k] = val;
+	return;
 }
 
 void
 mm_real_set_all (mm_real *mm, const double val)
 {
 	mm_array_set_all (mm->nz, mm->data, val);
+	return;
 }
 
 /* replace sparse -> dense */
 void
 mm_real_replace_sparse_to_dense (mm_real *x)
 {
-	int		k;
+	int		j;
 	double	*data;
 	if (!mm_is_sparse (x->typecode)) return;
 
@@ -157,16 +154,16 @@ mm_real_replace_sparse_to_dense (mm_real *x)
 	x->data = (double *) realloc (x->data, x->m * x->n * sizeof (double));
 	mm_array_set_all (x->nz, x->data, 0.);
 
-	for (k = 0; k < x->nz; k++) {
-		int		i = x->i[k];
-		int		j = x->j[k];
-		x->data[i + j * x->m] = data[k];
+	for (j = 0; j < x->n; j++) {
+		int		k;
+		for (k = x->p[j]; k < x->p[j + 1]; k++) {
+			int		i = x->i[k];
+			x->data[i + j * x->m] = data[k];
+		}
 	}
 	free (data);
 	free (x->i);
 	x->i = NULL;
-	free (x->j);
-	x->j = NULL;
 	free (x->p);
 	x->p = NULL;
 	return;
@@ -186,7 +183,6 @@ mm_real_replace_dense_to_sparse (mm_real *x, const double threshold)
 
 	mm_set_sparse (&x->typecode);
 	x->i = (int *) malloc (x->nz * sizeof (int));
-	x->j = (int *) malloc (x->nz * sizeof (int));
 	x->p = (int *) malloc ((x->n + 1) * sizeof (int));
 	x->data = (double *) malloc (x->nz * sizeof (double));
 
@@ -197,7 +193,6 @@ mm_real_replace_dense_to_sparse (mm_real *x, const double threshold)
 			double	dij = data[i + j * x->m];
 			if (fabs (dij) >= threshold) {
 				x->i[k] = i;
-				x->j[k] = j;
 				x->data[k] = dij;
 				k++;
 			}
@@ -216,14 +211,12 @@ mm_real_seye (const int n)
 	int			k;
 	mm_sparse	*mm = mm_real_new (MM_REAL_SPARSE, MM_REAL_SYMMETRIC, n, n, n);
 	mm->i = (int *) malloc (n * sizeof (int));
-	mm->j = (int *) malloc (n * sizeof (int));
 	mm->data = (double *) malloc (n * sizeof (double));
 	mm->p = (int *) malloc ((n + 1) * sizeof (int));
 
 	mm->p[0] = 0;
 	for (k = 0; k < n; k++) {
 		mm->i[k] = k;
-		mm->j[k] = k;
 		mm->data[k] = 1.;
 		mm->p[k + 1] = k + 1;
 	}
@@ -345,8 +338,8 @@ mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_de
 
 	for (j = 0; j < s->n; j++) {
 		for (k = s->p[j]; k < s->p[j + 1]; k++) {
-			int		si = (trans) ? s->j[k] : s->i[k];
-			int		sj = (trans) ? s->i[k] : s->j[k];
+			int		si = (trans) ? j : s->i[k];
+			int		sj = (trans) ? s->i[k] : j;
 			c->data[si] += alpha * s->data[k] * y->data[sj];
 			if (symmetric && j != sj) c->data[sj] += alpha * s->data[k] * y->data[si];
 		}

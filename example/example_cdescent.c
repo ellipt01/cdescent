@@ -32,20 +32,20 @@ output_solutionpath_cdescent (int iter, const cdescent *cd)
 }
 
 void
-example_cdescent_pathwise (const linregmodel *lreg, double logtmin, double dlogt, double logtmax, double tol, int maxiter, bool enable_mp)
+example_cdescent_pathwise (const linregmodel *lreg, double logtmin, double dlogt, double logtmax, double tol, int maxiter, bool parallel)
 {
 	int			iter = 0;
 	double		logt;
 	cdescent	*cd;
 
 	/* warm start */
-	cd = cdescent_new (lreg, tol);
+	cd = cdescent_new (lreg, tol, parallel);
 	logt = (cd->lreg->logcamax <= logtmax) ? cd->lreg->logcamax : logtmax;
 
 	while (logtmin <= logt) {
 
 		fprintf (stdout, "t = %.4e, intercept = %.4e\n", cd->lambda1, cd->b);
-		if (!cdescent_update_cyclic (cd, maxiter, enable_mp)) break;
+		if (!cdescent_update_cyclic (cd, maxiter)) break;
 		output_solutionpath_cdescent (iter, cd);
 
 		logt -= dlogt;

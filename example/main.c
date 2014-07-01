@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <omp.h>
 
 #include <cdescent.h>
 #include "example.h"
@@ -124,7 +125,6 @@ mm_real_real_penalty_spsmooth (const int n)
 
 	mm_real	*d = mm_real_new (MM_REAL_SPARSE, MM_REAL_UNSYMMETRIC, n - 1, n, nz);
 	d->i = (int *) malloc (nz * sizeof (int));
-	d->j = (int *) malloc (nz * sizeof (int));
 	d->p = (int *) malloc ((n + 1) * sizeof (int));
 	d->data = (double *) malloc (nz * sizeof (double));
 
@@ -133,12 +133,10 @@ mm_real_real_penalty_spsmooth (const int n)
 	for (j = 0; j < n; j++) {
 		if (j > 0) {
 			d->i[k] = j - 1;
-			d->j[k] = j;
 			d->data[k++] = -1.;
 		}
 		if (j < n - 1) {
 			d->i[k] = j;
-			d->j[k] = j;
 			d->data[k++] = 1.;
 		}
 		d->p[j + 1] = k;
@@ -170,7 +168,6 @@ create_mm_sparse (int m, int n, double *data, double threshold)
 	int			i, j, k, l;
 	mm_sparse	*x = mm_real_new (MM_REAL_SPARSE, MM_REAL_UNSYMMETRIC, m, n, m * n);
 	x->i = (int *) malloc (x->nz * sizeof (int));
-	x->j = (int *) malloc (x->nz * sizeof (int));
 	x->p = (int *) malloc ((n + 1) * sizeof (int));
 	x->data = (double *) malloc (x->nz * sizeof (double));
 
@@ -181,7 +178,6 @@ create_mm_sparse (int m, int n, double *data, double threshold)
 		for (i = 0; i < m; i++) {
 			if (fabs (data[l++]) > threshold) {
 				x->i[k] = i;
-				x->j[k] = j;
 				x->data[k] = data[k];
 				k++;
 			}
@@ -203,8 +199,6 @@ create_mm_dense (int m, int n, double *data)
 	for (k = 0; k < m * n; k++) x->data[k] = data[k];
 	return x;
 }
-
-#include <time.h>
 
 int
 main (int argc, char **argv)
@@ -239,11 +233,11 @@ main (int argc, char **argv)
 	lreg = linregmodel_new (y, x, lambda2, d, false, true, true, true);
 
 	{
-		clock_t	t1, t2;
-		t1 = clock ();
+		double	t1, t2;
+		t1 = omp_get_wtime ();
 		example_cdescent_pathwise (lreg, start, dt, stop, 1.e-3, maxiter, true);
-		t2 = clock ();
-		fprintf (stderr, "time = %.2e\n", (double) (t2 - t1) / CLOCKS_PER_SEC);
+		t2 = omp_get_wtime ();
+		fprintf (stderr, "time = %.2e\n", t2 - t1);
 	}
 
 	linregmodel_free (lreg);
