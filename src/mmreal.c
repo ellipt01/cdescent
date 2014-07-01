@@ -6,6 +6,8 @@
 #include <mmreal.h>
 #include "private.h"
 
+extern void	cas_add (double *data, int idx, double delta);
+
 /* allocate mm_real */
 mm_real *
 mm_real_alloc (void)
@@ -440,6 +442,33 @@ mm_real_axjpy (const double alpha, const int j, const mm_real *x, mm_dense *y)
 
 	if (mm_is_sparse (x->typecode)) mm_real_asjpy (alpha, j, x, y);
 	else mm_real_adjpy (alpha, j, x, y);
+
+	return;
+}
+
+static void
+mm_real_asjpy_cas (const double alpha, const int j, const mm_sparse *s, mm_dense *y)
+{
+	int		k;
+	for (k = s->p[j]; k < s->p[j + 1]; k++) cas_add (y->data, s->i[k], alpha * s->data[k]);
+}
+
+static void
+mm_real_adjpy_cas (const double alpha, const int j, const mm_dense *d, mm_dense *y)
+{
+	int		k;
+	double	*dj = d->data + j * d->m;
+	for (k = 0; k < d->m; k++) cas_add (y->data, k, alpha * dj[k]);
+}
+
+/* y += a * x(:,j): compare and swap version */
+void
+mm_real_axjpy_cas (const double alpha, const int j, const mm_real *x, mm_dense *y)
+{
+	if (!mm_is_dense (y->typecode)) cdescent_error ("mm_real_axjpy", "vector *y must be dense.", __FILE__, __LINE__);
+
+	if (mm_is_sparse (x->typecode)) mm_real_asjpy_cas (alpha, j, x, y);
+	else mm_real_adjpy_cas (alpha, j, x, y);
 
 	return;
 }

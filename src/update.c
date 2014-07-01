@@ -11,7 +11,7 @@
 #include "private.h"
 
 /*** updater of intercept: (sum (y) - sum(X) * beta) / n ***/
-void
+static void
 cdescent_update_intercept (cdescent *cd)
 {
 	if (cd->lreg->ycentered && cd->lreg->xcentered) cd->b = 0.;
@@ -27,7 +27,7 @@ cdescent_update_intercept (cdescent *cd)
 }
 
 /* update beta: beta[j] += etaj, etaj = beta[j] - beta_prev[j] */
-void
+static void
 cdescent_update_beta (cdescent *cd, const int j, const double etaj)
 {
 	// beta[j] += eta[j]
@@ -36,11 +36,20 @@ cdescent_update_beta (cdescent *cd, const int j, const double etaj)
 }
 
 /* update mu = X * beta: mu += X(:,j) * etaj */
-void
+static void
 cdescent_update_mu (cdescent *cd, const int j, const double etaj)
 {
 	// mu += etaj * X(:,j)
 	mm_real_axjpy (etaj, j, cd->lreg->x, cd->mu);
+	return;
+}
+
+/* update mu = X * beta: mu += X(:,j) * etaj */
+static void
+cdescent_update_mu_cas (cdescent *cd, const int j, const double etaj)
+{
+	// mu += etaj * X(:,j)
+	mm_real_axjpy_cas (etaj, j, cd->lreg->x, cd->mu);
 	return;
 }
 
@@ -51,6 +60,16 @@ cdescent_update_nu (cdescent *cd, const int j, const double etaj)
 	// nu += etaj * D(:,j)
 	if (linregmodel_is_regtype_lasso (cd->lreg)) return;
 	mm_real_axjpy (etaj, j, cd->lreg->d, cd->nu);
+	return;
+}
+
+/* update nu = D * beta: nu += D(:,j) * etaj */
+void
+cdescent_update_nu_cas (cdescent *cd, const int j, const double etaj)
+{
+	// nu += etaj * D(:,j)
+	if (linregmodel_is_regtype_lasso (cd->lreg)) return;
+	mm_real_axjpy_cas (etaj, j, cd->lreg->d, cd->nu);
 	return;
 }
 
@@ -69,6 +88,7 @@ cdescent_update_cyclic_once_cycle (cdescent *cd)
 
 	nrm2 = 0.;
 	/*** single "one-at-a-time" update of cyclic coordinate descent ***/
+
 	for (j = 0; j < cd->lreg->x->n; j++) {
 		// era[j] = beta[j] - beta_prev[j]
 		double	etaj = cdescent_beta_stepsize (cd, j);
@@ -79,8 +99,45 @@ cdescent_update_cyclic_once_cycle (cdescent *cd)
 			cdescent_update_nu (cd, j, etaj);
 			nrm2 += pow (etaj, 2.);
 		}
-
 	}
+
+	cd->nrm1 = mm_real_asum (cd->beta);
+
+	return (sqrt (nrm2) < cd->tolerance);
+}
+
+/*** progress coordinate descent update for one full cycle ***/
+bool
+cdescent_update_cyclic_once_cycle_mp (cdescent *cd)
+{
+	int		j;
+	double	nrm2;
+
+	/* b = (sum(y) - sum(X) * beta) / n.
+	 * so, if y or X are not centered,
+	 * i.e. sum(y) != 0 or sum(X) != 0,
+	 * b must be updated on each cycle. */
+	if (!cd->lreg->xcentered) cdescent_update_intercept (cd);
+
+	nrm2 = 0.;
+	/*** single "one-at-a-time" update of cyclic coordinate descent ***/
+
+	#pragma omp parallel private (j)
+	{
+		#pragma omp for reduction (+:nrm2)
+		for (j = 0; j < cd->lreg->x->n; j++) {
+			// era[j] = beta[j] - beta_prev[j]
+			double	etaj = cdescent_beta_stepsize (cd, j);
+
+			if (fabs (etaj) > 0.) {
+				cdescent_update_beta (cd, j, etaj);
+				cdescent_update_mu_cas (cd, j, etaj);
+				cdescent_update_nu_cas (cd, j, etaj);
+				nrm2 += pow (etaj, 2.);
+			}
+		}
+	}
+
 	cd->nrm1 = mm_real_asum (cd->beta);
 
 	return (sqrt (nrm2) < cd->tolerance);
@@ -89,14 +146,14 @@ cdescent_update_cyclic_once_cycle (cdescent *cd)
 /*** cyclic coordinate descent ***/
 /* repeat coordinate descent until solution is converged */
 bool
-cdescent_update_cyclic (cdescent *cd, const int maxiter)
+cdescent_update_cyclic (cdescent *cd, const int maxiter, bool enable_mp)
 {
 	int		iter = 0;
 	bool	converged = false;
 
 	while (!converged) {
 
-		converged = cdescent_update_cyclic_once_cycle (cd);
+		converged = (enable_mp) ? cdescent_update_cyclic_once_cycle_mp (cd) : cdescent_update_cyclic_once_cycle (cd);
 
 		if (++iter >= maxiter) {
 			cdescent_warning ("cdescent_cyclic", "reaching max number of iterations.", __FILE__, __LINE__);

@@ -46,13 +46,9 @@ void		cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1);
 double		cdescent_beta_stepsize (const cdescent *cd, const int j);
 
 /* cdescent.c */
-void		cdescent_update_intercept (cdescent *cd);
-void		cdescent_update_beta (cdescent *cd, const int j, const double etaj);
-void		cdescent_update_mu (cdescent *cd, const int j, const double etaj);
-void		cdescent_update_nu (cdescent *cd, const int j, const double etaj);
-
 bool		cdescent_update_cyclic_once_cycle (cdescent *cd);
-bool		cdescent_update_cyclic (cdescent *cd, const int maxiter);
+bool		cdescent_update_cyclic_once_cycle_mp (cdescent *cd);
+bool		cdescent_update_cyclic (cdescent *cd, const int maxiter, bool enable_mp);
 
 #ifdef __cplusplus
 }

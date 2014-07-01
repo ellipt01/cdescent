@@ -10,6 +10,7 @@ lib_LTLIBRARIES = libcdescent.la
 
 libcdescent_la_SOURCES =\
 	private.c\
+	cas.c\
 	mmio.c\
 	mmreal.c\
 	linregmodel.c\
@@ -17,9 +18,9 @@ libcdescent_la_SOURCES =\
 	stepsize.c\
 	update.c
 
-libcdescent_la_CPPFLAGS = -I$(top_srcdir)/include
+libcdescent_la_CPPFLAGS = -fopenmp -I$(top_srcdir)/include
 
 libcdescent_la_LDFLAGS = -L$(top_srcdir)/src
 
-libcdescent_la_LIBADD =
+libcdescent_la_LIBADD = -lgomp
 
