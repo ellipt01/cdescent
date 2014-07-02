@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <unistd.h>
 #include <omp.h>
 
 #include <cdescent.h>
@@ -48,7 +49,7 @@ read_params (int argc, char **argv)
 	double	_gamma = gamma_bic;
 	char	c;
 
-	while ((c = getopt (argc, argv, "f:l:t:g:m")) != -1) {
+	while ((c = getopt (argc, argv, "f:l:t:g:m:")) != -1) {
 		char *p;
 
 		switch (c) {
@@ -78,10 +79,20 @@ read_params (int argc, char **argv)
 					maxiter = atoi (optarg);
 				break;
 
+			case ':':
+					fprintf (stdout, "%c needs value.\n", c);
+      				break;
+
+			case '?':
+      				fprintf (stdout, "unknown option\n");
+      				break;
+
 			default:
 				break;
 		}
 	}
+	for(; optind < argc; optind++) fprintf (stdout, "%s\n", argv[optind]);
+
 	if (strlen (fn) <= 1) {
 		fprintf (stderr, "ERROR: input file name is not specified.\n");
 		status = false;

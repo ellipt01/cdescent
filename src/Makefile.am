@@ -18,9 +18,9 @@ libcdescent_la_SOURCES =\
 	stepsize.c\
 	update.c
 
-libcdescent_la_CPPFLAGS = -fopenmp -I$(top_srcdir)/include
+libcdescent_la_CPPFLAGS = -I$(top_srcdir)/include
 
 libcdescent_la_LDFLAGS = -L$(top_srcdir)/src
 
-libcdescent_la_LIBADD = -llapack -lgomp
+libcdescent_la_LIBADD =
 

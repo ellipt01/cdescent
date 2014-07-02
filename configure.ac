@@ -21,26 +21,52 @@ AC_PROG_LIBTOOL
 AM_INIT_AUTOMAKE
 
 # Checks for libraries.
-AC_CHECK_LIB([m], [floor], [])
-AC_CHECK_LIB([gfortran], [main],[])
-#AC_CHECK_LIB(
-#	[qrupdate],
-#	[dchinx_],
-#	[],
-#	[AC_MSG_ERROR("ERROR: cannot find library for -lqrupdate. check LDFLAGS and retry - stop.")]
-#)
-#AC_CHECK_FUNCS([dchinx_ dchdex_])
+AC_CHECK_LIB([m],[floor],[])
+AC_CHECK_LIB([gfortran],[main],[])
 
 AC_ARG_WITH(
-	[atlas-libdir],
-	[ --with-atlas-libdir=<ATLAS library path>],
-	[with_atlas_libdir="$withval"],
+	[atlas-dir],
+	AC_HELP_STRING([--with-atlas-dir=DIR],[ATLAS library directory]),
+	[with_atlas_dir="$withval"],
 	[with_atlas=""]
 )
-ac_save_LIBS="$LIBS"
-LIBS="$LIBS -L$with_atlas_libdir"
+if test "$with_atlas_dir"; then
+	LIBS="$LIBS -L$with_atlas_dir"
+fi
 
-AC_CHECK_LIB([lapack],[dlamch_],[LAPACK=-llapack])
+AC_ARG_WITH(
+	[blas-dir],
+	AC_HELP_STRING([--with-blas-dir=DIR],[BLAS library directory]),
+	[with_blas_libdir="$withval"],
+	[with_blas=""]
+)
+if test "$with_blas_dir"; then
+	LIBS="$LIBS -L$with_blas_dir"
+fi
+
+AC_ARG_WITH(
+	[lapack-dir],
+	AC_HELP_STRING([--with-lapack-dir=DIR],[LAPACK library directory]),
+	[with_lapack_libdir="$withval"],
+	[with_lapack=""]
+)
+if test "$with_lapack_dir"; then
+	LIBS="$LIBS -L$with_lapack_dir"
+fi
+
+AC_CHECK_LIB([blas],[dcopy_],[])
+AC_CHECK_LIB([lapack],[dlamch_],[])
+
+use_omp="yes"
+AC_ARG_ENABLE(
+	[openmp],
+	AC_HELP_STRING([--enable-openmp],[enable openMP [[default=yes]]]),
+	[use_omp="yes"],
+	[use_omp="no"]
+)
+if test "x$use_omp"="xyes"; then
+	CFLAGS="$CFLAGS -fopenmp"
+fi
 
 # Checks for header files.
 AC_CHECK_HEADER([stdlib.h])
@@ -57,8 +83,7 @@ AC_TYPE_SIZE_T
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([floor pow sqrt log strrchr])
-#AC_CHECK_FUNCS([dcopy_])
-#AC_CHECK_FUNCS([dpotrf_ dpotrs_])
+AC_CHECK_FUNCS([dcopy_])
 
 # pkgconfig
 CDESCENT_DESCRIPTION='C implementation of coordinate descent algorithm'
