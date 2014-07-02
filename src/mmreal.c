@@ -108,7 +108,7 @@ mm_real_copy_sparse (const mm_real *src)
 static mm_real *
 mm_real_copy_dense (const mm_real *src)
 {
-	int		k;
+	int			k;
 	mm_real	*dest = mm_real_new (MM_REAL_DENSE, MM_REAL_UNSYMMETRIC, src->m, src->n, src->nz);
 	dest->data = (double *) malloc (src->nz * sizeof (double));
 	for (k = 0; k < src->nz; k++) dest->data[k] = src->data[k];
@@ -209,30 +209,30 @@ static mm_real *
 mm_real_seye (const int n)
 {
 	int			k;
-	mm_sparse	*mm = mm_real_new (MM_REAL_SPARSE, MM_REAL_SYMMETRIC, n, n, n);
-	mm->i = (int *) malloc (n * sizeof (int));
-	mm->data = (double *) malloc (n * sizeof (double));
-	mm->p = (int *) malloc ((n + 1) * sizeof (int));
+	mm_sparse	*s = mm_real_new (MM_REAL_SPARSE, MM_REAL_SYMMETRIC, n, n, n);
+	s->i = (int *) malloc (n * sizeof (int));
+	s->data = (double *) malloc (n * sizeof (double));
+	s->p = (int *) malloc ((n + 1) * sizeof (int));
 
-	mm->p[0] = 0;
+	s->p[0] = 0;
 	for (k = 0; k < n; k++) {
-		mm->i[k] = k;
-		mm->data[k] = 1.;
-		mm->p[k + 1] = k + 1;
+		s->i[k] = k;
+		s->data[k] = 1.;
+		s->p[k + 1] = k + 1;
 	}
 
-	return mm;
+	return s;
 }
 
 static mm_real *
 mm_real_deye (const int n)
 {
 	int			k;
-	mm_dense	*mm = mm_real_new (MM_REAL_DENSE, MM_REAL_SYMMETRIC, n, n, n);
-	mm->data = (double *) malloc (n * sizeof (double));
-	mm_real_set_all (mm, 0.);
-	for (k = 0; k < n; k++) mm->data[k + k * n] = 1.;
-	return mm;
+	mm_dense	*d = mm_real_new (MM_REAL_DENSE, MM_REAL_SYMMETRIC, n, n, n * n);
+	d->data = (double *) malloc (d->nz * sizeof (double));
+	mm_real_set_all (d, 0.);
+	for (k = 0; k < n; k++) d->data[k + k * n] = 1.;
+	return d;
 }
 
 /* n x n identical matrix */

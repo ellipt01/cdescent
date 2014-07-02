@@ -35,6 +35,8 @@ usage (char *toolname)
 	exit (1);
 }
 
+extern char	*optarg;
+
 bool
 read_params (int argc, char **argv)
 {
@@ -44,44 +46,40 @@ read_params (int argc, char **argv)
 	double	_dt = dt;
 	double	_stop = stop;
 	double	_gamma = gamma_bic;
+	char	c;
 
-	if (argc <= 1) return false;
+	while ((c = getopt (argc, argv, "f:l:t:g:m")) != -1) {
+		char *p;
 
-	for (i = 1; i < argc; i++) {
-		char	*p;
+		switch (c) {
 
-		if (argv[i][0] == '-') {
-
-			switch (argv[i][1]) {
-
-				case 'f':
-					p = strrchr (argv[++i], ':');
-					if (p) {
-						strcpy (fn, argv[i]);
-						fn[strlen (argv[i]) - strlen (p)] = '\0';
-						skipheaders = atoi (++p);
-					} else strcpy (fn, argv[i]);
+			case 'f':
+				p = strrchr (optarg, ':');
+				if (p) {
+					strcpy (fn, optarg);
+					fn[strlen (optarg) - strlen (p)] = '\0';
+					skipheaders = atoi (++p);
+				} else strcpy (fn, optarg);
 				break;
 
-				case 'l':
-					lambda2 = (double) atof (argv[++i]);
+			case 'l':
+					lambda2 = (double) atof (optarg);
 				break;
 
-				case 't':
-					sscanf (argv[++i], "%lf:%lf:%lf", &_start, &_dt, &_stop);
+			case 't':
+					sscanf (optarg, "%lf:%lf:%lf", &_start, &_dt, &_stop);
 				break;
 
-				case 'g':
-					_gamma = (double) atof (argv[++i]);
+			case 'g':
+					_gamma = (double) atof (optarg);
 				break;
 
-				case 'm':
-					maxiter = atoi (argv[++i]);
+			case 'm':
+					maxiter = atoi (optarg);
 				break;
 
-				default:
+			default:
 				break;
-			}
 		}
 	}
 	if (strlen (fn) <= 1) {
@@ -123,25 +121,25 @@ mm_real_real_penalty_spsmooth (const int n)
 	int		i, j, k;
 	int		nz = 2 * (n - 1);
 
-	mm_real	*d = mm_real_new (MM_REAL_SPARSE, MM_REAL_UNSYMMETRIC, n - 1, n, nz);
-	d->i = (int *) malloc (nz * sizeof (int));
-	d->p = (int *) malloc ((n + 1) * sizeof (int));
-	d->data = (double *) malloc (nz * sizeof (double));
+	mm_sparse	*s = mm_real_new (MM_REAL_SPARSE, MM_REAL_UNSYMMETRIC, n - 1, n, nz);
+	s->i = (int *) malloc (nz * sizeof (int));
+	s->p = (int *) malloc ((n + 1) * sizeof (int));
+	s->data = (double *) malloc (nz * sizeof (double));
 
 	k = 0;
-	d->p[0] = 0;
+	s->p[0] = 0;
 	for (j = 0; j < n; j++) {
 		if (j > 0) {
-			d->i[k] = j - 1;
-			d->data[k++] = -1.;
+			s->i[k] = j - 1;
+			s->data[k++] = -1.;
 		}
 		if (j < n - 1) {
-			d->i[k] = j;
-			d->data[k++] = 1.;
+			s->i[k] = j;
+			s->data[k++] = 1.;
 		}
-		d->p[j + 1] = k;
+		s->p[j + 1] = k;
 	}
-	return d;
+	return s;
 }
 
 mm_real *
