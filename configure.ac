@@ -23,22 +23,31 @@ AM_INIT_AUTOMAKE
 # Checks for libraries.
 AC_CHECK_LIB([m], [floor], [])
 AC_CHECK_LIB([gfortran], [main],[])
+#AC_CHECK_LIB(
+#	[qrupdate],
+#	[dchinx_],
+#	[],
+#	[AC_MSG_ERROR("ERROR: cannot find library for -lqrupdate. check LDFLAGS and retry - stop.")]
+#)
+#AC_CHECK_FUNCS([dchinx_ dchdex_])
 
-AC_CHECK_LIB(
-	[qrupdate],
-	[dchinx_],
-	[],
-	[AC_MSG_ERROR("ERROR: cannot find library for -lqrupdate. check LDFLAGS and retry - stop.")]
+AC_ARG_WITH(
+	[atlas-libdir],
+	[ --with-atlas-libdir=<ATLAS library path>],
+	[with_atlas_libdir="$withval"],
+	[with_atlas=""]
 )
-AC_CHECK_FUNCS([dchinx_ dchdex_])
+ac_save_LIBS="$LIBS"
+LIBS="$LIBS -L$with_atlas_libdir"
 
+AC_CHECK_LIB([lapack],[dlamch_],[LAPACK=-llapack])
 
 # Checks for header files.
 AC_CHECK_HEADER([stdlib.h])
 AC_CHECK_HEADER([string.h])
 AC_CHECK_HEADER([lapack.h])
 AC_CHECK_HEADER([blas.h])
-AC_CHECK_HEADER([qrupdate.h])
+#AC_CHECK_HEADER([qrupdate.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -48,7 +57,8 @@ AC_TYPE_SIZE_T
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([floor pow sqrt log strrchr])
-AC_CHECK_FUNCS([dpotrf_ dpotrs_])
+#AC_CHECK_FUNCS([dcopy_])
+#AC_CHECK_FUNCS([dpotrf_ dpotrs_])
 
 # pkgconfig
 CDESCENT_DESCRIPTION='C implementation of coordinate descent algorithm'
