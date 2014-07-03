@@ -10,7 +10,6 @@ lib_LTLIBRARIES = libcdescent.la
 
 libcdescent_la_SOURCES =\
 	private.c\
-	cas.c\
 	mmio.c\
 	mmreal.c\
 	linregmodel.c\

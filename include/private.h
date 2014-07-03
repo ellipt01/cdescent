@@ -52,5 +52,7 @@ void			cdescent_warning (const char * function_name, const char *error_msg, cons
 /* machine double epsilon */
 double			cdescent_double_eps (void);
 
+/* compare and swap add */
+void			cdescent_cas_add (double *data, double delta);
 
 #endif /* LINREG_PRIVATE_H_ */
