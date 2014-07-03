@@ -25,33 +25,60 @@ AC_CHECK_LIB([m],[floor],[])
 AC_CHECK_LIB([gfortran],[main],[])
 
 AC_ARG_WITH(
-	[atlas-dir],
-	AC_HELP_STRING([--with-atlas-dir=DIR],[ATLAS library directory]),
-	[with_atlas_dir="$withval"],
+	[atlas-libdir],
+	AC_HELP_STRING([--with-atlas-libdir=DIR],[ATLAS library directory]),
+	[with_atlas_libdir="$withval"],
 	[with_atlas=""]
 )
-if test "$with_atlas_dir"; then
-	LIBS="$LIBS -L$with_atlas_dir"
+if test "$with_atlas_libdir"; then
+	LDFLAGS="$LDFLAGS -L$with_atlas_libdir"
+fi
+AC_ARG_WITH(
+	[atlas-incdir],
+	AC_HELP_STRING([--with-atlas-incdir=DIR],[ATLAS include directory]),
+	[with_atlas_incdir="$withval"],
+	[with_atlas=""]
+)
+if test "$with_atlas_incdir"; then
+	CPPFLAGS="$CPPFLAGS -L$with_atlas_incdir"
 fi
 
 AC_ARG_WITH(
-	[blas-dir],
-	AC_HELP_STRING([--with-blas-dir=DIR],[BLAS library directory]),
-	[with_blas_dir="$withval"],
+	[blas-libdir],
+	AC_HELP_STRING([--with-blas-libdir=DIR],[BLAS library directory]),
+	[with_blas_libdir="$withval"],
 	[with_blas=""]
 )
-if test "$with_blas_dir"; then
-	LIBS="$LIBS -L$with_blas_dir"
+if test "$with_blas_libdir"; then
+	LDFLAGS="$LDFLAGS -L$with_blas_libdir"
+fi
+AC_ARG_WITH(
+	[blas-incdir],
+	AC_HELP_STRING([--with-blas-incdir=DIR],[BLAS include directory]),
+	[with_blas_incdir="$withval"],
+	[with_blas=""]
+)
+if test "$with_blas_incdir"; then
+	CPPFLAGS="$CPPFLAGS -L$with_blas_incdir"
 fi
 
 AC_ARG_WITH(
-	[lapack-dir],
-	AC_HELP_STRING([--with-lapack-dir=DIR],[LAPACK library directory]),
-	[with_lapack_dir="$withval"],
+	[lapack-libdir],
+	AC_HELP_STRING([--with-lapack-libdir=DIR],[LAPACK library directory]),
+	[with_lapack_libdir="$withval"],
 	[with_lapack=""]
 )
-if test "$with_lapack_dir"; then
-	LIBS="$LIBS -L$with_lapack_dir"
+if test "$with_lapack_libdir"; then
+	LDFLAGS="$LDFLAGS -L$with_lapack_libdir"
+fi
+AC_ARG_WITH(
+	[lapack-incdir],
+	AC_HELP_STRING([--with-lapack-incdir=DIR],[LAPACK include directory]),
+	[with_lapack_incdir="$withval"],
+	[with_lapack=""]
+)
+if test "$with_lapack_incdir"; then
+	CPPFLAGS="$CPPFLAGS -L$with_lapack_incdir"
 fi
 
 AC_CHECK_LIB([blas],[dcopy_],[])
@@ -61,9 +88,9 @@ AC_ARG_ENABLE(
 	[openmp],
 	AC_HELP_STRING([--enable-openmp],[enable openMP [[default=yes]]]),
 	[],
-	[enable_omp="yes"]
+	[enable_openmp="yes"]
 )
-if test "x$enable_omp"="xyes"; then
+if test "x$enable_openmp"="xyes"; then
 	CFLAGS="$CFLAGS -fopenmp"
 fi
 
