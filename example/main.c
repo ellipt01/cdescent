@@ -230,7 +230,7 @@ main (int argc, char **argv)
 		read_data (fn, skipheaders, &m, &n, &datay, &datax);
 		y = create_mm_dense (m, 1, datay);
 		free (datay);
-		x = create_mm_sparse (m, n, datax, 0.);
+		x = create_mm_dense (m, n, datax);
 		free (datax);
 	}
 //	d = NULL;

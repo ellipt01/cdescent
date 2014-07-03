@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-union dlval {
+union dlvar {
 	double	dv;
 	long	lv;
 };
@@ -50,14 +50,14 @@ compare_and_swap (long *ptr, long oldv, long newv)
 void
 cas_add (double *data, int idx, double delta)
 {
-	volatile union dlval	oldval;
-	volatile union dlval	newval;
-	volatile union dlptr	ptr;
+	union dlvar	oldval;
+	union dlvar	newval;
+	union dlptr	ptr;
 	ptr.dp = data;
 	while (1) {
-		oldval.dv = ptr.dp[idx];
+		oldval.dv = *(volatile double *) &ptr.dp[idx];
 		newval.dv = oldval.dv + delta;
-		if (compare_and_swap (ptr.lp + idx, (volatile long) oldval.lv, (volatile long) newval.lv))
+		if (compare_and_swap (ptr.lp + idx, *(volatile long *) &oldval.lv, *(volatile long *) &newval.lv))
 			break;
 	}
 	return;

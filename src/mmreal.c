@@ -60,8 +60,10 @@ void
 mm_real_free (mm_real *mm)
 {
 	if (mm) {
-		if (mm->i) free (mm->i);
-		if (mm->p) free (mm->p);
+		if (mm_is_sparse (mm->typecode)) {
+			if (mm->i) free (mm->i);
+			if (mm->p) free (mm->p);
+		}
 		if (mm->data) free (mm->data);
 		free (mm);
 	}
