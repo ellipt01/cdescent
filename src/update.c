@@ -77,6 +77,7 @@ cdescent_update_nu_cas (cdescent *cd, const int j, const double etaj)
 bool
 cdescent_update_cyclic_once_cycle (cdescent *cd)
 {
+	int		j;
 	double	nrm2;
 
 	/* b = (sum(y) - sum(X) * beta) / n.
@@ -89,9 +90,8 @@ cdescent_update_cyclic_once_cycle (cdescent *cd)
 	/*** single "one-at-a-time" update of cyclic coordinate descent ***/
 
 	if (cd->parallel) {	// do parallel
-		#pragma omp parallel
+		#pragma omp parallel private (j)
 		{
-			int		j;
 			#pragma omp for reduction (+:nrm2)
 			for (j = 0; j < cd->lreg->x->n; j++) {
 				// era[j] = beta[j] - beta_prev[j]
@@ -106,7 +106,6 @@ cdescent_update_cyclic_once_cycle (cdescent *cd)
 			}
 		}
 	} else {	// single thread
-		int		j;
 		for (j = 0; j < cd->lreg->x->n; j++) {
 			// era[j] = beta[j] - beta_prev[j]
 			double	etaj = cdescent_beta_stepsize (cd, j);

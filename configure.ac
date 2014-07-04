@@ -91,7 +91,17 @@ AC_ARG_ENABLE(
 	[enable_openmp="yes"]
 )
 if test "x$enable_openmp"="xyes"; then
-	CFLAGS="$CFLAGS -fopenmp"
+	case "$CC" in
+		gcc )
+			CFLAGS="$CFLAGS -fopenmp"
+			;;
+		pgcc )
+			CFLAGS="$CFLAGS -mp"
+			;;
+		icc )
+			CFLAGS="$CFLAGS -openmp"
+			;;
+	esac
 fi
 
 # Checks for header files.

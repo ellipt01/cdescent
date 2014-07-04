@@ -11,6 +11,19 @@
 
 #include "private.h"
 
+bool	_compare_and_swap (long *ptr, long oldv, long newv);
+
+#ifdef __GNUC__
+#	if __GNUC_PREREQ (4, 1)	// gcc_version >= 4.1
+#	else
+#define __sync_bool_compare_and_swap(p, f, t) _compare_and_swap((p), (f), (t))
+#	endif
+#else
+#  ifdef __ICC
+#define __sync_bool_compare_and_swap(p, f, t) stm::iccsync::bool_compare_and_swap((p), (f), (t))
+#  endif
+#endif
+
 const int		ione  =  1;
 const double	dzero =  0.;
 const double	done  =  1.;
@@ -66,20 +79,6 @@ _compare_and_swap (long *ptr, long oldv, long newv)
 	return ret;
 }
 
-static bool
-compare_and_swap (long *ptr, long oldv, long newv)
-{
-	bool	status = false;
-#ifdef __GNUC__
-#	if __GNUC_PREREQ (4, 1)	// gcc_version >= 4.1
-	status = __sync_bool_compare_and_swap (ptr, oldv, newv);
-#	endif
-#else
-	status = _compare_and_swap (ptr, oldv, newv);
-#endif
-	return status;
-}
-
 void
 cdescent_cas_add (double *data, double delta)
 {
@@ -90,7 +89,7 @@ cdescent_cas_add (double *data, double delta)
 	while (1) {
 		oldval.dv = *(volatile double *) ptr.dp;
 		newval.dv = oldval.dv + delta;
-		if (compare_and_swap (ptr.lp, *(volatile long *) &oldval.lv, *(volatile long *) &newval.lv))
+		if (__sync_bool_compare_and_swap (ptr.lp, *(volatile long *) &oldval.lv, *(volatile long *) &newval.lv))
 			break;
 	}
 	return;
