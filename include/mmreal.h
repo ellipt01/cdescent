@@ -64,7 +64,7 @@ double		mm_real_xj_nrm2 (const int j, const mm_real *x);
 mm_real	*mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dense *y, const double beta);
 double		mm_real_xj_trans_dot_y (const int j, const mm_real *x, const mm_dense *y);
 void		mm_real_axjpy (const double alpha, const int j, const mm_real *x, mm_dense *y);
-void		mm_real_axjpy_cas (const double alpha, const int j, const mm_real *x, mm_dense *y);
+void		mm_real_axjpy_atomic (const double alpha, const int j, const mm_real *x, mm_dense *y);
 
 #ifdef __cplusplus
 }
