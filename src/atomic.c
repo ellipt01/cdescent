@@ -1,5 +1,5 @@
 /*
- * parallel.c
+ * atomic.c
  *
  *  Created on: 2014/07/04
  *      Author: utsugi
@@ -47,14 +47,14 @@ bool_compare_and_swap (long *ptr, long oldv, long newv)
 }
 
 void
-cdescent_atomic_add (double *data, double delta)
+atomic_add (double *data, double delta)
 {
 	union dlvar	oldval;
 	union dlvar	newval;
 	union dlptr	ptr;
 	ptr.dp = data;
 	while (1) {
-		oldval.dv = *(volatile double *) ptr.dp;
+		oldval.dv = *data;
 		newval.dv = oldval.dv + delta;
 		if (atomic_bool_compare_and_swap (ptr.lp, *(volatile long *) &oldval.lv, *(volatile long *) &newval.lv))
 			break;
@@ -62,3 +62,18 @@ cdescent_atomic_add (double *data, double delta)
 	return;
 }
 
+void
+atomic_max (double *data, double val)
+{
+	union dlvar	oldval;
+	union dlvar	newval;
+	union dlptr	ptr;
+	ptr.dp = data;
+	while (1) {
+		oldval.dv = *data;
+		if (oldval.dv >= val) break;
+		if (atomic_bool_compare_and_swap (ptr.lp, *(volatile long *) &oldval.lv, *(volatile long *) &newval.lv))
+			break;
+	}
+	return;
+}

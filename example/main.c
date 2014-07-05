@@ -174,7 +174,7 @@ mm_real_real_penalty_smooth (MM_RealType type, const int n)
 mm_sparse *
 create_mm_sparse (int m, int n, double *data, double threshold)
 {
-	int			i, j, k, l;
+	int			j, k, l;
 	mm_sparse	*x = mm_real_new (MM_REAL_SPARSE, MM_REAL_UNSYMMETRIC, m, n, m * n);
 	x->i = (int *) malloc (x->nz * sizeof (int));
 	x->p = (int *) malloc ((n + 1) * sizeof (int));
@@ -184,6 +184,7 @@ create_mm_sparse (int m, int n, double *data, double threshold)
 	l = 0;
 	x->p[0] = 0;
 	for (j = 0; j < n; j++) {
+		int		i;
 		for (i = 0; i < m; i++) {
 			if (fabs (data[l++]) > threshold) {
 				x->i[k] = i;

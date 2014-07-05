@@ -17,8 +17,9 @@
 static void
 centering (mm_dense *x)
 {
-	int		i, j;
+	int		j;
 	for (j = 0; j < x->n; j++) {
+		int		i;
 		double	meanj = 0.;
 		for (i = 0; i < x->m; i++) meanj += x->data[i + j * x->m];
 		meanj /= (double) x->m;

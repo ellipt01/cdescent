@@ -56,13 +56,13 @@ cdescent_new (const linregmodel *lreg, const double tol, bool parallel)
 	mm_real_set_all (cd->beta, 0.);
 
 	// mu = X * beta
-	cd->mu = mm_real_new (false, false, lreg->x->m, 1, lreg->x->m);
+	cd->mu = mm_real_new (MM_REAL_DENSE, MM_REAL_UNSYMMETRIC, lreg->x->m, 1, lreg->x->m);
 	cd->mu->data = (double *) malloc (lreg->x->m * sizeof (double));
 	mm_real_set_all (cd->mu, 0.);
 
 	// nu = D * beta
 	if (!linregmodel_is_regtype_lasso (cd->lreg)) {
-		cd->nu = mm_real_new (false, false, lreg->d->m, 1, lreg->d->m);
+		cd->nu = mm_real_new (MM_REAL_DENSE, MM_REAL_UNSYMMETRIC, lreg->d->m, 1, lreg->d->m);
 		cd->nu->data = (double *) malloc (lreg->d->nz * sizeof (double));
 		mm_real_set_all (cd->nu, 0.);
 	}

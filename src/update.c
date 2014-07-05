@@ -9,6 +9,7 @@
 #include <cdescent.h>
 
 #include "private.h"
+#include "atomic.h"
 
 /*** updater of intercept: (sum (y) - sum(X) * beta) / n ***/
 static void
@@ -89,7 +90,7 @@ cdescent_update_cyclic_once_cycle (cdescent *cd)
 	}
 	cd->nrm1 = mm_real_asum (cd->beta);
 
-	return (sqrt (nrm2) < cd->tolerance);
+	return (nrm2 < cd->tolerance);
 }
 
 /*** cyclic coordinate descent ***/

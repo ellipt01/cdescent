@@ -5,6 +5,7 @@
 
 #include <mmreal.h>
 #include "private.h"
+#include "atomic.h"
 
 /* allocate mm_real */
 mm_real *
@@ -443,7 +444,7 @@ static void
 mm_real_asjpy_atomic (const double alpha, const int j, const mm_sparse *s, mm_dense *y)
 {
 	int		k;
-	for (k = s->p[j]; k < s->p[j + 1]; k++) cdescent_atomic_add (y->data + s->i[k], alpha * s->data[k]);
+	for (k = s->p[j]; k < s->p[j + 1]; k++) atomic_add (y->data + s->i[k], alpha * s->data[k]);
 }
 
 static void
@@ -451,7 +452,7 @@ mm_real_adjpy_atomic (const double alpha, const int j, const mm_dense *d, mm_den
 {
 	int		k;
 	double	*dj = d->data + j * d->m;
-	for (k = 0; k < d->m; k++) cdescent_atomic_add (y->data + k, alpha * dj[k]);
+	for (k = 0; k < d->m; k++) atomic_add (y->data + k, alpha * dj[k]);
 }
 
 /* y += a * x(:,j): compare and swap version */

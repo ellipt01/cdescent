@@ -44,7 +44,7 @@ example_cdescent_pathwise (const linregmodel *lreg, double logtmin, double dlogt
 
 	while (logtmin <= logt) {
 
-		fprintf (stdout, "t = %.4e, intercept = %.4e\n", cd->lambda1, cd->b);
+//		fprintf (stdout, "t = %.4e, intercept = %.4e\n", cd->lambda1, cd->b);
 		if (!cdescent_update_cyclic (cd, maxiter)) break;
 		output_solutionpath_cdescent (iter, cd);
 

@@ -10,7 +10,7 @@ lib_LTLIBRARIES = libcdescent.la
 
 libcdescent_la_SOURCES =\
 	private.c\
-	parallel.c\
+	atomic.c\
 	mmio.c\
 	mmreal.c\
 	linregmodel.c\
