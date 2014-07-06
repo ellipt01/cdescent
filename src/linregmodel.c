@@ -138,7 +138,7 @@ linregmodel_new (mm_real *y, mm_real *x, const double lambda2, mm_real *d, bool 
 
 	/* dtd = diag (D' * D) */
 	if (!linregmodel_is_regtype_lasso (lreg)) {
-		int				j;
+		int		j;
 		lreg->dtd = (double *) malloc (lreg->d->n * sizeof (double));
 		for (j = 0; j < lreg->d->n; j++) lreg->dtd[j] = pow (mm_real_xj_nrm2 (j, lreg->d), 2.);
 	}

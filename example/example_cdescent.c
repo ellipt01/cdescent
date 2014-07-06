@@ -53,6 +53,7 @@ example_cdescent_pathwise (const linregmodel *lreg, double logtmin, double dlogt
 
 		iter++;
 	}
-
+	fprintf (stderr, "total iter = %d\n", cd->total_iter);
+	cdescent_free (cd);
 	return;
 }

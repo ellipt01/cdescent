@@ -109,10 +109,9 @@ mm_real_copy_sparse (const mm_real *src)
 static mm_real *
 mm_real_copy_dense (const mm_real *src)
 {
-	int			k;
 	mm_real	*dest = mm_real_new (MM_REAL_DENSE, MM_REAL_UNSYMMETRIC, src->m, src->n, src->nz);
 	dest->data = (double *) malloc (src->nz * sizeof (double));
-	for (k = 0; k < src->nz; k++) dest->data[k] = src->data[k];
+	dcopy_ (&src->nz, src->data, &ione, dest->data, &ione);
 	return dest;
 }
 
