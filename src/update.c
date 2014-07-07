@@ -13,7 +13,7 @@
 
 /*** updater of intercept: (sum (y) - sum(X) * beta) / n ***/
 static void
-cdescent_update_intercept (cdescent *cd)
+update_intercept (cdescent *cd)
 {
 	if (cd->lreg->ycentered && cd->lreg->xcentered) cd->b = 0.;
 	else {
@@ -27,33 +27,21 @@ cdescent_update_intercept (cdescent *cd)
 	return;
 }
 
-/* update beta: beta[j] += etaj, etaj = beta[j] - beta_prev[j] */
+/* update mm_dense *mm: mm += x(:,j) * val */
 static void
-cdescent_update_beta (cdescent *cd, const int j, const double etaj)
+update_mm_dense (bool atomic, mm_dense *mm, int j, mm_real *x, const double val)
 {
-	// beta[j] += eta[j]
-	cd->beta->data[j] += etaj;
+	if (atomic) mm_real_axjpy_atomic (val, j, x, mm);
+	else mm_real_axjpy (val, j, x, mm);
 	return;
 }
 
-/* update mu = X * beta: mu += X(:,j) * etaj */
+/* update abs max */
 static void
-cdescent_update_mu (bool atomic, cdescent *cd, const int j, const double etaj)
+update_amax (bool atomic, double *amax, double absval)
 {
-	// mu += etaj * X(:,j)
-	if (atomic) mm_real_axjpy_atomic (etaj, j, cd->lreg->x, cd->mu);
-	else mm_real_axjpy (etaj, j, cd->lreg->x, cd->mu);
-	return;
-}
-
-/* update nu = D * beta: nu += D(:,j) * etaj */
-void
-cdescent_update_nu (bool atomic, cdescent *cd, const int j, const double etaj)
-{
-	// nu += etaj * D(:,j)
-	if (linregmodel_is_regtype_lasso (cd->lreg)) return;
-	if (atomic) mm_real_axjpy_atomic (etaj, j, cd->lreg->d, cd->nu);
-	else mm_real_axjpy (etaj, j, cd->lreg->d, cd->nu);
+	if (atomic) atomic_max (amax, absval);
+	else if (*amax < absval) *amax = absval;
 	return;
 }
 
@@ -62,35 +50,39 @@ bool
 cdescent_update_cyclic_once_cycle (cdescent *cd)
 {
 	int		j;
-	double	nrm2;
+	double	amax_change;	// max of |eta(j)| = |beta_new(j) - beta_prev(j)|
 	bool	atomic = (cd->parallel == true);
 
 	/* b = (sum(y) - sum(X) * beta) / n.
 	 * so, if y or X are not centered,
 	 * i.e. sum(y) != 0 or sum(X) != 0,
 	 * b must be updated on each cycle. */
-	if (!cd->lreg->xcentered) cdescent_update_intercept (cd);
+	if (!cd->lreg->xcentered) update_intercept (cd);
 
-	nrm2 = 0.;
+	amax_change = 0.;
+
 	/*** single "one-at-a-time" update of cyclic coordinate descent ***/
-	#pragma omp parallel private (j)
-	{
-		#pragma omp for reduction (+:nrm2)
-		for (j = 0; j < cd->lreg->x->n; j++) {
-			// era[j] = beta[j] - beta_prev[j]
-			double	etaj = cdescent_beta_stepsize (cd, j);
+#pragma omp parallel for private (j)
+	for (j = 0; j < cd->lreg->x->n; j++) {
+		// eta(j) = beta_new(j) - beta_prev(j)
+		double	etaj = cdescent_beta_stepsize (cd, j);
+		double	abs_etaj = fabs (etaj);
 
-			if (fabs (etaj) > 0.) {
-				cdescent_update_beta (cd, j, etaj);
-				cdescent_update_mu (atomic, cd, j, etaj);
-				cdescent_update_nu (atomic, cd, j, etaj);
-				nrm2 += pow (etaj, 2.);
-			}
+		if (abs_etaj > 0.) {
+			// update beta: beta(j) += eta(j)
+			cd->beta->data[j] += etaj;
+			// update mu (= X * beta): mu += X(:,j) * etaj
+			update_mm_dense (atomic, cd->mu, j, cd->lreg->x, etaj);
+			// update nu (= D * beta) if lambda2 != 0 && cd->nu != NULL: nu += D(:,j) * etaj
+			if (!linregmodel_is_regtype_lasso (cd->lreg)) update_mm_dense (atomic, cd->nu, j, cd->lreg->d, etaj);
+			// update max( |eta| )
+			update_amax (atomic, &amax_change, abs_etaj);
 		}
 	}
+
 	cd->nrm1 = mm_real_asum (cd->beta);
 
-	return (nrm2 < cd->tolerance);
+	return (amax_change < cd->tolerance);
 }
 
 /*** cyclic coordinate descent ***/

@@ -70,8 +70,9 @@ atomic_max (double *data, double val)
 	union dlptr	ptr;
 	ptr.dp = data;
 	while (1) {
+		if (*data >= val) break;
 		oldval.dv = *data;
-		if (oldval.dv >= val) break;
+		newval.dv = val;
 		if (atomic_bool_compare_and_swap (ptr.lp, *(volatile long *) &oldval.lv, *(volatile long *) &newval.lv))
 			break;
 	}
