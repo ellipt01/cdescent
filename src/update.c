@@ -62,7 +62,7 @@ cdescent_update_cyclic_once_cycle (cdescent *cd)
 	amax_change = 0.;
 
 	/*** single "one-at-a-time" update of cyclic coordinate descent ***/
-#pragma omp parallel for private (j)
+#pragma omp parallel for
 	for (j = 0; j < cd->lreg->x->n; j++) {
 		// eta(j) = beta_new(j) - beta_prev(j)
 		double	etaj = cdescent_beta_stepsize (cd, j);
@@ -74,7 +74,7 @@ cdescent_update_cyclic_once_cycle (cdescent *cd)
 			// update mu (= X * beta): mu += X(:,j) * etaj
 			update_mm_dense (atomic, cd->mu, j, cd->lreg->x, etaj);
 			// update nu (= D * beta) if lambda2 != 0 && cd->nu != NULL: nu += D(:,j) * etaj
-			if (!linregmodel_is_regtype_lasso (cd->lreg)) update_mm_dense (atomic, cd->nu, j, cd->lreg->d, etaj);
+			if (!cd->lreg->regtype_is_lasso) update_mm_dense (atomic, cd->nu, j, cd->lreg->d, etaj);
 			// update max( |eta| )
 			update_amax (atomic, &amax_change, abs_etaj);
 		}

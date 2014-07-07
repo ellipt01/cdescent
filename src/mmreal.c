@@ -383,9 +383,7 @@ static double
 mm_real_sj_trans_dot_y (const int j, const mm_sparse *s, const mm_dense *y)
 {
 	int		k;
-	double	val;
-
-	val = 0;
+	double	val = 0;
 	for (k = s->p[j]; k < s->p[j + 1]; k++) val += s->data[k] * y->data[s->i[k]];
 	return val;
 }

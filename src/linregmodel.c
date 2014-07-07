@@ -15,7 +15,7 @@
 /* centering each column of matrix:
  * x(:, j) -> x(:, j) - mean(x(:, j)) */
 static void
-centering (mm_dense *x)
+do_centering (mm_dense *x)
 {
 	int		j;
 	for (j = 0; j < x->n; j++) {
@@ -31,7 +31,7 @@ centering (mm_dense *x)
 /* normalizing each column of matrix:
  * x(:, j) -> x(:, j) / norm(x(:, j)) */
 static void
-normalizing (mm_real *x)
+do_normalizing (mm_real *x)
 {
 	int		j;
 	for (j = 0; j < x->n; j++) {
@@ -55,6 +55,7 @@ linregmodel_alloc (void)
 	lreg->x = NULL;
 	lreg->d = NULL;
 	lreg->lambda2 = 0.;
+	lreg->regtype_is_lasso = true;
 
 	lreg->c = NULL;
 	lreg->logcamax = 0.;
@@ -72,7 +73,8 @@ linregmodel_alloc (void)
 }
 
 linregmodel *
-linregmodel_new (mm_real *y, mm_real *x, const double lambda2, mm_real *d, bool has_copy, bool ycentering, bool xcentering, bool xnormalizing)
+linregmodel_new (mm_real *y, mm_real *x, const double lambda2, mm_real *d, bool has_copy,
+		bool do_ycentering, bool do_xcentering, bool do_xnormalizing)
 {
 	double			camax;
 	linregmodel	*lreg;
@@ -95,20 +97,23 @@ linregmodel_new (mm_real *y, mm_real *x, const double lambda2, mm_real *d, bool 
 		lreg->y = y;
 		lreg->d = d;
 	}
-	lreg->lambda2 = (lambda2 > cdescent_double_eps ()) ? lambda2 : 0.;
 
-	if (ycentering) {
+	if (lambda2 > cdescent_double_eps ()) lreg->lambda2 = lambda2;
+
+	if (lreg->lambda2 > cdescent_double_eps () && lreg->d) lreg->regtype_is_lasso = false;
+
+	if (do_ycentering) {
 		if (mm_is_sparse (lreg->y->typecode)) 	mm_real_replace_sparse_to_dense (lreg->y);
-		centering (lreg->y);
+		do_centering (lreg->y);
 		lreg->ycentered = true;
 	}
-	if (xcentering) {
+	if (do_xcentering) {
 		if (mm_is_sparse (lreg->x->typecode)) 	mm_real_replace_sparse_to_dense (lreg->x);
-		centering (lreg->x);
+		do_centering (lreg->x);
 		lreg->xcentered = true;
 	}
-	if (xnormalizing) {
-		normalizing (lreg->x);
+	if (do_xnormalizing) {
+		do_normalizing (lreg->x);
 		lreg->xnormalized = true;
 	}
 
@@ -137,7 +142,7 @@ linregmodel_new (mm_real *y, mm_real *x, const double lambda2, mm_real *d, bool 
 	}
 
 	/* dtd = diag (D' * D) */
-	if (!linregmodel_is_regtype_lasso (lreg)) {
+	if (!lreg->regtype_is_lasso) {
 		int		j;
 		lreg->dtd = (double *) malloc (lreg->d->n * sizeof (double));
 		for (j = 0; j < lreg->d->n; j++) lreg->dtd[j] = pow (mm_real_xj_nrm2 (j, lreg->d), 2.);
@@ -161,11 +166,4 @@ linregmodel_free (linregmodel *lreg)
 		free (lreg);
 	}
 	return;
-}
-
-/* if lambda2 < eps || d == NULL, regression type = lasso */
-bool
-linregmodel_is_regtype_lasso (const linregmodel *lreg)
-{
-	return (lreg->lambda2 < cdescent_double_eps () || lreg->d == NULL);
 }

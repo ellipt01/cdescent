@@ -29,12 +29,13 @@ struct s_linregmodel {
 
 	mm_real	*x;
 	mm_real	*y;
+	/* penalty term. */
+	mm_real	*d;
 
 	/* threshold for L2 penalty */
 	double		lambda2;
 
-	/* penalty term. */
-	mm_real	*d;
+	bool		regtype_is_lasso;
 
 	mm_real	*c;
 	double		logcamax;		// log10 ( amax(c) )
@@ -59,9 +60,9 @@ struct s_linregmodel {
 
 /* linregmodel.c */
 linregmodel	*linregmodel_alloc (void);
-linregmodel	*linregmodel_new (mm_real *y, mm_real *x, const double lambda2, mm_real *d, bool has_copy, bool ycentering, bool xcentering, bool xnormalizing);
+linregmodel	*linregmodel_new (mm_real *y, mm_real *x, const double lambda2, mm_real *d,
+		bool has_copy, bool do_ycentering, bool do_xcentering, bool do_xnormalizing);
 void			linregmodel_free (linregmodel *l);
-bool			linregmodel_is_regtype_lasso (const linregmodel *lreg);
 
 #ifdef __cplusplus
 }
