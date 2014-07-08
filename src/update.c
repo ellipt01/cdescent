@@ -80,7 +80,7 @@ cdescent_update_cyclic_once_cycle (cdescent *cd)
 		}
 	}
 
-	cd->nrm1 = mm_real_asum (cd->beta);
+	cd->nrm1 = mm_real_xj_asum (0, cd->beta);
 
 	return (amax_change < cd->tolerance);
 }

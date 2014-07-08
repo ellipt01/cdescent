@@ -125,7 +125,7 @@ linregmodel_new (mm_real *y, mm_real *x, const double lambda2, mm_real *d, bool 
 	lreg->logcamax = floor (log10 (camax)) + 1.;
 
 	/* sum y */
-	if (!lreg->ycentered) lreg->sy = mm_real_sum (lreg->y);
+	if (!lreg->ycentered) lreg->sy = mm_real_xj_sum (0, lreg->y);
 
 	/* sx(j) = sum X(:,j) */
 	if (!lreg->xcentered) {
