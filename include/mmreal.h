@@ -48,7 +48,7 @@ void		mm_real_free (mm_real *mm);
 bool		mm_real_realloc (mm_real *mm, const int nz);
 mm_real	*mm_real_copy (const mm_real *mm);
 
-void		mm_array_set_all (int n, double *data, const double val);
+void		mm_real_array_set_all (int n, double *data, const double val);
 void		mm_real_set_all (mm_real *mm, const double val);
 
 void		mm_real_replace_sparse_to_dense (mm_real *x);
