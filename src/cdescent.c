@@ -38,7 +38,7 @@ cdescent_new (const linregmodel *lreg, const double tol, bool parallel)
 {
 	cdescent	*cd;
 
-	if (!lreg) cdescent_error ("cdescent_alloc", "linreg *lreg is empty.", __FILE__, __LINE__);
+	if (!lreg) error_and_exit ("cdescent_alloc", "linreg *lreg is empty.", __FILE__, __LINE__);
 
 	cd = cdescent_alloc ();
 

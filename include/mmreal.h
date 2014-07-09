@@ -18,12 +18,12 @@ extern "C" {
 typedef enum {
 	MM_REAL_DENSE  = 0,
 	MM_REAL_SPARSE = 1
-} MM_RealType;
+} MMRealFormat;
 
 typedef enum {
 	MM_REAL_UNSYMMETRIC = 0,
 	MM_REAL_SYMMETRIC   = 1
-} MM_RealSymmetric;
+} MMRealSymmetry;
 
 // matrix market format matrix
 typedef struct s_mm_real	mm_real;
@@ -43,7 +43,7 @@ struct s_mm_real {
 };
 
 mm_real	*mm_real_alloc (void);
-mm_real	*mm_real_new (MM_RealType type, MM_RealSymmetric symmetric, const int m, const int n, const int nz);
+mm_real	*mm_real_new (MMRealFormat format, MMRealSymmetry symmetry, const int m, const int n, const int nz);
 void		mm_real_free (mm_real *mm);
 bool		mm_real_realloc (mm_real *mm, const int nz);
 mm_real	*mm_real_copy (const mm_real *mm);
@@ -53,7 +53,7 @@ void		mm_real_set_all (mm_real *mm, const double val);
 
 void		mm_real_replace_sparse_to_dense (mm_real *x);
 void		mm_real_replace_dense_to_sparse (mm_real *x, const double threshold);
-mm_real	*mm_real_eye (MM_RealType type, const int n);
+mm_real	*mm_real_eye (MMRealFormat type, const int n);
 
 double		mm_real_xj_asum (const int j, const mm_real *x);
 double		mm_real_xj_sum (const int j, const mm_real *x);

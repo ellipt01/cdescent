@@ -79,12 +79,12 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool
 	double			camax;
 	linregmodel	*lreg;
 
-	if (!y) cdescent_error ("linregmodel_new", "y is empty.", __FILE__, __LINE__);
-	if (!x) cdescent_error ("linregmodel_new", "x is empty.", __FILE__, __LINE__);
-	if (y->n != 1) cdescent_error ("linregmodel_new", "y must be vector.", __FILE__, __LINE__);
-	if (!mm_is_dense (y->typecode)) cdescent_error ("linregmodel_new", "y must be dense.", __FILE__, __LINE__);
-	if (y->m != x->m) cdescent_error ("linregmodel_new", "dimensions of matrix x and vector y do not match.", __FILE__, __LINE__);
-	if (d && x->n != d->n) cdescent_error ("linregmodel_new", "dimensions of matrix x and d do not match.", __FILE__, __LINE__);
+	if (!y) error_and_exit ("linregmodel_new", "y is empty.", __FILE__, __LINE__);
+	if (!x) error_and_exit ("linregmodel_new", "x is empty.", __FILE__, __LINE__);
+	if (!mm_is_dense (y->typecode)) error_and_exit ("linregmodel_new", "y must be dense.", __FILE__, __LINE__);
+	if (y->n != 1) error_and_exit ("linregmodel_new", "y must be vector.", __FILE__, __LINE__);
+	if (y->m != x->m) error_and_exit ("linregmodel_new", "dimensions of matrix x and vector y do not match.", __FILE__, __LINE__);
+	if (d && x->n != d->n) error_and_exit ("linregmodel_new", "dimensions of matrix x and d do not match.", __FILE__, __LINE__);
 
 	lreg = linregmodel_alloc ();
 
@@ -99,9 +99,9 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool
 		lreg->d = d;
 	}
 
-	if (lambda2 > cdescent_double_eps ()) lreg->lambda2 = lambda2;
+	if (lambda2 > double_eps ()) lreg->lambda2 = lambda2;
 
-	if (lreg->lambda2 > cdescent_double_eps () && lreg->d) lreg->regtype_is_lasso = false;
+	if (lreg->lambda2 > double_eps () && lreg->d) lreg->regtype_is_lasso = false;
 
 	if (do_ycentering) {
 		do_centering (lreg->y);

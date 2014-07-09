@@ -98,7 +98,7 @@ cdescent_update_cyclic (cdescent *cd, const int maxiter)
 		converged = cdescent_update_cyclic_once_cycle (cd);
 
 		if (++iter >= maxiter) {
-			cdescent_warning ("cdescent_cyclic", "reaching max number of iterations.", __FILE__, __LINE__);
+			print_warning ("cdescent_cyclic", "reaching max number of iterations.", __FILE__, __LINE__);
 			break;
 		}
 	}

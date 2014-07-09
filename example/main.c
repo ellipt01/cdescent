@@ -127,7 +127,7 @@ fprintf_params (FILE *stream)
 }
 
 static mm_sparse *
-mm_real_real_penalty_spsmooth (const int n)
+mm_real_penalty_ssmooth (const int n)
 {
 	int		i, j, k;
 	int		nz = 2 * (n - 1);
@@ -153,22 +153,23 @@ mm_real_real_penalty_spsmooth (const int n)
 	return s;
 }
 
-mm_real *
-mm_real_real_penalty_smooth (MM_RealType type, const int n)
+static mm_dense *
+mm_real_penalty_dsmooth (const int n)
 {
-	mm_real	*d;
-
-	if (type == MM_REAL_SPARSE) d = mm_real_real_penalty_spsmooth (n);
-	else {
-		int		j;
-		d = mm_real_new (MM_REAL_DENSE, MM_REAL_UNSYMMETRIC, n - 1, n, (n - 1) * n);
-		d->data = (double *) malloc (d->nz * sizeof (double));
-		for (j = 0; j < n - 1; j++) {
-			d->data[j + j * d->m] = 1.;
-			d->data[j + (j + 1) * d->m] = -1.;
-		}
+	int			j;
+	mm_dense	*d = mm_real_new (MM_REAL_DENSE, MM_REAL_UNSYMMETRIC, n - 1, n, (n - 1) * n);
+	d->data = (double *) malloc (d->nz * sizeof (double));
+	for (j = 0; j < n; j++) {
+		if (j > 0) d->data[j + (j + 1) * d->m] = -1.;
+		if (j < n - 1) d->data[j + j * d->m] = 1.;
 	}
 	return d;
+}
+
+mm_real *
+mm_real_penalty_smooth (MMRealFormat format, const int n)
+{
+	return (format == MM_REAL_SPARSE) ? mm_real_penalty_ssmooth (n) : mm_real_penalty_dsmooth (n);
 }
 
 mm_sparse *
@@ -216,7 +217,7 @@ main (int argc, char **argv)
 	linregmodel	*lreg;
 
 	mm_real		*x;
-	mm_real		*y;
+	mm_dense		*y;
 	mm_real		*d;
 
 	if (!read_params (argc, argv)) usage (argv[0]);

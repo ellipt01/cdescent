@@ -28,9 +28,14 @@ mm_real_alloc (void)
 }
 
 mm_real *
-mm_real_new (MM_RealType type, MM_RealSymmetric symmetric, const int m, const int n, const int nz)
+mm_real_new (MMRealFormat format, MMRealSymmetry symmetry, const int m, const int n, const int nz)
 {
 	mm_real	*mm = mm_real_alloc ();
+
+	if (!(format == MM_REAL_SPARSE || format == MM_REAL_DENSE))
+		error_and_exit ("mm_real_new", "format must be MM_REAL_SPARSE or DENSE.", __FILE__, __LINE__);
+	if (!(symmetry == MM_REAL_SYMMETRIC || symmetry == MM_REAL_UNSYMMETRIC))
+		error_and_exit ("mm_real_new", "symmetry must be MM_REAL_SYMMETRIC or UNSYMMETRIC.", __FILE__, __LINE__);
 
 	mm->m = m;
 	mm->n = n;
@@ -43,14 +48,14 @@ mm_real_new (MM_RealType type, MM_RealSymmetric symmetric, const int m, const in
 	mm_set_matrix (&mm->typecode);
 
 	// typecode[1] = 'C' or 'A'
-	if (type == MM_REAL_SPARSE) mm_set_coordinate (&mm->typecode);
+	if (format == MM_REAL_SPARSE) mm_set_coordinate (&mm->typecode);
 	else mm_set_array (&mm->typecode);
 
 	// typecode[2] = 'R'
 	mm_set_real (&mm->typecode);
 
 	// typecode[3] = 'S'
-	if (symmetric == MM_REAL_SYMMETRIC) mm_set_symmetric (&mm->typecode);
+	if (symmetry == MM_REAL_SYMMETRIC) mm_set_symmetric (&mm->typecode);
 
 	return mm;
 }
@@ -89,8 +94,8 @@ static mm_sparse *
 mm_real_copy_sparse (const mm_sparse *src)
 {
 	int					k;
-	MM_RealSymmetric	symmetric = (mm_is_symmetric (src->typecode)) ? MM_REAL_SYMMETRIC : MM_REAL_UNSYMMETRIC;
-	mm_sparse			*dest = mm_real_new (MM_REAL_SPARSE, symmetric, src->m, src->n, src->nz);
+	MMRealSymmetry	symmetry = (mm_is_symmetric (src->typecode)) ? MM_REAL_SYMMETRIC : MM_REAL_UNSYMMETRIC;
+	mm_sparse			*dest = mm_real_new (MM_REAL_SPARSE, symmetry, src->m, src->n, src->nz);
 
 	dest->i = (int *) malloc (src->nz * sizeof (int));
 	dest->p = (int *) malloc ((src->n + 1) * sizeof (int));
@@ -208,7 +213,7 @@ static mm_real *
 mm_real_seye (const int n)
 {
 	int			k;
-	mm_sparse	*s = mm_real_new (MM_REAL_SPARSE, MM_REAL_SYMMETRIC, n, n, n);
+	mm_sparse	*s = mm_real_new (MM_REAL_SPARSE, MM_REAL_UNSYMMETRIC, n, n, n);
 	s->i = (int *) malloc (n * sizeof (int));
 	s->data = (double *) malloc (n * sizeof (double));
 	s->p = (int *) malloc ((n + 1) * sizeof (int));
@@ -227,7 +232,7 @@ static mm_real *
 mm_real_deye (const int n)
 {
 	int			k;
-	mm_dense	*d = mm_real_new (MM_REAL_DENSE, MM_REAL_SYMMETRIC, n, n, n * n);
+	mm_dense	*d = mm_real_new (MM_REAL_DENSE, MM_REAL_UNSYMMETRIC, n, n, n * n);
 	d->data = (double *) malloc (d->nz * sizeof (double));
 	mm_real_set_all (d, 0.);
 	for (k = 0; k < n; k++) d->data[k + k * n] = 1.;
@@ -236,10 +241,10 @@ mm_real_deye (const int n)
 
 /* n x n identical matrix */
 mm_real *
-mm_real_eye (MM_RealType type, const int n)
+mm_real_eye (MMRealFormat format, const int n)
 {
-	if (n <= 0) cdescent_error ("mm_real_eye", "index out of range.", __FILE__, __LINE__);
-	return (type == MM_REAL_SPARSE) ? mm_real_seye (n) : mm_real_deye (n);
+	if (n <= 0) error_and_exit ("mm_real_eye", "index out of range.", __FILE__, __LINE__);
+	return (format == MM_REAL_SPARSE) ? mm_real_seye (n) : mm_real_deye (n);
 }
 
 /*** sum of x->data ***/
@@ -271,7 +276,7 @@ mm_real_dj_asum (const int j, const mm_dense *d)
 double
 mm_real_xj_asum (const int j, const mm_real *x)
 {
-	if (j < 0 || x->n <= j) cdescent_error ("mm_real_xj_asum", "index out of range.", __FILE__, __LINE__);
+	if (j < 0 || x->n <= j) error_and_exit ("mm_real_xj_asum", "index out of range.", __FILE__, __LINE__);
 	return (mm_is_sparse (x->typecode)) ? mm_real_sj_asum (j, x) : mm_real_dj_asum (j, x);
 }
 
@@ -308,7 +313,7 @@ mm_real_dj_sum (const int j, const mm_sparse *d)
 double
 mm_real_xj_sum (const int j, const mm_real *x)
 {
-	if (j < 0 || x->n <= j) cdescent_error ("mm_real_xj_sum", "index out of range.", __FILE__, __LINE__);
+	if (j < 0 || x->n <= j) error_and_exit ("mm_real_xj_sum", "index out of range.", __FILE__, __LINE__);
 	return (mm_is_sparse (x->typecode)) ? mm_real_sj_sum (j, x) : mm_real_dj_sum (j, x);
 }
 
@@ -343,7 +348,7 @@ mm_real_dj_nrm2 (const int j, const mm_dense *d)
 double
 mm_real_xj_nrm2 (const int j, const mm_real *x)
 {
-	if (j < 0 || x->n <= j) cdescent_error ("mm_real_xj_nrm2", "index out of range.", __FILE__, __LINE__);
+	if (j < 0 || x->n <= j) error_and_exit ("mm_real_xj_nrm2", "index out of range.", __FILE__, __LINE__);
 	return (mm_is_sparse (x->typecode)) ? mm_real_sj_nrm2 (j, x) : mm_real_dj_nrm2 (j, x);
 }
 
@@ -394,10 +399,10 @@ mm_real_d_dot_y (bool trans, const double alpha, const mm_dense *d, const mm_den
 mm_real *
 mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dense *y, const double beta)
 {
-	if (!mm_is_dense (y->typecode)) cdescent_error ("mm_real_x_dot_y", "y must be dense.", __FILE__, __LINE__);
-	if (y->n != 1) cdescent_error ("mm_real_x_dot_y", "y must be vector.", __FILE__, __LINE__);
+	if (!mm_is_dense (y->typecode)) error_and_exit ("mm_real_x_dot_y", "y must be dense.", __FILE__, __LINE__);
+	if (y->n != 1) error_and_exit ("mm_real_x_dot_y", "y must be vector.", __FILE__, __LINE__);
 	if ((trans && x->m != y->m) || (!trans && x->n != y->m))
-		cdescent_error ("mm_real_x_dot_y", "vector and matrix dimensions do not match.", __FILE__, __LINE__);
+		error_and_exit ("mm_real_x_dot_y", "vector and matrix dimensions do not match.", __FILE__, __LINE__);
 
 	return (mm_is_sparse (x->typecode)) ? \
 		mm_real_s_dot_y (trans, alpha, x, y, beta) : mm_real_d_dot_y (trans, alpha, x, y, beta);
@@ -435,11 +440,11 @@ mm_real_xj_trans_dot_y (const int j, const mm_real *x, const mm_dense *y)
 {
 	double	val;
 
-	if (j < 0 || x->n <= j) cdescent_error ("mm_real_xj_trans_dot_y", "index out of range.", __FILE__, __LINE__);
+	if (j < 0 || x->n <= j) error_and_exit ("mm_real_xj_trans_dot_y", "index out of range.", __FILE__, __LINE__);
 	if (!mm_is_dense (y->typecode))
-		cdescent_error ("mm_real_xj_trans_dot_y", "y must be dense.", __FILE__, __LINE__);
-	if (y->n != 1) cdescent_error ("mm_real_xj_trans_dot_y", "y must be vector.", __FILE__, __LINE__);
-	if (x->m != y->m) cdescent_error ("mm_real_xj_trans_dot_y", "vector and matrix dimensions do not match.", __FILE__, __LINE__);
+		error_and_exit ("mm_real_xj_trans_dot_y", "y must be dense.", __FILE__, __LINE__);
+	if (y->n != 1) error_and_exit ("mm_real_xj_trans_dot_y", "y must be vector.", __FILE__, __LINE__);
+	if (x->m != y->m) error_and_exit ("mm_real_xj_trans_dot_y", "vector and matrix dimensions do not match.", __FILE__, __LINE__);
 
 	if (mm_is_sparse (x->typecode)) val = mm_real_sj_trans_dot_y (j, x, y);
 	else val = mm_real_dj_trans_dot_y (j, x, y);
@@ -477,10 +482,10 @@ mm_real_adjpy (const double alpha, const int j, const mm_dense *d, mm_dense *y)
 void
 mm_real_axjpy (const double alpha, const int j, const mm_real *x, mm_dense *y)
 {
-	if (j < 0 || x->n <= j) cdescent_error ("mm_real_axjpy", "index out of range.", __FILE__, __LINE__);
-	if (!mm_is_dense (y->typecode)) cdescent_error ("mm_real_axjpy", "y must be dense.", __FILE__, __LINE__);
-	if (y->n != 1) cdescent_error ("mm_real_axjpy", "y must be vector.", __FILE__, __LINE__);
-	if (x->m != y->m) cdescent_error ("mm_real_axjpy", "vector and matrix dimensions do not match.", __FILE__, __LINE__);
+	if (j < 0 || x->n <= j) error_and_exit ("mm_real_axjpy", "index out of range.", __FILE__, __LINE__);
+	if (!mm_is_dense (y->typecode)) error_and_exit ("mm_real_axjpy", "y must be dense.", __FILE__, __LINE__);
+	if (y->n != 1) error_and_exit ("mm_real_axjpy", "y must be vector.", __FILE__, __LINE__);
+	if (x->m != y->m) error_and_exit ("mm_real_axjpy", "vector and matrix dimensions do not match.", __FILE__, __LINE__);
 
 	if (mm_is_sparse (x->typecode)) mm_real_asjpy (alpha, j, x, y);
 	else mm_real_adjpy (alpha, j, x, y);
@@ -519,10 +524,10 @@ mm_real_adjpy_atomic (const double alpha, const int j, const mm_dense *d, mm_den
 void
 mm_real_axjpy_atomic (const double alpha, const int j, const mm_real *x, mm_dense *y)
 {
-	if (j < 0 || x->n <= j) cdescent_error ("mm_real_axjpy_atomic", "index out of range.", __FILE__, __LINE__);
-	if (!mm_is_dense (y->typecode)) cdescent_error ("mm_real_axjpy_atomic", "y must be dense.", __FILE__, __LINE__);
-	if (y->n != 1) cdescent_error ("mm_real_axjpy_atomic", "y must be vector.", __FILE__, __LINE__);
-	if (x->m != y->m) cdescent_error ("mm_real_axjpy_atomic", "vector and matrix dimensions do not match.", __FILE__, __LINE__);
+	if (j < 0 || x->n <= j) error_and_exit ("mm_real_axjpy_atomic", "index out of range.", __FILE__, __LINE__);
+	if (!mm_is_dense (y->typecode)) error_and_exit ("mm_real_axjpy_atomic", "y must be dense.", __FILE__, __LINE__);
+	if (y->n != 1) error_and_exit ("mm_real_axjpy_atomic", "y must be vector.", __FILE__, __LINE__);
+	if (x->m != y->m) error_and_exit ("mm_real_axjpy_atomic", "vector and matrix dimensions do not match.", __FILE__, __LINE__);
 
 	if (mm_is_sparse (x->typecode)) mm_real_asjpy_atomic (alpha, j, x, y);
 	else mm_real_adjpy_atomic (alpha, j, x, y);

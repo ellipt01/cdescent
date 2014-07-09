@@ -45,11 +45,11 @@ extern const double	done;	//  1.
 extern const double	dmone;	// -1.
 
 /* print error message and terminate program */
-void	cdescent_error (const char * function_name, const char *error_msg, const char *file, const int line);
+void	error_and_exit (const char * function_name, const char *error_msg, const char *file, const int line);
 /* print warning message */
-void	cdescent_warning (const char * function_name, const char *error_msg, const char *file, const int line);
+void	print_warning (const char * function_name, const char *error_msg, const char *file, const int line);
 
 /* machine double epsilon */
-double	cdescent_double_eps (void);
+double	double_eps (void);
 
 #endif /* LINREG_PRIVATE_H_ */
