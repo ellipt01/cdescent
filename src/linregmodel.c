@@ -73,17 +73,18 @@ linregmodel_alloc (void)
 }
 
 linregmodel *
-linregmodel_new (mm_real *y, mm_real *x, const double lambda2, mm_real *d, bool has_copy,
+linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool has_copy,
 		bool do_ycentering, bool do_xcentering, bool do_xnormalizing)
 {
 	double			camax;
 	linregmodel	*lreg;
 
-	if (!y) cdescent_error ("linregmodel_new", "vector *y is empty.", __FILE__, __LINE__);
-	if (!x) cdescent_error ("linregmodel_new", "matrix *x is empty.", __FILE__, __LINE__);
-	if (!mm_is_dense (y->typecode)) cdescent_error ("linregmodel_new", "vector *y must be dense.", __FILE__, __LINE__);
-	if (y->m != x->m) cdescent_error ("linregmodel_new", "size of matrix *x and vector *y are not match.", __FILE__, __LINE__);
-	if (d && x->n != d->n) cdescent_error ("linregmodel_new", "size of matrix *x and *d are not match.", __FILE__, __LINE__);
+	if (!y) cdescent_error ("linregmodel_new", "y is empty.", __FILE__, __LINE__);
+	if (!x) cdescent_error ("linregmodel_new", "x is empty.", __FILE__, __LINE__);
+	if (y->n != 1) cdescent_error ("linregmodel_new", "y must be vector.", __FILE__, __LINE__);
+	if (!mm_is_dense (y->typecode)) cdescent_error ("linregmodel_new", "y must be dense.", __FILE__, __LINE__);
+	if (y->m != x->m) cdescent_error ("linregmodel_new", "dimensions of matrix x and vector y do not match.", __FILE__, __LINE__);
+	if (d && x->n != d->n) cdescent_error ("linregmodel_new", "dimensions of matrix x and d do not match.", __FILE__, __LINE__);
 
 	lreg = linregmodel_alloc ();
 
@@ -91,7 +92,7 @@ linregmodel_new (mm_real *y, mm_real *x, const double lambda2, mm_real *d, bool 
 	if (has_copy) {
 		lreg->y = mm_real_copy (y);
 		lreg->x = mm_real_copy (x);
-		lreg->d = (d) ? mm_real_copy (d) : NULL;
+		if (d) lreg->d = mm_real_copy (d);
 	} else {
 		lreg->x = x;
 		lreg->y = y;
@@ -103,7 +104,6 @@ linregmodel_new (mm_real *y, mm_real *x, const double lambda2, mm_real *d, bool 
 	if (lreg->lambda2 > cdescent_double_eps () && lreg->d) lreg->regtype_is_lasso = false;
 
 	if (do_ycentering) {
-		if (mm_is_sparse (lreg->y->typecode)) 	mm_real_replace_sparse_to_dense (lreg->y);
 		do_centering (lreg->y);
 		lreg->ycentered = true;
 	}

@@ -396,7 +396,7 @@ mm_real_d_dot_y (bool trans, const double alpha, const mm_dense *d, const mm_den
 mm_real *
 mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dense *y, const double beta)
 {
-	if (!mm_is_dense (y->typecode)) cdescent_error ("mm_real_x_dot_y", "vector *v must be dense.", __FILE__, __LINE__);
+	if (!mm_is_dense (y->typecode)) cdescent_error ("mm_real_x_dot_y", "y must be dense.", __FILE__, __LINE__);
 	if (y->n != 1) cdescent_error ("mm_real_x_dot_y", "y must be vector.", __FILE__, __LINE__);
 	if ((trans && x->m != y->m) || (!trans && x->n != y->m))
 		cdescent_error ("mm_real_x_dot_y", "vector and matrix dimensions do not match.", __FILE__, __LINE__);
