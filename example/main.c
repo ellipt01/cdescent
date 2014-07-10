@@ -244,11 +244,15 @@ main (int argc, char **argv)
 	lreg = linregmodel_new (y, x, lambda2, d, false, true, true, true);
 
 	{
+#ifdef _OPENMP
 		double	t1, t2;
 		t1 = omp_get_wtime ();
+#endif
 		example_cdescent_pathwise (lreg, start, dt, stop, 1.e-3, maxiter, true);
+#ifdef _OPENMP
 		t2 = omp_get_wtime ();
 		fprintf (stderr, "time = %.2e\n", t2 - t1);
+#endif
 	}
 
 	linregmodel_free (lreg);

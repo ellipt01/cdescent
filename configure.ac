@@ -28,7 +28,7 @@ AC_ARG_WITH(
 	[atlas-libdir],
 	AC_HELP_STRING([--with-atlas-libdir=DIR],[ATLAS library directory]),
 	[with_atlas_libdir="$withval"],
-	[with_atlas=""]
+	[with_atlas_libdir=""]
 )
 if test "$with_atlas_libdir"; then
 	LDFLAGS="$LDFLAGS -L$with_atlas_libdir"
@@ -37,7 +37,7 @@ AC_ARG_WITH(
 	[atlas-incdir],
 	AC_HELP_STRING([--with-atlas-incdir=DIR],[ATLAS include directory]),
 	[with_atlas_incdir="$withval"],
-	[with_atlas=""]
+	[with_atlas_incdir=""]
 )
 if test "$with_atlas_incdir"; then
 	CPPFLAGS="$CPPFLAGS -L$with_atlas_incdir"
@@ -47,7 +47,7 @@ AC_ARG_WITH(
 	[blas-libdir],
 	AC_HELP_STRING([--with-blas-libdir=DIR],[BLAS library directory]),
 	[with_blas_libdir="$withval"],
-	[with_blas=""]
+	[with_blas_libdir=""]
 )
 if test "$with_blas_libdir"; then
 	LDFLAGS="$LDFLAGS -L$with_blas_libdir"
@@ -56,7 +56,7 @@ AC_ARG_WITH(
 	[blas-incdir],
 	AC_HELP_STRING([--with-blas-incdir=DIR],[BLAS include directory]),
 	[with_blas_incdir="$withval"],
-	[with_blas=""]
+	[with_blas_incdir=""]
 )
 if test "$with_blas_incdir"; then
 	CPPFLAGS="$CPPFLAGS -L$with_blas_incdir"
@@ -66,7 +66,7 @@ AC_ARG_WITH(
 	[lapack-libdir],
 	AC_HELP_STRING([--with-lapack-libdir=DIR],[LAPACK library directory]),
 	[with_lapack_libdir="$withval"],
-	[with_lapack=""]
+	[with_lapack_libdir=""]
 )
 if test "$with_lapack_libdir"; then
 	LDFLAGS="$LDFLAGS -L$with_lapack_libdir"
@@ -75,7 +75,7 @@ AC_ARG_WITH(
 	[lapack-incdir],
 	AC_HELP_STRING([--with-lapack-incdir=DIR],[LAPACK include directory]),
 	[with_lapack_incdir="$withval"],
-	[with_lapack=""]
+	[with_lapack_incdir=""]
 )
 if test "$with_lapack_incdir"; then
 	CPPFLAGS="$CPPFLAGS -L$with_lapack_incdir"
@@ -86,23 +86,29 @@ AC_CHECK_LIB([lapack],[dlamch_],[])
 
 AC_ARG_ENABLE(
 	[openmp],
-	AC_HELP_STRING([--enable-openmp],[enable openMP [[default=yes]]]),
+	AC_HELP_STRING([--enable-openmp],[enable openMP support [[default=yes]]]),
 	[],
-	[enable_openmp="yes"]
+	[enable_openmp=yes]
 )
-if test "x$enable_openmp"="xyes"; then
+
+if test "x$enable_openmp" != xno; then
 	case "$CC" in
 		gcc )
-			CFLAGS="$CFLAGS -fopenmp"
+			OMPFLAGS="-fopenmp"
 			;;
 		pgcc )
-			CFLAGS="$CFLAGS -mp"
+			OMPFLAGS="-mp"
 			;;
 		icc )
-			CFLAGS="$CFLAGS -openmp"
+			OMPFLAGS="-openmp"
+			;;
+		* )
+			OMPFLAGS=""
 			;;
 	esac
+	CFLAGS="$CFLAGS $OMPFLAGS"
 fi
+AC_SUBST([OMPFLAGS])
 
 # Checks for header files.
 AC_CHECK_HEADER([stdlib.h])
@@ -122,7 +128,7 @@ AC_CHECK_FUNCS([dcopy_])
 AC_CHECK_FUNCS([dlamch_])
 
 # pkgconfig
-CDESCENT_DESCRIPTION='C implementation of coordinate descent algorithm'
+CDESCENT_DESCRIPTION="C implementation of coordinate descent algorithm"
 AC_SUBST([CDESCENT_DESCRIPTION])
 AC_CONFIG_FILES([cdescent.pc:pkgconfig/cdescent.pc.in])
 

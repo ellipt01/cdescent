@@ -7,4 +7,4 @@ Name: @PACKAGE@
 Description: @CDESCENT_DESCRIPTION@
 Version: @VERSION@
 Libs: -L${libdir} -lcdescent
-Cflags: -I${includedir}/@PACKAGE@
+Cflags: -I${includedir}/@PACKAGE@ @OMPFLAGS@

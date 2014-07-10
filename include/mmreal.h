@@ -15,6 +15,10 @@ extern "C" {
 #include <stdbool.h>
 #include <mmio.h>
 
+#define mm_real_is_sparse(a)	mm_is_sparse((a)->typecode)
+#define mm_real_is_dense(a)		mm_is_dense((a)->typecode)
+#define mm_real_is_symmetric(a)	(mm_is_symmetric((a)->typecode) || mm_is_skew((a)->typecode))
+
 typedef enum {
 	MM_REAL_DENSE  = 0,
 	MM_REAL_SPARSE = 1
@@ -23,7 +27,7 @@ typedef enum {
 typedef enum {
 	MM_REAL_UNSYMMETRIC = 0,
 	MM_REAL_SYMMETRIC   = 1
-} MMRealSymmetry;
+} MMRealSymmetric;
 
 // matrix market format matrix
 typedef struct s_mm_real	mm_real;
@@ -43,9 +47,10 @@ struct s_mm_real {
 };
 
 mm_real	*mm_real_alloc (void);
-mm_real	*mm_real_new (MMRealFormat format, MMRealSymmetry symmetry, const int m, const int n, const int nz);
+mm_real	*mm_real_new (MMRealFormat format, MMRealSymmetric symmetric, const int m, const int n, const int nz);
 void		mm_real_free (mm_real *mm);
 bool		mm_real_realloc (mm_real *mm, const int nz);
+
 mm_real	*mm_real_copy (const mm_real *mm);
 
 void		mm_real_array_set_all (int n, double *data, const double val);

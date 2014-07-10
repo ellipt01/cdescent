@@ -37,8 +37,8 @@ do_normalizing (mm_real *x)
 	for (j = 0; j < x->n; j++) {
 		double	alpha;
 		double	nrmj;
-		int		size = (mm_is_sparse (x->typecode)) ? x->p[j + 1] - x->p[j] : x->m;
-		double	*xj = x->data + ((mm_is_sparse (x->typecode)) ? x->p[j] : j * x->m);
+		int		size = (mm_real_is_sparse (x)) ? x->p[j + 1] - x->p[j] : x->m;
+		double	*xj = x->data + ((mm_real_is_sparse (x)) ? x->p[j] : j * x->m);
 		nrmj = dnrm2_ (&size, xj, &ione);
 		alpha = 1. / nrmj;
 		dscal_ (&size, &alpha, xj, &ione);
@@ -108,7 +108,7 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool
 		lreg->ycentered = true;
 	}
 	if (do_xcentering) {
-		if (mm_is_sparse (lreg->x->typecode)) 	mm_real_replace_sparse_to_dense (lreg->x);
+		if (mm_real_is_sparse (lreg->x)) 	mm_real_replace_sparse_to_dense (lreg->x);
 		do_centering (lreg->x);
 		lreg->xcentered = true;
 	}
