@@ -1,5 +1,14 @@
 #!/bin/sh
 
+version=`gnuplot --version | gawk '{print $2}'`
+major=${version%.*}
+minor=${version#*.}
+
+if [ $major -lt 4 ]; then
+	echo "gnuplot version too old"
+	exit
+fi
+
 if [ -z "$1" ]; then
 	echo "USAGE: $0 <num of variables> { <lambda1> [x1:x2] [y1:y2] }"
 	exit
@@ -24,7 +33,14 @@ j=1
 for i in `seq -f %03g 0 $1`; do
 	fn=beta"$i".res
 
-	echo -n "\"$fn\" using 2:3 with lines linecolor $j linetype 1 linewidth 1" >> tmp.gnuplot
+	echo -n "\"$fn\" using 2:3 with line linewidth 1" >> tmp.gnuplot
+
+	if [ $minor -ge 2 ]; then
+		echo -n " linetype 1 linecolor $j" >> tmp.gnuplot
+	else
+		echo -n " linetype $j" >> tmp.gnuplot
+	fi
+
 	if [ $i -lt $1 ]; then
 		echo -n ", " >> tmp.gnuplot
 	fi

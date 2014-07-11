@@ -24,11 +24,6 @@ typedef enum {
 	MM_REAL_SPARSE = 1
 } MMRealFormat;
 
-typedef enum {
-	MM_REAL_UNSYMMETRIC = 0,
-	MM_REAL_SYMMETRIC   = 1
-} MMRealSymmetric;
-
 // matrix market format matrix
 typedef struct s_mm_real	mm_real;
 typedef struct s_mm_real	mm_dense;
@@ -47,7 +42,7 @@ struct s_mm_real {
 };
 
 mm_real	*mm_real_alloc (void);
-mm_real	*mm_real_new (MMRealFormat format, MMRealSymmetric symmetric, const int m, const int n, const int nz);
+mm_real	*mm_real_new (MMRealFormat format, bool symmetric, const int m, const int n, const int nz);
 void		mm_real_free (mm_real *mm);
 bool		mm_real_realloc (mm_real *mm, const int nz);
 

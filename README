@@ -1,5 +1,5 @@
-liblarsen
+libcdescent
 ============
 
-A pure C implementation of a library to obtain lasso, elastic net L1 regularized linear regression and variable selection estimator based on LARS-EN algorithm.
+A pure C implementation of a library to obtain lasso, elastic net L1 regularized linear regression and variable selection estimator based on coordinate descent algorithm.
 

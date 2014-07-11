@@ -132,7 +132,7 @@ mm_real_penalty_ssmooth (const int n)
 	int		i, j, k;
 	int		nz = 2 * (n - 1);
 
-	mm_sparse	*s = mm_real_new (MM_REAL_SPARSE, MM_REAL_UNSYMMETRIC, n - 1, n, nz);
+	mm_sparse	*s = mm_real_new (MM_REAL_SPARSE, false, n - 1, n, nz);
 	s->i = (int *) malloc (nz * sizeof (int));
 	s->p = (int *) malloc ((n + 1) * sizeof (int));
 	s->data = (double *) malloc (nz * sizeof (double));
@@ -157,8 +157,9 @@ static mm_dense *
 mm_real_penalty_dsmooth (const int n)
 {
 	int			j;
-	mm_dense	*d = mm_real_new (MM_REAL_DENSE, MM_REAL_UNSYMMETRIC, n - 1, n, (n - 1) * n);
+	mm_dense	*d = mm_real_new (MM_REAL_DENSE, false, n - 1, n, (n - 1) * n);
 	d->data = (double *) malloc (d->nz * sizeof (double));
+	mm_real_set_all (d, 0.);
 	for (j = 0; j < n; j++) {
 		if (j > 0) d->data[j + (j + 1) * d->m] = -1.;
 		if (j < n - 1) d->data[j + j * d->m] = 1.;
@@ -175,21 +176,21 @@ mm_real_penalty_smooth (MMRealFormat format, const int n)
 mm_sparse *
 create_mm_sparse (int m, int n, double *data, double threshold)
 {
-	int			j, k, l;
-	mm_sparse	*x = mm_real_new (MM_REAL_SPARSE, MM_REAL_UNSYMMETRIC, m, n, m * n);
+	int			j, k;
+	mm_sparse	*x = mm_real_new (MM_REAL_SPARSE, false, m, n, m * n);
 	x->i = (int *) malloc (x->nz * sizeof (int));
 	x->p = (int *) malloc ((n + 1) * sizeof (int));
 	x->data = (double *) malloc (x->nz * sizeof (double));
 
 	k = 0;
-	l = 0;
 	x->p[0] = 0;
 	for (j = 0; j < n; j++) {
 		int		i;
 		for (i = 0; i < m; i++) {
-			if (fabs (data[l++]) > threshold) {
+			double	dij = data[i + j * m];
+			if (fabs (dij) > threshold) {
 				x->i[k] = i;
-				x->data[k] = data[k];
+				x->data[k] = dij;
 				k++;
 			}
 		}
@@ -205,10 +206,25 @@ mm_dense *
 create_mm_dense (int m, int n, double *data)
 {
 	int			k;
-	mm_dense	*x = mm_real_new (MM_REAL_DENSE, MM_REAL_UNSYMMETRIC, m, n, m * n);
+	mm_dense	*x = mm_real_new (MM_REAL_DENSE, false, m, n, m * n);
 	x->data = (double *) malloc (x->nz * sizeof (double));
 	for (k = 0; k < m * n; k++) x->data[k] = data[k];
 	return x;
+}
+
+void
+fprintf_mm_dense (FILE *stream, const mm_dense *d)
+{
+	int		i, j, k;
+	k = 0;
+	for (i = 0; i < d->m; i++) {
+		for (j = 0; j < d->n; j++) {
+			fprintf (stream, "%.4f", d->data[i + j * d->m]);
+			if (j < d->n - 1) fprintf (stream, " ");
+		}
+		fprintf (stream, "\n");
+	}
+	return;
 }
 
 int
@@ -232,16 +248,15 @@ main (int argc, char **argv)
 		read_data (fn, skipheaders, &m, &n, &datay, &datax);
 		y = create_mm_dense (m, 1, datay);
 		free (datay);
-		x = create_mm_dense (m, n, datax);
+		x = create_mm_sparse (m, n, datax, 1.5);
 		free (datax);
 	}
-//	d = NULL;
-//	d = mm_real_eye (MM_REAL_DENSE, x->n);
+	//	d = NULL;
 	d = mm_real_eye (MM_REAL_SPARSE, x->n);
-//	d = mm_real_penalty_smooth (MM_REAL_DENSE, x->n);
-//	d = mm_real_penalty_smooth (MM_REAL_SPARSE, x->n);
+	//	d = mm_real_penalty_smooth (MM_REAL_SPARSE, x->n);
 
 	lreg = linregmodel_new (y, x, lambda2, d, false, true, true, true);
+	//	fprintf_mm_dense (stdout, lreg->x);
 
 	{
 #ifdef _OPENMP

@@ -28,14 +28,12 @@ mm_real_alloc (void)
 }
 
 mm_real *
-mm_real_new (MMRealFormat format, MMRealSymmetric symmetric, const int m, const int n, const int nz)
+mm_real_new (MMRealFormat format, bool symmetric, const int m, const int n, const int nz)
 {
 	mm_real	*mm = mm_real_alloc ();
 
 	if (!(format == MM_REAL_SPARSE || format == MM_REAL_DENSE))
 		error_and_exit ("mm_real_new", "format must be MM_REAL_SPARSE or DENSE.", __FILE__, __LINE__);
-	if (!(symmetric == MM_REAL_SYMMETRIC || symmetric == MM_REAL_UNSYMMETRIC))
-		error_and_exit ("mm_real_new", "symmetry must be MM_REAL_SYMMETRIC or UNSYMMETRIC.", __FILE__, __LINE__);
 
 	mm->m = m;
 	mm->n = n;
@@ -55,7 +53,7 @@ mm_real_new (MMRealFormat format, MMRealSymmetric symmetric, const int m, const 
 	mm_set_real (&mm->typecode);
 
 	// typecode[3] = 'S'
-	if (symmetric == MM_REAL_SYMMETRIC) mm_set_symmetric (&mm->typecode);
+	if (symmetric) mm_set_symmetric (&mm->typecode);
 
 	return mm;
 }
@@ -89,13 +87,12 @@ mm_real_realloc (mm_real *mm, const int nz)
 	return true;
 }
 
-/*** copy ***/
+/* copy sparse */
 static mm_sparse *
 mm_real_copy_sparse (const mm_sparse *src)
 {
-	int					k;
-	MMRealSymmetric	symmetric = (mm_real_is_symmetric (src)) ? MM_REAL_SYMMETRIC : MM_REAL_UNSYMMETRIC;
-	mm_sparse			*dest = mm_real_new (MM_REAL_SPARSE, symmetric, src->m, src->n, src->nz);
+	int			k;
+	mm_sparse	*dest = mm_real_new (MM_REAL_SPARSE, mm_is_symmetric (src->typecode), src->m, src->n, src->nz);
 
 	dest->i = (int *) malloc (src->nz * sizeof (int));
 	dest->p = (int *) malloc ((src->n + 1) * sizeof (int));
@@ -110,23 +107,24 @@ mm_real_copy_sparse (const mm_sparse *src)
 	return dest;
 }
 
+/* copy dense */
 static mm_dense *
 mm_real_copy_dense (const mm_dense *src)
 {
-	mm_dense	*dest = mm_real_new (MM_REAL_DENSE, MM_REAL_UNSYMMETRIC, src->m, src->n, src->nz);
+	mm_dense	*dest = mm_real_new (MM_REAL_DENSE, false, src->m, src->n, src->nz);
 	dest->data = (double *) malloc (src->nz * sizeof (double));
 	dcopy_ (&src->nz, src->data, &ione, dest->data, &ione);
 	return dest;
 }
 
-/* return copy of mm_real */
+/*** copy x ***/
 mm_real *
 mm_real_copy (const mm_real *src)
 {
 	return (mm_real_is_sparse (src)) ? mm_real_copy_sparse (src) : mm_real_copy_dense (src);
 }
 
-/* set all */
+/*** set all array to val ***/
 void
 mm_real_array_set_all (const int n, double *data, const double val)
 {
@@ -135,6 +133,7 @@ mm_real_array_set_all (const int n, double *data, const double val)
 	return;
 }
 
+/*** set all data of mm to val ***/
 void
 mm_real_set_all (mm_real *mm, const double val)
 {
@@ -142,7 +141,7 @@ mm_real_set_all (mm_real *mm, const double val)
 	return;
 }
 
-/* replace sparse -> dense */
+/*** replace sparse -> dense ***/
 void
 mm_real_replace_sparse_to_dense (mm_real *x)
 {
@@ -174,8 +173,8 @@ mm_real_replace_sparse_to_dense (mm_real *x)
 	return;
 }
 
-/* replace dense -> sparse
- * the elements of x->data that fabs (x->data[j]) < threshold are set to 0 */
+/*** replace dense -> sparse ***/
+/* the elements of x->data that fabs (x->data[j]) < threshold are set to 0 */
 void
 mm_real_replace_dense_to_sparse (mm_real *x, const double threshold)
 {
@@ -208,12 +207,12 @@ mm_real_replace_dense_to_sparse (mm_real *x, const double threshold)
 	return;
 }
 
-/*** identical matrix ***/
+/* identical sparse matrix */
 static mm_sparse *
 mm_real_seye (const int n)
 {
 	int			k;
-	mm_sparse	*s = mm_real_new (MM_REAL_SPARSE, MM_REAL_UNSYMMETRIC, n, n, n);
+	mm_sparse	*s = mm_real_new (MM_REAL_SPARSE, false, n, n, n);
 	s->i = (int *) malloc (n * sizeof (int));
 	s->data = (double *) malloc (n * sizeof (double));
 	s->p = (int *) malloc ((n + 1) * sizeof (int));
@@ -228,18 +227,19 @@ mm_real_seye (const int n)
 	return s;
 }
 
+/* identical dense matrix */
 static mm_dense *
 mm_real_deye (const int n)
 {
 	int			k;
-	mm_dense	*d = mm_real_new (MM_REAL_DENSE, MM_REAL_UNSYMMETRIC, n, n, n * n);
+	mm_dense	*d = mm_real_new (MM_REAL_DENSE, false, n, n, n * n);
 	d->data = (double *) malloc (d->nz * sizeof (double));
 	mm_real_set_all (d, 0.);
 	for (k = 0; k < n; k++) d->data[k + k * n] = 1.;
 	return d;
 }
 
-/* n x n identical matrix */
+/*** n x n identical matrix ***/
 mm_real *
 mm_real_eye (MMRealFormat format, const int n)
 {
@@ -247,7 +247,7 @@ mm_real_eye (MMRealFormat format, const int n)
 	return (format == MM_REAL_SPARSE) ? mm_real_seye (n) : mm_real_deye (n);
 }
 
-/*** sum of x->data ***/
+/* sum |s(:,j)| */
 static double
 mm_real_sj_asum (const int j, const mm_sparse *s)
 {
@@ -266,13 +266,14 @@ mm_real_sj_asum (const int j, const mm_sparse *s)
 	return asum;
 }
 
+/* sum |d(:,j)| */
 static double
 mm_real_dj_asum (const int j, const mm_dense *d)
 {
 	return dasum_ (&d->m, d->data + j * d->m, &ione);
 }
 
-/*** sum |x->data| ***/
+/*** sum |x(:,j)| ***/
 double
 mm_real_xj_asum (const int j, const mm_real *x)
 {
@@ -280,7 +281,7 @@ mm_real_xj_asum (const int j, const mm_real *x)
 	return (mm_real_is_sparse (x)) ? mm_real_sj_asum (j, x) : mm_real_dj_asum (j, x);
 }
 
-/*** sum of x(:,j) ***/
+/* sum s(:,j) */
 static double
 mm_real_sj_sum (const int j, const mm_sparse *s)
 {
@@ -300,6 +301,7 @@ mm_real_sj_sum (const int j, const mm_sparse *s)
 	return sum;
 }
 
+/* sum d(:,j) */
 static double
 mm_real_dj_sum (const int j, const mm_dense *d)
 {
@@ -309,7 +311,7 @@ mm_real_dj_sum (const int j, const mm_dense *d)
 	return sum;
 }
 
-/* sum of x(:,j) */
+/*** sum x(:,j) ***/
 double
 mm_real_xj_sum (const int j, const mm_real *x)
 {
@@ -317,7 +319,7 @@ mm_real_xj_sum (const int j, const mm_real *x)
 	return (mm_real_is_sparse (x)) ? mm_real_sj_sum (j, x) : mm_real_dj_sum (j, x);
 }
 
-/*** norm of x(:,j) ***/
+/* norm2 s(:,j) */
 static double
 mm_real_sj_nrm2 (const int j, const mm_sparse *s)
 {
@@ -338,13 +340,14 @@ mm_real_sj_nrm2 (const int j, const mm_sparse *s)
 	return nrm2;
 }
 
+/* norm2 d(:,j) */
 static double
 mm_real_dj_nrm2 (const int j, const mm_dense *d)
 {
 	return dnrm2_ (&d->m, d->data + j * d->m, &ione);
 }
 
-/* norm of x(:,j) */
+/*** norm2 x(:,j) ***/
 double
 mm_real_xj_nrm2 (const int j, const mm_real *x)
 {
@@ -352,7 +355,7 @@ mm_real_xj_nrm2 (const int j, const mm_real *x)
 	return (mm_real_is_sparse (x)) ? mm_real_sj_nrm2 (j, x) : mm_real_dj_nrm2 (j, x);
 }
 
-/*** x * y, where x is matrix and y is vector ***/
+/* s * y, where s is sparse matrix and y is dense vector */
 static mm_dense *
 mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_dense *y, const double beta)
 {
@@ -362,7 +365,7 @@ mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_de
 	m = (trans) ? s->n : s->m;
 	n = (trans) ? s->m : s->n;
 	
-	d = mm_real_new (MM_REAL_DENSE, MM_REAL_UNSYMMETRIC, m, 1, m);
+	d = mm_real_new (MM_REAL_DENSE, false, m, 1, m);
 	d->data = (double *) malloc (d->nz * sizeof (double));
 	mm_real_set_all (d, beta);
 
@@ -379,6 +382,7 @@ mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_de
 	return d;
 }
 
+/* d * y, where d is dense matrix and y is dense vector */
 static mm_dense *
 mm_real_d_dot_y (bool trans, const double alpha, const mm_dense *d, const mm_dense *y, const double beta)
 {
@@ -387,7 +391,7 @@ mm_real_d_dot_y (bool trans, const double alpha, const mm_dense *d, const mm_den
 	m = (trans) ? d->n : d->m;
 	n = (trans) ? d->m : d->n;
 
-	c = mm_real_new (MM_REAL_DENSE, MM_REAL_UNSYMMETRIC, m, 1, m);
+	c = mm_real_new (MM_REAL_DENSE, false, m, 1, m);
 	c->data = (double *) malloc (c->nz * sizeof (double));
 
 	dgemv_ ((trans) ? "T" : "N", &d->m, &d->n, &alpha, d->data, &d->m, y->data, &ione, &beta, c->data, &ione);
@@ -395,7 +399,7 @@ mm_real_d_dot_y (bool trans, const double alpha, const mm_dense *d, const mm_den
 	return c;
 }
 
-/* x * y or x' * y */
+/*** x * y, where x is matrix and y is dense vector ***/
 mm_real *
 mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dense *y, const double beta)
 {
@@ -407,7 +411,7 @@ mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dens
 	return (mm_real_is_sparse (x)) ? mm_real_s_dot_y (trans, alpha, x, y, beta) : mm_real_d_dot_y (trans, alpha, x, y, beta);
 }
 
-/*** x(:,j)' * y ***/
+/* s(:,j)' * y */
 static double
 mm_real_sj_trans_dot_y (const int j, const mm_sparse *s, const mm_dense *y)
 {
@@ -427,13 +431,14 @@ mm_real_sj_trans_dot_y (const int j, const mm_sparse *s, const mm_dense *y)
 	return val;
 }
 
+/* d(:,j)' * y */
 static double
 mm_real_dj_trans_dot_y (const int j, const mm_dense *d, const mm_dense *y)
 {
 	return ddot_ (&d->m, d->data + j * d->m, &ione, y->data, &ione);
 }
 
-/* x(:,j)' * y */
+/*** x(:,j)' * y ***/
 double
 mm_real_xj_trans_dot_y (const int j, const mm_real *x, const mm_dense *y)
 {
@@ -446,7 +451,7 @@ mm_real_xj_trans_dot_y (const int j, const mm_real *x, const mm_dense *y)
 	return (mm_real_is_sparse (x)) ? mm_real_sj_trans_dot_y (j, x, y) : mm_real_dj_trans_dot_y (j, x, y);
 }
 
-/*** y = alpha * x(:,j) + y ***/
+/* y = alpha * s(:,j) + y */
 static void
 mm_real_asjpy (const double alpha, const int j, const mm_sparse *s, mm_dense *y)
 {
@@ -465,6 +470,7 @@ mm_real_asjpy (const double alpha, const int j, const mm_sparse *s, mm_dense *y)
 	return;
 }
 
+/* y = alpha * d(:,j) + y */
 static void
 mm_real_adjpy (const double alpha, const int j, const mm_dense *d, mm_dense *y)
 {
@@ -472,7 +478,7 @@ mm_real_adjpy (const double alpha, const int j, const mm_dense *d, mm_dense *y)
 	return;
 }
 
-/* y += a * x(:,j) */
+/*** y = alpha * x(:,j) + y ***/
 void
 mm_real_axjpy (const double alpha, const int j, const mm_real *x, mm_dense *y)
 {
@@ -484,6 +490,7 @@ mm_real_axjpy (const double alpha, const int j, const mm_real *x, mm_dense *y)
 	return (mm_real_is_sparse (x)) ? mm_real_asjpy (alpha, j, x, y) : mm_real_adjpy (alpha, j, x, y);
 }
 
+/* y = alpha * s(:,j) + y, atomic */
 static void
 mm_real_asjpy_atomic (const double alpha, const int j, const mm_sparse *s, mm_dense *y)
 {
@@ -502,6 +509,7 @@ mm_real_asjpy_atomic (const double alpha, const int j, const mm_sparse *s, mm_de
 	return;
 }
 
+/* y = alpha * d(:,j) + y, atomic */
 static void
 mm_real_adjpy_atomic (const double alpha, const int j, const mm_dense *d, mm_dense *y)
 {
@@ -511,7 +519,7 @@ mm_real_adjpy_atomic (const double alpha, const int j, const mm_dense *d, mm_den
 	return;
 }
 
-/* y += a * x(:,j): compare and swap version */
+/*** y = alpha * x(:,j) + y, atomic ***/
 void
 mm_real_axjpy_atomic (const double alpha, const int j, const mm_real *x, mm_dense *y)
 {
