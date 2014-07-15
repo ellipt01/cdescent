@@ -252,8 +252,8 @@ main (int argc, char **argv)
 		free (datax);
 	}
 	//	d = NULL;
-	d = mm_real_eye (MM_REAL_SPARSE, x->n);
-	//	d = mm_real_penalty_smooth (MM_REAL_SPARSE, x->n);
+	//	d = mm_real_eye (MM_REAL_SPARSE, x->n);
+	d = mm_real_penalty_smooth (MM_REAL_SPARSE, x->n);
 
 	lreg = linregmodel_new (y, x, lambda2, d, false, true, true, true);
 	//	fprintf_mm_dense (stdout, lreg->x);

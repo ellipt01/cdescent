@@ -35,7 +35,7 @@ struct s_linregmodel {
 	/* threshold for L2 penalty */
 	double		lambda2;
 
-	bool		regtype_is_lasso;
+	bool		is_regtype_lasso;
 
 	mm_dense	*c;
 	double		logcamax;		// log10 ( amax(c) )

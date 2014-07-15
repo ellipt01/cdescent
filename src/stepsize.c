@@ -28,7 +28,7 @@ static double
 cdescent_scale2 (const cdescent *cd, const int j)
 {
 	double	scale2 = (cd->lreg->xnormalized) ? 1. : cd->lreg->xtx[j];
-	if (!cd->lreg->regtype_is_lasso) scale2 += cd->lreg->dtd[j] * cd->lreg->lambda2;
+	if (!cd->lreg->is_regtype_lasso) scale2 += cd->lreg->dtd[j] * cd->lreg->lambda2;
 	return scale2;
 }
 
@@ -51,7 +51,7 @@ cdescent_gradient (const cdescent *cd, const int j)
 	if (!cd->lreg->xcentered && !cd->lreg->ycentered) z -= cd->lreg->sx[j] * cd->b;
 
 	// not lasso, z -= lambda2 * D(:,j)' * nu (nu = D * beta)
-	if (!cd->lreg->regtype_is_lasso) z -= lambda2 * mm_real_xj_trans_dot_y (j, cd->lreg->d, cd->nu);
+	if (!cd->lreg->is_regtype_lasso) z -= lambda2 * mm_real_xj_trans_dot_y (j, cd->lreg->d, cd->nu);
 
 	return z;
 }

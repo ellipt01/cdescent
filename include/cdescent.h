@@ -16,6 +16,9 @@ extern "C" {
 
 typedef struct s_cdescent	cdescent;
 
+#define cdescent_get_m (cd)	((cd)->lreg->x->m)
+#define cdescent_get_n (cd)	((cd)->lreg->x->n)
+
 struct s_cdescent {
 
 	const linregmodel	*lreg;			// linear regression equations
@@ -50,6 +53,9 @@ double		cdescent_beta_stepsize (const cdescent *cd, const int j);
 bool		cdescent_update_cyclic_once_cycle (cdescent *cd);
 bool		cdescent_update_cyclic_once_cycle_mp (cdescent *cd);
 bool		cdescent_update_cyclic (cdescent *cd, const int maxiter);
+
+/* bic.c */
+double		cdescent_eval_bic (const cdescent *cd, double gamma);
 
 #ifdef __cplusplus
 }

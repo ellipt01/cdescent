@@ -78,7 +78,7 @@ cdescent_update_cyclic_once_cycle (cdescent *cd)
 				// update mu (= X * beta): mu += X(:,j) * etaj
 				update_mm_dense (atomic, cd->mu, j, cd->lreg->x, etaj);
 				// update nu (= D * beta) if lambda2 != 0 && cd->nu != NULL: nu += D(:,j) * etaj
-				if (!cd->lreg->regtype_is_lasso) update_mm_dense (atomic, cd->nu, j, cd->lreg->d, etaj);
+				if (!cd->lreg->is_regtype_lasso) update_mm_dense (atomic, cd->nu, j, cd->lreg->d, etaj);
 				// update max( |eta| )
 				update_amax (atomic, &amax_change, abs_etaj);
 			}
@@ -95,7 +95,7 @@ cdescent_update_cyclic_once_cycle (cdescent *cd)
 			if (abs_etaj > 0.) {
 				cd->beta->data[j] += etaj;
 				update_mm_dense (atomic, cd->mu, j, cd->lreg->x, etaj);
-				if (!cd->lreg->regtype_is_lasso) update_mm_dense (atomic, cd->nu, j, cd->lreg->d, etaj);
+				if (!cd->lreg->is_regtype_lasso) update_mm_dense (atomic, cd->nu, j, cd->lreg->d, etaj);
 				update_amax (atomic, &amax_change, abs_etaj);
 			}
 		}

@@ -16,7 +16,8 @@ libcdescent_la_SOURCES =\
 	linregmodel.c\
 	cdescent.c\
 	stepsize.c\
-	update.c
+	update.c\
+	bic.c
 
 libcdescent_la_CPPFLAGS = -I$(top_srcdir)/include
 

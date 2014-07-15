@@ -55,7 +55,7 @@ linregmodel_alloc (void)
 	lreg->x = NULL;
 	lreg->d = NULL;
 	lreg->lambda2 = 0.;
-	lreg->regtype_is_lasso = true;
+	lreg->is_regtype_lasso = true;
 
 	lreg->c = NULL;
 	lreg->logcamax = 0.;
@@ -101,7 +101,7 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool
 
 	if (lambda2 > double_eps ()) lreg->lambda2 = lambda2;
 
-	if (lreg->lambda2 > double_eps () && lreg->d) lreg->regtype_is_lasso = false;
+	if (lreg->lambda2 > double_eps () && lreg->d) lreg->is_regtype_lasso = false;
 
 	if (do_ycentering) {
 		do_centering (lreg->y);
@@ -142,7 +142,7 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool
 	}
 
 	/* dtd = diag (D' * D) */
-	if (!lreg->regtype_is_lasso) {
+	if (!lreg->is_regtype_lasso) {
 		int		j;
 		lreg->dtd = (double *) malloc (lreg->d->n * sizeof (double));
 		for (j = 0; j < lreg->d->n; j++) lreg->dtd[j] = pow (mm_real_xj_nrm2 (j, lreg->d), 2.);
