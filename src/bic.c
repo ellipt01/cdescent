@@ -18,7 +18,7 @@
 /*
  *   Bayesian Information Criterion for L2 reguralized
  *   linear regression model b = Z * beta
- *   where b = [l->y ; 0], Z = [l->x ; sqrt(l->lambda2) * E]
+ *   where b = [y ; 0], Z = [x ; sqrt(lambda2) * D]
  */
 
 /* residual sum of squares | b - Z * beta |^2 */
@@ -54,12 +54,12 @@ calc_degree_of_freedom (const cdescent *cd)
 }
 
 /* Extended Bayesian Information Criterion (Chen and Chen, 2008)
- * EBIC = n log(rss) + df * log(n) + 2 * gamma * df * log(p)
+ * EBIC = m log(rss) + df * log(m) + 2 * gamma * df * log(n)
  * gamma	: tuning parameter for EBIC
  * rss		: residual sum of squares |b - Z * beta|^2
  * df		: degree of freedom of the system
- * 	n		: number of data (= l->y->size = l->x->size1)
- * 	p		: number of variables (= l->x->size2)
+ * m		: number of data (num rows of b and Z)
+ * n		: number of variables (num cols of Z and num rows of beta)
  *
  * 	if gamma = 0, eBIC is identical with the classical BIC
 */

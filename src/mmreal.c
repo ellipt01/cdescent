@@ -400,7 +400,7 @@ mm_real_d_dot_y (bool trans, const double alpha, const mm_dense *d, const mm_den
 }
 
 /*** x * y, where x is matrix and y is dense vector ***/
-mm_real *
+mm_dense *
 mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dense *y, const double beta)
 {
 	if (!mm_is_dense (y->typecode)) error_and_exit ("mm_real_x_dot_y", "y must be dense.", __FILE__, __LINE__);

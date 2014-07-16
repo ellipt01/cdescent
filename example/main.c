@@ -18,8 +18,8 @@
 char		fn[80] = "\0";
 int			skipheaders = 0;
 double		lambda2 = 0.;
-double		start = 0.;
-double		stop = 100.;
+double		start = -2.;
+double		stop = 10.;
 double		dt = 0.1;
 double		gamma_bic = 0.;	// traditional BIC
 int			maxiter = 100000;
@@ -31,8 +31,9 @@ usage (char *toolname)
 	if (p) p++;
 	else p = toolname;
 
-	fprintf (stderr, "\nUSAGE:\n%s -f <input_file>{:skipheaders} -l <lambda2> \n", p);
-	fprintf (stderr, "[optional] { -t <start>:<dt>:<stop> -g <gamma of EBIC in [0, 1]> -m <maxsteps> }\n\n");
+	fprintf (stderr, "\nUSAGE:\n%s -f <input_file>{:num skipheaders} -l <lambda2> \n", p);
+	fprintf (stderr, "[optional] { -t <log10_lambda1_min>:<d_log10_lambda1>:<log10_lambda1_max>\n");
+	fprintf (stderr, "             -g <gamma of EBIC in [0, 1]> -m <maxsteps> }\n\n");
 	exit (1);
 }
 
@@ -252,8 +253,8 @@ main (int argc, char **argv)
 		free (datax);
 	}
 	//	d = NULL;
-	//	d = mm_real_eye (MM_REAL_SPARSE, x->n);
-	d = mm_real_penalty_smooth (MM_REAL_SPARSE, x->n);
+	d = mm_real_eye (MM_REAL_SPARSE, x->n);
+	//	d = mm_real_penalty_smooth (MM_REAL_SPARSE, x->n);
 
 	lreg = linregmodel_new (y, x, lambda2, d, false, true, true, true);
 	//	fprintf_mm_dense (stdout, lreg->x);

@@ -18,7 +18,7 @@ echo "set terminal postscript eps enhanced color" >| tmp.gnuplot
 echo "set output \"out.eps\"" >> tmp.gnuplot
 echo "unset key" >> tmp.gnuplot
 
-echo -n "set title \"Trace Plot of coefficients fit by Lasso, Elastic net" >> tmp.gnuplot
+echo -n "set title \"Trace Plot of solution path by Lasso, Elastic net" >> tmp.gnuplot
 if [ -n "$2" ]; then
 	echo -n " ({/Symbol l}_2 = $2)"  >> tmp.gnuplot
 fi
