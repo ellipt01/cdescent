@@ -1,5 +1,5 @@
 /*
- * linreg.c
+ * linregmodel.c
  *
  *  Created on: 2014/05/19
  *      Author: utsugi

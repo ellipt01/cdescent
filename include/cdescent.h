@@ -21,15 +21,15 @@ typedef struct s_cdescent	cdescent;
 
 struct s_cdescent {
 
-	const linregmodel	*lreg;			// linear regression equations
+	const linregmodel	*lreg;			// linear regression model
 
 	double				tolerance;		// tolerance of convergence
 
-	double				lambda1;		// L-1 regularization parameter
+	double				lambda1;		// regularization parameter of L1 penalty
 	double				lambda1_max;	// maximum value of lambda1
 
 	double				b;				// intercept
-	double				nrm1;
+	double				nrm1;			// = sum_j |beta_j|
 	mm_real			*beta;			// solution
 
 	mm_real			*mu;			// mu = X * beta, estimate of y

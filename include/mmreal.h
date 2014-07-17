@@ -20,8 +20,8 @@ extern "C" {
 #define mm_real_is_symmetric(a)	(mm_is_symmetric((a)->typecode) || mm_is_skew((a)->typecode))
 
 typedef enum {
-	MM_REAL_DENSE  = 0,
-	MM_REAL_SPARSE = 1
+	MM_REAL_DENSE  = 0,	// dense matrix
+	MM_REAL_SPARSE = 1	// sparse matrix
 } MMRealFormat;
 
 // matrix market format matrix
@@ -29,16 +29,17 @@ typedef struct s_mm_real	mm_real;
 typedef struct s_mm_real	mm_dense;
 typedef struct s_mm_real	mm_sparse;
 
+// implementation of dense / sparse matrix
 struct s_mm_real {
-	MM_typecode	typecode;
+	MM_typecode	typecode;	// type of matrix. see mmio.h
 
-	int				m;
-	int				n;
-	int				nz;
+	int				m;		// num of rows of matrix
+	int				n;		// num of columns
+	int				nz;		// num of nonzero matrix elements
 
-	int				*i;
-	int				*p;
-	double			*data;
+	int				*i;		// row index of each entries: size = nz
+	int				*p;		// num of nonzero matrix elements included in each column: size = n + 1
+	double			*data;	// nonzero matrix elements: size = nz
 };
 
 mm_real	*mm_real_alloc (void);

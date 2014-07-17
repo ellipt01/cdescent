@@ -1,5 +1,5 @@
 /*
- * update.c
+ * stepsize.c
  *
  *  Created on: 2014/06/02
  *      Author: utsugi

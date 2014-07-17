@@ -19,42 +19,45 @@ extern "C" {
 
 typedef struct s_linregmodel	linregmodel;
 
-/* structure of linear regression model
- *   b = Z * beta,
- *   b = [y; 0]
- *   Z = scale * [X; sqrt(lambda2) * J]
+/* Object of L1 regularized linear regression problem
+ *
+ *   argmin(beta) || b - Z * beta ||^2 + lambda_1 sum |beta|
+ *
+ *   where
+ *   	b = [y; 0]
+ *   	Z = scale * [X; sqrt(lambda2) * D]
  */
 struct s_linregmodel {
 	bool		has_copy;	// has copy of x, y and d
 
-	mm_real	*x;
-	mm_dense	*y;
+	mm_real	*x;		// matrix of predictors X
+	mm_dense	*y;		// observed data vector y (must be dense)
 	/* penalty term. */
-	mm_real	*d;
+	mm_real	*d;		// linear operator matrix D
 
-	/* threshold for L2 penalty */
+	/* weight of penalty term */
 	double		lambda2;
 
-	bool		is_regtype_lasso;
+	bool		is_regtype_lasso;	// = (d == NULL || lambda2 < eps)
 
-	mm_dense	*c;
+	mm_dense	*c;				// = x' * y: correlation (constant) vector
 	double		logcamax;		// log10 ( amax(c) )
 
-	bool		ycentered;
-	bool		xcentered;
-	bool		xnormalized;
+	bool		ycentered;		// y is centered?
+	bool		xcentered;		// x is centered?
+	bool		xnormalized;	// x is normalized?
 
 	/* sum of y. If y is centered, sy = 0. */
-	double		sy;
+	double		sy;		// = sum_i y(i)
 
 	/* sum of X(:, j). If X is centered, sx = NULL. */
-	double		*sx;
+	double		*sx;	// sx(j) = sum_i x(i,j)
 
 	/* norm of X(:, j). If X is normalized, xtx = NULL. */
-	double		*xtx;
+	double		*xtx;	// xtx(j) = x(:,j)' * x(:,j)
 
 	/* dtd = diag(D' * D), D = lreg->pen->d */
-	double		*dtd;
+	double		*dtd;	// dtd(j) = d(:,j)' * d(:,j)
 
 };
 

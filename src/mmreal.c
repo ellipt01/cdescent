@@ -1,3 +1,10 @@
+/*
+ * mmreal.c
+ *
+ *  Created on: 2014/06/25
+ *      Author: utsugi
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
