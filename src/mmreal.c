@@ -541,7 +541,7 @@ mm_real_axjpy_atomic (const double alpha, const int j, const mm_real *x, mm_dens
 	return (mm_real_is_sparse (x)) ? mm_real_asjpy_atomic (alpha, j, x, y) : mm_real_adjpy_atomic (alpha, j, x, y);
 }
 
-/* mm_real is now, only real symmetric or general sparse and real general dense are supported */
+/* mm_real supports real symmetric or general sparse, and real general dense matrix */
 static bool
 is_type_supported (MM_typecode typecode)
 {
@@ -557,7 +557,7 @@ is_type_supported (MM_typecode typecode)
 	// skew and hermitian is not supported
 	if (mm_is_skew (typecode) || mm_is_hermitian (typecode)) return false;
 
-	// dense symmetric is not supported
+	// only general dense is supported
 	if (mm_is_dense (typecode) && !mm_is_general (typecode)) return false;
 
 	return true;

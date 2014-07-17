@@ -21,23 +21,22 @@
  *   where b = [y ; 0], Z = [x ; sqrt(lambda2) * D]
  */
 
-/* residual sum of squares | b - Z * beta |^2 */
+/* residual sum of squares
+ * rss = | b - Z * beta |^2
+ *     = | y - mu |^2 + | 0 - sqrt(lambda2) * nu |^2 */
 static double
 calc_rss (const cdescent *cd)
 {
-	int			m = cd->lreg->x->m;
-	double		rss;
-	double		*r = (double *) malloc (m * sizeof (double));
+	int		m = cd->lreg->x->m;
+	double	rss;
+	double	*r = (double *) malloc (m * sizeof (double));
 	dcopy_ (&m, cd->lreg->y->data, &ione, r, &ione);	// r = y
 	daxpy_ (&m, &dmone, cd->mu->data, &ione, r, &ione);	// r = y - mu
-	rss = pow (dnrm2_ (&m, r, &ione), 2.);
-	if (!cd->lreg->is_regtype_lasso) {
-		int			k = cd->lreg->d->m;
-		mm_dense	*db = mm_real_x_dot_y (false, 1., cd->lreg->d, cd->beta, 0.);
-		rss += cd->lreg->lambda2 * pow (dnrm2_ (&k, db->data, &ione), 2.);
-		mm_real_free (db);
-	}
+	rss = pow (dnrm2_ (&m, r, &ione), 2.);	// rss = | y - mu |^2
 	free (r);
+	// rss += | 0 - sqrt(lambda2) * nu |^2
+	if (!cd->lreg->is_regtype_lasso)
+		rss += cd->lreg->lambda2 * pow (dnrm2_ (&cd->nu->m, cd->nu->data, &ione), 2.);
 	return rss;
 }
 
@@ -47,10 +46,10 @@ static double
 calc_degree_of_freedom (const cdescent *cd)
 {
 	int		i;
-	int		size = 0;
+	int		sizeA = 0;	// size of active set
 	double	eps = double_eps ();
-	for (i = 0; i < cd->beta->m; i++) if (fabs (cd->beta->data[i]) > eps) size++;
-	return (double) size;
+	for (i = 0; i < cd->beta->m; i++) if (fabs (cd->beta->data[i]) > eps) sizeA++;
+	return (double) sizeA;
 }
 
 /* Extended Bayesian Information Criterion (Chen and Chen, 2008)
