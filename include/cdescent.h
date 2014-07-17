@@ -51,7 +51,6 @@ double		cdescent_beta_stepsize (const cdescent *cd, const int j);
 
 /* cdescent.c */
 bool		cdescent_update_cyclic_once_cycle (cdescent *cd);
-bool		cdescent_update_cyclic_once_cycle_mp (cdescent *cd);
 bool		cdescent_update_cyclic (cdescent *cd, const int maxiter);
 
 /* bic.c */

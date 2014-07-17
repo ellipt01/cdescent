@@ -173,10 +173,13 @@ mm_real_replace_sparse_to_dense (mm_real *x)
 		}
 	}
 	free (data);
+
 	free (x->i);
 	x->i = NULL;
 	free (x->p);
 	x->p = NULL;
+	mm_set_general (&x->typecode);
+
 	return;
 }
 
@@ -536,4 +539,129 @@ mm_real_axjpy_atomic (const double alpha, const int j, const mm_real *x, mm_dens
 	if (x->m != y->m) error_and_exit ("mm_real_axjpy_atomic", "vector and matrix dimensions do not match.", __FILE__, __LINE__);
 
 	return (mm_real_is_sparse (x)) ? mm_real_asjpy_atomic (alpha, j, x, y) : mm_real_adjpy_atomic (alpha, j, x, y);
+}
+
+/* mm_real is now, only real symmetric or general sparse and real general dense are supported */
+static bool
+is_type_supported (MM_typecode typecode)
+{
+	// invalid type
+	if (!mm_is_valid (typecode)) return false;
+
+	// pattern is not supported
+	if (mm_is_pattern (typecode)) return false;
+
+	// integrer and complex are not supported
+	if (mm_is_integer (typecode) || mm_is_complex (typecode)) return false;
+
+	// skew and hermitian is not supported
+	if (mm_is_skew (typecode) || mm_is_hermitian (typecode)) return false;
+
+	// dense symmetric is not supported
+	if (mm_is_dense (typecode) && !mm_is_general (typecode)) return false;
+
+	return true;
+}
+
+/* fread sparse */
+static mm_sparse *
+mm_real_fread_sparse (FILE *fp, MM_typecode typecode)
+{
+	int			k;
+	int			m, n, nz;
+	int			*j;
+	mm_sparse	*s;
+
+	mm_read_mtx_crd_size (fp, &m, &n, &nz);
+	s = mm_real_new (MM_REAL_SPARSE, mm_is_symmetric (typecode), m, n, nz);
+	s->i = (int *) malloc (s->nz * sizeof (int));
+	s->data = (double *) malloc (s->nz * sizeof (double));
+	s->p = (int *) malloc ((s->n + 1) * sizeof (int));
+
+	j = (int *) malloc (s->nz * sizeof (int));
+	mm_read_mtx_crd_data (fp, s->m, s->n, s->nz, s->i, j, s->data, typecode);
+
+	s->p[0] = 0;
+	for (k = 0; k < s->nz; k++) {
+		s->i[k]--;		// fortran -> c
+		if (k > 0 && j[k] != j[k - 1]) s->p[j[k] - 1] = k;
+	}
+	s->p[n] = k;
+	free (j);
+
+	return s;
+}
+
+/* fread dense */
+static mm_dense *
+mm_real_fread_dense (FILE *fp, MM_typecode typecode)
+{
+	int			k;
+	int			m, n;
+	int			ret;
+	mm_dense	*d;
+
+	mm_read_mtx_array_size (fp, &m, &n);
+	d = mm_real_new (MM_REAL_DENSE, false, m, n, m * n);
+	d->data = (double *) malloc (d->nz * sizeof (double));
+
+	k = 0;
+	do {
+		ret = fscanf (fp, "%lf", &d->data[k]);
+		if (ret > 0 && ++k >= d->nz) break;
+	} while (ret != EOF);
+
+	return d;
+}
+
+/*** fread MatrixMarket format file ***/
+mm_real *
+mm_real_fread (FILE *fp)
+{
+	MM_typecode	typecode;
+	mm_read_banner (fp, &typecode);
+	if (!is_type_supported (typecode)) {
+		char	msg[128];
+		sprintf (msg, "matrix type does not supported :[%s].", mm_typecode_to_str (typecode));
+		error_and_exit ("mm_real_fread", msg, __FILE__, __LINE__);
+	}
+	return (mm_is_sparse (typecode)) ? mm_real_fread_sparse (fp, typecode) : mm_real_fread_dense (fp, typecode);
+}
+
+/* fwrite sparse */
+static void
+mm_real_fwrite_sparse (FILE *stream, mm_sparse *s, const char *format)
+{
+	int		j, k;
+	mm_write_banner (stream, s->typecode);
+	mm_write_mtx_crd_size (stream, s->m, s->n, s->nz);
+	for (j = 0; j < s->n; j++) {
+		for (k = s->p[j]; k < s->p[j + 1]; k++) {
+			fprintf (stream, "%d %d ", s->i[k] + 1, j + 1);
+			fprintf (stream, format, s->data[k]);
+			fprintf (stream, "\n");
+		}
+	}
+	return;
+}
+
+/* fwrite dense */
+static void
+mm_real_fwrite_dense (FILE *stream, mm_dense *d, const char *format)
+{
+	int		k;
+	mm_write_banner (stream, d->typecode);
+	mm_write_mtx_array_size (stream, d->m, d->n);
+	for (k = 0; k < d->nz; k++) {
+		fprintf (stream, format, d->data[k]);
+		fprintf (stream, "\n");
+	}
+	return;
+}
+
+/*** fwrite in MatrixMarket format ***/
+void
+mm_real_fwrite (FILE *stream, mm_real *x, const char *format)
+{
+	return (mm_is_sparse (x->typecode)) ? mm_real_fwrite_sparse (stream, x, format) : mm_real_fwrite_dense (stream, x, format);
 }

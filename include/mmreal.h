@@ -37,8 +37,8 @@ struct s_mm_real {
 	int				n;		// num of columns
 	int				nz;		// num of nonzero matrix elements
 
-	int				*i;		// row index of each entries: size = nz
-	int				*p;		// num of nonzero matrix elements included in each column: size = n + 1
+	int				*i;		// row index of each nonzero elements: size = nz
+	int				*p;		// p[0] = 0, p[j+1] = num of nonzeros in X(:,1:j): size = n + 1
 	double			*data;	// nonzero matrix elements: size = nz
 };
 
@@ -54,6 +54,7 @@ void		mm_real_set_all (mm_real *mm, const double val);
 
 void		mm_real_replace_sparse_to_dense (mm_real *x);
 void		mm_real_replace_dense_to_sparse (mm_real *x, const double threshold);
+
 mm_real	*mm_real_eye (MMRealFormat type, const int n);
 
 double		mm_real_xj_asum (const int j, const mm_real *x);
@@ -64,6 +65,9 @@ mm_dense	*mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, con
 double		mm_real_xj_trans_dot_y (const int j, const mm_real *x, const mm_dense *y);
 void		mm_real_axjpy (const double alpha, const int j, const mm_real *x, mm_dense *y);
 void		mm_real_axjpy_atomic (const double alpha, const int j, const mm_real *x, mm_dense *y);
+
+mm_real	*mm_real_fread (FILE *fp);
+void		mm_real_fwrite (FILE *stream, mm_real *x, const char *format);
 
 #ifdef __cplusplus
 }

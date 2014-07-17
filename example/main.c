@@ -43,9 +43,9 @@ main (int argc, char **argv)
 		x = create_mm_dense (m, n, datax);
 		free (datax);
 	}
-	//	d = NULL;
-	d = mm_real_eye (MM_REAL_SPARSE, x->n);
-	//	d = mm_real_penalty_smooth (MM_REAL_SPARSE, x->n);
+	//	d = NULL;	// lasso
+	d = mm_real_eye (MM_REAL_SPARSE, x->n);	// elastic net
+	//	d = mm_real_penalty_smooth (MM_REAL_SPARSE, x->n);	// s-lasso
 
 	lreg = linregmodel_new (y, x, lambda2, d, false, true, true, true);
 

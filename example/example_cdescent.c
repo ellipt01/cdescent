@@ -10,6 +10,12 @@
 #include <math.h>
 #include <cdescent.h>
 
+#include "example.h"
+
+#ifdef DEBUG
+extern double	gamma_bic;
+#endif
+
 static void
 output_solutionpath_cdescent (int iter, const cdescent *cd)
 {
@@ -46,12 +52,12 @@ example_cdescent_pathwise (const linregmodel *lreg, double logtmin, double dlogt
 
 		cdescent_set_log10_lambda1 (cd, logt);
 
-#ifdef DEBUG
-		double	bic = cdescent_eval_bic (cd, 0.75);
-		fprintf (stdout, "t %.4e bic %.8e\n", cd->lambda1, bic);
-#endif
 		if (!cdescent_update_cyclic (cd, maxiter)) break;
 		output_solutionpath_cdescent (iter, cd);
+#ifdef DEBUG
+		double	bic = cdescent_eval_bic (cd, gamma_bic);
+		fprintf (stdout, "t %.4e ebic %.8e\n", cd->nrm1, bic);
+#endif
 
 		logt -= dlogt;
 

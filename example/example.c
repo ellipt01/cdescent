@@ -210,12 +210,10 @@ static mm_sparse *
 mm_real_penalty_ssmooth (const int n)
 {
 	int		i, j, k;
-	int		nz = 2 * (n - 1);
-
-	mm_sparse	*s = mm_real_new (MM_REAL_SPARSE, false, n - 1, n, nz);
-	s->i = (int *) malloc (nz * sizeof (int));
-	s->p = (int *) malloc ((n + 1) * sizeof (int));
-	s->data = (double *) malloc (nz * sizeof (double));
+	mm_sparse	*s = mm_real_new (MM_REAL_SPARSE, false, n - 1, n, 2 * (n - 1));
+	s->i = (int *) malloc (s->nz * sizeof (int));
+	s->p = (int *) malloc ((s->n + 1) * sizeof (int));
+	s->data = (double *) malloc (s->nz * sizeof (double));
 
 	k = 0;
 	s->p[0] = 0;
@@ -241,12 +239,13 @@ mm_real_penalty_dsmooth (const int n)
 	d->data = (double *) malloc (d->nz * sizeof (double));
 	mm_real_set_all (d, 0.);
 	for (j = 0; j < n; j++) {
-		if (j > 0) d->data[j + (j + 1) * d->m] = -1.;
+		if (j > 0) d->data[j - 1 + j * d->m] = -1.;
 		if (j < n - 1) d->data[j + j * d->m] = 1.;
 	}
 	return d;
 }
 
+/* s-lasso */
 mm_real *
 mm_real_penalty_smooth (MMRealFormat format, const int n)
 {

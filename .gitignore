@@ -1,18 +1,17 @@
-<<<<<<< HEAD
 *~
 *.old
 *.orig
 
-# working directries
-#bin
+# dot files of eclipse
 .cproject
 .autotools
 .settings
+
+# working directries
 work
 share
 Debug
 
-=======
 # Object files
 *.o
 *.lo
@@ -38,4 +37,4 @@ Debug
 *.i*86
 *.x86_64
 *.hex
->>>>>>> origin/master
+
