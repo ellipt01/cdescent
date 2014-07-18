@@ -6,5 +6,6 @@ root=${d%bin}
 find $root -name '*~' -exec rm {} \;
 find $root -name '*.o' -exec rm {} \;
 find $root -name 'beta*' -exec rm {} \;
+find $root -name '*.res' -exec rm {} \;
 find $root -name 'out*.eps' -exec rm {} \;
 

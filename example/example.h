@@ -10,18 +10,13 @@
 
 #include <cdescent.h>
 
-char		infn[80];
+char		infn_x[80];
+char		infn_y[80];
 
 /* example.c */
-void		usage (char *toolname);
-bool		read_params (int argc, char **argv);
-void		fprintf_params (FILE *stream);
-void		read_data (char *fn, int skip_header, int *n, int *p, double **y, double **x);
-mm_dense	*create_mm_dense (int m, int n, double *data);
 mm_real	*mm_real_penalty_smooth (MMRealFormat format, const int n);
 
 /* example_cdescent.c */
-void		example_cdescent_pathwise (const linregmodel *lreg, double start, double dt, double stop, double tol,
-				int maxiter, bool parallel);
+void		example_cdescent_pathwise (cdescent *cd, double log10_lambda1, double dlog10_lambda1, int maxiter, bool output_path);
 
 #endif /* EXAMPLE_H_ */

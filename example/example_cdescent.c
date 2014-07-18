@@ -17,7 +17,7 @@ extern double	gamma_bic;
 #endif
 
 static void
-output_solutionpath_cdescent (int iter, const cdescent *cd)
+cdescent_output_solutionpath (int iter, const cdescent *cd)
 {
 	int			i;
 	char		fn[80];
@@ -37,33 +37,45 @@ output_solutionpath_cdescent (int iter, const cdescent *cd)
 	return;
 }
 
+/* Evaluate the regression coefficients beta
+ * correspond to the specified L1 regularization parameter log_lambda1.
+ *
+ * The evaluation is made starting at the smallest value λmax for which
+ * the entire vector β = 0, and decreasing sequence of values for λ1 on
+ * the log scale.
+ * log (λmax) is identical with log ( max ( abs(X' * y) ) ), where this
+ * value is stored in cd->lreg->logcamax.
+ * The interval of decreasing sequence of log (λ1) is specified by
+ * dlog_lambda1.
+ *
+ * if output_path == true, solution path is output in files beta0xx.res
+ */
+
 void
-example_cdescent_pathwise (const linregmodel *lreg, double logtmin, double dlogt, double logtmax, double tol, int maxiter, bool parallel)
+example_cdescent_pathwise (cdescent *cd, double log10_lambda1, double dlog10_lambda1, int maxiter, bool output_path)
 {
 	int			iter = 0;
 	double		logt;
-	cdescent	*cd;
 
 	/* warm start */
-	cd = cdescent_new (lreg, tol, parallel);
-	logt = (cd->lreg->logcamax <= logtmax) ? cd->lreg->logcamax : logtmax;
+	logt = cd->lreg->logcamax;
 
-	while (logtmin <= logt) {
+	while (log10_lambda1 <= logt) {
 
 		cdescent_set_log10_lambda1 (cd, logt);
 
 		if (!cdescent_update_cyclic (cd, maxiter)) break;
-		output_solutionpath_cdescent (iter, cd);
+
+		// output solution path
+		if (output_path) cdescent_output_solutionpath (iter++, cd);
+
 #ifdef DEBUG
 		double	bic = cdescent_eval_bic (cd, gamma_bic);
 		fprintf (stdout, "t %.4e ebic %.8e\n", cd->nrm1, bic);
 #endif
 
-		logt -= dlogt;
-
-		iter++;
+		logt -= dlog10_lambda1;
 	}
 	fprintf (stderr, "total iter = %d\n", cd->total_iter);
-	cdescent_free (cd);
 	return;
 }
