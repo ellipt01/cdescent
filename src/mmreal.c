@@ -26,9 +26,12 @@ mm_real_alloc (void)
 	mm->p = NULL;
 	mm->data = NULL;
 
-	// typdecode[3] = 'G'
+	/* set typecode = "M_RG" : Matrix Real General */
+	// typdecode[3] = 'G' : General
 	mm_initialize_typecode (&mm->typecode);
-	// typecode[2] = 'R'
+	// typecode[0] = 'M' : Matrix
+	mm_set_matrix (&mm->typecode);
+	// typecode[2] = 'R' : Real
 	mm_set_real (&mm->typecode);
 
 	return mm;
@@ -46,19 +49,9 @@ mm_real_new (MMRealFormat format, bool symmetric, const int m, const int n, cons
 	mm->n = n;
 	mm->nz = nz;
 
-	// typecode[3] = 'G'
-	mm_initialize_typecode (&mm->typecode);
-
-	// typecode[0] = 'M'
-	mm_set_matrix (&mm->typecode);
-
 	// typecode[1] = 'C' or 'A'
 	if (format == MM_REAL_SPARSE) mm_set_coordinate (&mm->typecode);
 	else mm_set_array (&mm->typecode);
-
-	// typecode[2] = 'R'
-	mm_set_real (&mm->typecode);
-
 	// typecode[3] = 'S'
 	if (symmetric) mm_set_symmetric (&mm->typecode);
 
@@ -213,7 +206,7 @@ mm_real_replace_dense_to_sparse (mm_real *x, const double threshold)
 		x->p[j + 1] = k;
 	}
 	free (data);
-	mm_real_realloc (x, k);
+	if (x->nz != k) mm_real_realloc (x, k);
 	return;
 }
 
@@ -233,7 +226,6 @@ mm_real_seye (const int n)
 		s->data[k] = 1.;
 		s->p[k + 1] = k + 1;
 	}
-
 	return s;
 }
 

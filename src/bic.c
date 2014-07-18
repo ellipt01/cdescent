@@ -69,7 +69,7 @@ cdescent_eval_bic (const cdescent *cd, double gamma)
 	double	df = calc_degree_of_freedom (cd);
 	double	m = (double) cd->lreg->x->m;
 	double	n = (double) cd->lreg->x->n;
-	if (!cd->lreg->is_regtype_lasso) m += n;
+	if (!cd->lreg->is_regtype_lasso) m += (double) cd->lreg->d->m;
 #ifdef DEBUG
 	fprintf (stdout, "rss %f df %f ", log (rss), df);
 #endif

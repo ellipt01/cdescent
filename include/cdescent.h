@@ -16,9 +16,6 @@ extern "C" {
 
 typedef struct s_cdescent	cdescent;
 
-#define cdescent_get_m (cd)	((cd)->lreg->x->m)
-#define cdescent_get_n (cd)	((cd)->lreg->x->n)
-
 struct s_cdescent {
 
 	const linregmodel	*lreg;			// linear regression model
