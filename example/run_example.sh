@@ -19,10 +19,11 @@
 #                      if lambda2 < machine_epsilon, it is regarded as 0.
 #                      (default is 0)
 #
-# -t <log10l1_min>:<d_log10l1>:<log10l1_max>
+# -t <log10l1_min>:<d_log10l1>
 #				       : beta is calculated for each lambda1 (weight of L1 penalty)
-#                      in the range of [10^log10l1_min : 10^d_log10l1 : 10^log10l1_max]
-#                      (default is -2:0.1:5)
+#                      in the range of [10^log10l1_min : 10^d_log10l1 : 10^log10l1_max],
+#                      where log10l1_max = cd->lreg->logcamax (see include linregmodel.h)
+#                      (default is -2:0.1)
 #
 # -g <gamma>         : tunning parameter of extended BIC, in [0, 1] (see Chen and Chen, 2008).
 #                      (default is 0)
