@@ -26,67 +26,56 @@ AC_CHECK_LIB([gfortran],[main],[])
 
 AC_ARG_WITH(
 	[atlas-libdir],
-	AC_HELP_STRING([--with-atlas-libdir=DIR],[ATLAS library directory]),
+	[AC_HELP_STRING([--with-atlas-libdir=DIR],
+	[ATLAS library directory])],
 	[with_atlas_libdir="$withval"],
-	[with_atlas_libdir=""]
-)
+	[with_atlas_libdir=""])
 if test "$with_atlas_libdir"; then
 	LDFLAGS="$LDFLAGS -L$with_atlas_libdir"
+	with_atlas=yes
 fi
+
 AC_ARG_WITH(
 	[atlas-incdir],
-	AC_HELP_STRING([--with-atlas-incdir=DIR],[ATLAS include directory]),
+	[AC_HELP_STRING([--with-atlas-incdir=DIR],
+	[ATLAS include directory])],
 	[with_atlas_incdir="$withval"],
-	[with_atlas_incdir=""]
-)
+	[with_atlas_incdir=""])
 if test "$with_atlas_incdir"; then
 	CPPFLAGS="$CPPFLAGS -L$with_atlas_incdir"
+	with_atlas=yes
 fi
 
 AC_ARG_WITH(
 	[blas-libdir],
-	AC_HELP_STRING([--with-blas-libdir=DIR],[BLAS library directory]),
+	[AC_HELP_STRING([--with-blas-libdir=DIR],
+	[BLAS library directory])],
 	[with_blas_libdir="$withval"],
-	[with_blas_libdir=""]
-)
+	[with_blas_libdir=""])
 if test "$with_blas_libdir"; then
 	LDFLAGS="$LDFLAGS -L$with_blas_libdir"
 fi
+
 AC_ARG_WITH(
 	[blas-incdir],
-	AC_HELP_STRING([--with-blas-incdir=DIR],[BLAS include directory]),
+	[AC_HELP_STRING([--with-blas-incdir=DIR],
+	[BLAS include directory])],
 	[with_blas_incdir="$withval"],
-	[with_blas_incdir=""]
-)
+	[with_blas_incdir=""])
 if test "$with_blas_incdir"; then
 	CPPFLAGS="$CPPFLAGS -L$with_blas_incdir"
 fi
 
-AC_ARG_WITH(
-	[lapack-libdir],
-	AC_HELP_STRING([--with-lapack-libdir=DIR],[LAPACK library directory]),
-	[with_lapack_libdir="$withval"],
-	[with_lapack_libdir=""]
-)
-if test "$with_lapack_libdir"; then
-	LDFLAGS="$LDFLAGS -L$with_lapack_libdir"
+if test "x$with_atlas" == xyes; then
+	AC_CHECK_LIB([f77blas],[main],[])
+else
+	AC_CHECK_LIB([blas],[main],[])
 fi
-AC_ARG_WITH(
-	[lapack-incdir],
-	AC_HELP_STRING([--with-lapack-incdir=DIR],[LAPACK include directory]),
-	[with_lapack_incdir="$withval"],
-	[with_lapack_incdir=""]
-)
-if test "$with_lapack_incdir"; then
-	CPPFLAGS="$CPPFLAGS -L$with_lapack_incdir"
-fi
-
-AC_CHECK_LIB([blas],[dcopy_],[])
-AC_CHECK_LIB([lapack],[dlamch_],[])
 
 AC_ARG_ENABLE(
 	[openmp],
-	AC_HELP_STRING([--enable-openmp],[enable openMP support [[default=yes]]]),
+	[AC_HELP_STRING([--enable-openmp],
+	[enable openMP support [[default=yes]]])],
 	[],
 	[enable_openmp=yes]
 )
@@ -113,7 +102,6 @@ AC_SUBST([OMPFLAGS])
 # Checks for header files.
 AC_CHECK_HEADER([stdlib.h])
 AC_CHECK_HEADER([string.h])
-AC_CHECK_HEADER([lapack.h])
 AC_CHECK_HEADER([blas.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -125,7 +113,6 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([floor pow sqrt log strrchr])
 AC_CHECK_FUNCS([dcopy_])
-AC_CHECK_FUNCS([dlamch_])
 
 # pkgconfig
 CDESCENT_DESCRIPTION="C implementation of coordinate descent algorithm"

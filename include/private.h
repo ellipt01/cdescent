@@ -32,12 +32,6 @@ extern void	dgemm_ (const char *transa, const char *transb, const int *m, const 
 		const double *beta, double *c, const int *ldc);
 #endif
 
-#ifdef HAVE_LAPACK_H
-#include <lapack.h>
-#else
-extern double	dlamch_ (const char *cmach);
-#endif
-
 /* following constants are set in linreg.c */
 extern const int		ione;	//  1
 extern const double	dzero;	//  0.
@@ -48,8 +42,5 @@ extern const double	dmone;	// -1.
 void	error_and_exit (const char * function_name, const char *error_msg, const char *file, const int line);
 /* print warning message */
 void	print_warning (const char * function_name, const char *error_msg, const char *file, const int line);
-
-/* machine double epsilon */
-double	double_eps (void);
 
 #endif /* LINREG_PRIVATE_H_ */

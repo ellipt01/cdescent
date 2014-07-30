@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <float.h>
 #include <linregmodel.h>
 
 #include "private.h"
@@ -99,9 +100,9 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool
 		lreg->d = d;
 	}
 
-	if (lambda2 > double_eps ()) lreg->lambda2 = lambda2;
+	if (lambda2 > DBL_EPSILON) lreg->lambda2 = lambda2;
 
-	if (lreg->lambda2 > double_eps () && lreg->d) lreg->is_regtype_lasso = false;
+	if (lreg->lambda2 > DBL_EPSILON && lreg->d) lreg->is_regtype_lasso = false;
 
 	if (do_ycentering) {
 		do_centering (lreg->y);

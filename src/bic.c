@@ -11,6 +11,7 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include <float.h>
 #include <cdescent.h>
 
 #include "private.h"
@@ -47,7 +48,7 @@ calc_degree_of_freedom (const cdescent *cd)
 {
 	int		i;
 	int		sizeA = 0;	// size of active set
-	double	eps = double_eps ();
+	double	eps = DBL_EPSILON;
 	for (i = 0; i < cd->beta->m; i++) if (fabs (cd->beta->data[i]) > eps) sizeA++;
 	return (double) sizeA;
 }

@@ -33,11 +33,3 @@ print_warning (const char * function_name, const char *error_msg, const char *fi
 	fprintf (stderr, "WARNING: %s: %s:%d: %s\n", function_name, file, line, error_msg);
 	return;
 }
-
-/* double_eps of machine precision */
-double
-double_eps (void)
-{
-	if (_double_eps_ < 0.) _double_eps_ = dlamch_ ("e");
-	return _double_eps_;
-}
