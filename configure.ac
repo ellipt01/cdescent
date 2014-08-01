@@ -25,67 +25,67 @@ AC_CHECK_LIB([m],[floor],[])
 AC_CHECK_LIB([gfortran],[main],[])
 
 AC_ARG_WITH(
-	[atlas-libdir],
-	[AC_HELP_STRING([--with-atlas-libdir=DIR],
+	[atlas],
+	[AC_HELP_STRING([--with-atlas=<ATLAS library DIR>],
 	[ATLAS library directory])],
-	[with_atlas_libdir="$withval"],
-	[with_atlas_libdir=""])
-if test "$with_atlas_libdir"; then
-	LDFLAGS="$LDFLAGS -L$with_atlas_libdir"
+	[atlas_libdir="$withval"],
+	[atlas_libdir=""])
+if test "$atlas_libdir"; then
+	LDFLAGS="$LDFLAGS -L$atlas_libdir"
 	use_atlas=yes
 fi
 
 AC_ARG_WITH(
 	[atlas-incdir],
-	[AC_HELP_STRING([--with-atlas-incdir=DIR],
+	[AC_HELP_STRING([--with-atlas-incdir=<ATLAS include DIR>],
 	[ATLAS include directory])],
-	[with_atlas_incdir="$withval"],
-	[with_atlas_incdir=""])
-if test "$with_atlas_incdir"; then
-	CPPFLAGS="$CPPFLAGS -L$with_atlas_incdir"
+	[atlas_incdir="$withval"],
+	[atlas_incdir=""])
+if test "$atlas_incdir"; then
+	CPPFLAGS="$CPPFLAGS -L$atlas_incdir"
 	use_atlas=yes
 fi
 
 AC_ARG_WITH(
-	[mkl-libdir],
-	[AC_HELP_STRING([--with-mkl-libdir=DIR],
+	[mkl],
+	[AC_HELP_STRING([--with-mkl=<MKL library DIR>],
 	[Intel math kernel library directory])],
-	[with_mkl_libdir="$withval"],
-	[with_mkl_libdir=""])
-if test "$with_mkl_libdir"; then
-	LDFLAGS="$LDFLAGS -L$with_mkl_libdir"
+	[mkl_libdir="$withval"],
+	[mkl_libdir=""])
+if test "$mkl_libdir"; then
+	LDFLAGS="$LDFLAGS -L$mkl_libdir"
 	use_mkl=yes
 fi
 
 AC_ARG_WITH(
 	[mkl-incdir],
-	[AC_HELP_STRING([--with-mkl-incdir=DIR],
+	[AC_HELP_STRING([--with-mkl-incdir=<MKL include DIR>],
 	[Intel math kernel library include directory])],
-	[with_mkl_incdir="$withval"],
-	[with_mkl_incdir=""])
-if test "$with_mkl_incdir"; then
-	CPPFLAGS="$CPPFLAGS -L$with_mkl_incdir"
+	[mkl_incdir="$withval"],
+	[mkl_incdir=""])
+if test "$mkl_incdir"; then
+	CPPFLAGS="$CPPFLAGS -L$mkl_incdir"
 	use_mkl=yes
 fi
 
 AC_ARG_WITH(
-	[blas-libdir],
-	[AC_HELP_STRING([--with-blas-libdir=DIR],
+	[blas],
+	[AC_HELP_STRING([--with-blas=<BLAS library DIR>],
 	[BLAS library directory])],
-	[with_blas_libdir="$withval"],
-	[with_blas_libdir=""])
-if test "$with_blas_libdir"; then
-	LDFLAGS="$LDFLAGS -L$with_blas_libdir"
+	[blas_libdir="$withval"],
+	[blas_libdir=""])
+if test "$blas_libdir"; then
+	LDFLAGS="$LDFLAGS -L$blas_libdir"
 fi
 
 AC_ARG_WITH(
 	[blas-incdir],
-	[AC_HELP_STRING([--with-blas-incdir=DIR],
+	[AC_HELP_STRING([--with-blas-incdir=<BLAS include DIR>],
 	[BLAS include directory])],
-	[with_blas_incdir="$withval"],
-	[with_blas_incdir=""])
-if test "$with_blas_incdir"; then
-	CPPFLAGS="$CPPFLAGS -L$with_blas_incdir"
+	[blas_incdir="$withval"],
+	[blas_incdir=""])
+if test "$blas_incdir"; then
+	CPPFLAGS="$CPPFLAGS -L$blas_incdir"
 fi
 
 if test "x$use_atlas" == xyes; then
