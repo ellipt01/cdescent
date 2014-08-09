@@ -20,6 +20,44 @@ AC_PROG_LIBTOOL
 
 AM_INIT_AUTOMAKE
 
+# checks gcc version
+AC_DEFUN([AX_GCC_VERSION], [
+	GCC_VERSION=""
+	AS_IF([test "x$GCC" = "xyes"],[
+		AC_CACHE_CHECK([gcc version],[ax_cv_gcc_version],[
+			ax_cv_gcc_version="`$CC -dumpversion`"
+			AS_IF([test "x$ax_cv_gcc_version" = "x"],[ax_cv_gcc_version=""])
+		])
+		GCC_VERSION=$ax_cv_gcc_version
+	])
+	AC_SUBST([GCC_VERSION])
+])
+
+# if CC=gcc, checks gcc version (>= 4.1)
+if test "x$GCC" == xyes; then
+	AX_GCC_VERSION
+	AC_CACHE_CHECK([gcc major version],[ax_cv_gcc_version_major],[
+		ax_cv_gcc_version_major="`echo $GCC_VERSION | cut -d'.' -f1`"
+		AS_IF([test "x$ax_cv_gcc_version_major" = "x"],[ax_cv_gcc_version_major=""])
+	])
+	GCC_VERSION_MAJOR=$ax_cv_gcc_version_major
+	AC_CACHE_CHECK([gcc minor version],[ax_cv_gcc_version_minor],[
+		ax_cv_gcc_version_minor="`echo $GCC_VERSION | cut -d'.' -f2`"
+		AS_IF([test "x$ax_cv_gcc_version_minor" = "x"],[ax_cv_gcc_version_minor=""])
+	])
+	GCC_VERSION_MINOR=$ax_cv_gcc_version_minor
+
+	AS_IF([test "$GCC_VERSION_MAJOR" -lt 4],[
+		AC_MSG_FAILURE([gcc version requires >= 4.1])
+	])
+
+	AS_IF([test "$GCC_VERSION_MAJOR" -eq 4],[
+		AS_IF([test "$GCC_VERSION_MINOR" -lt 1],[
+			AC_MSG_FAILURE([gcc version requires >= 4.1])
+		])
+	])
+fi
+
 # Checks for libraries.
 AC_CHECK_LIB([m],[floor],[])
 AC_CHECK_LIB([gfortran],[main],[])

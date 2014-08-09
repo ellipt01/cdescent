@@ -8,19 +8,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-bool	bool_compare_and_swap (long *ptr, long oldv, long newv);
-
-#ifdef __GNUC__
-#	if __GNUC_PREREQ (4, 1)	// gcc_version >= 4.1
 #define atomic_bool_compare_and_swap(p, f, t) __sync_bool_compare_and_swap((p), (f), (t))
-#	else
-#define atomic_bool_compare_and_swap(p, f, t) bool_compare_and_swap((p), (f), (t))
-#	endif
-#else
-#  ifdef __ICC
-#define atomic_bool_compare_and_swap(p, f, t) stm::iccsync::bool_compare_and_swap((p), (f), (t))
-#  endif
-#endif
 
 union dlvar {
 	double	dv;
@@ -31,20 +19,6 @@ union dlptr {
 	double	*dp;
 	long	*lp;
 };
-
-bool
-bool_compare_and_swap (long *ptr, long oldv, long newv)
-{
-	unsigned char	ret;
-	__asm__ __volatile__ (
-			"  lock\n"
-			"  cmpxchgq %2,%1\n"
-			"  sete %0\n"
-			:  "=q" (ret), "=m" (*ptr)
-			:  "r" (newv), "m" (*ptr), "a" (oldv)
-			:  "memory");
-	return ret;
-}
 
 void
 atomic_add (double *data, double delta)
