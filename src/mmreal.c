@@ -362,10 +362,9 @@ static mm_dense *
 mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_dense *y, const double beta)
 {
 	int			j, k;
-	int			m, n;
+	int			m;
 	mm_dense	*d;
 	m = (trans) ? s->n : s->m;
-	n = (trans) ? s->m : s->n;
 	
 	d = mm_real_new (MM_REAL_DENSE, false, m, 1, m);
 	d->data = (double *) malloc (d->nz * sizeof (double));
@@ -388,10 +387,9 @@ mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_de
 static mm_dense *
 mm_real_d_dot_y (bool trans, const double alpha, const mm_dense *d, const mm_dense *y, const double beta)
 {
-	int			m, n;
+	int			m;
 	mm_dense	*c;
 	m = (trans) ? d->n : d->m;
-	n = (trans) ? d->m : d->n;
 
 	c = mm_real_new (MM_REAL_DENSE, false, m, 1, m);
 	c->data = (double *) malloc (c->nz * sizeof (double));

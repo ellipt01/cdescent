@@ -74,14 +74,35 @@ if test "$atlas_libdir"; then
 fi
 
 AC_ARG_WITH(
+	[tatlas],
+	[AC_HELP_STRING([--with-tatlas=<parallel ATLAS library DIR>],
+	[parallel ATLAS library directory])],
+	[tatlas_libdir="$withval"],
+	[tatlas_libdir=""])
+if test "$tatlas_libdir"; then
+	LDFLAGS="$LDFLAGS -L$tatlas_libdir"
+	use_tatlas=yes
+fi
+
+AC_ARG_WITH(
+	[satlas],
+	[AC_HELP_STRING([--with-satlas=<serial ATLAS library DIR>],
+	[serial ATLAS library directory])],
+	[satlas_libdir="$withval"],
+	[satlas_libdir=""])
+if test "$satlas_libdir"; then
+	LDFLAGS="$LDFLAGS -L$satlas_libdir"
+	use_satlas=yes
+fi
+
+AC_ARG_WITH(
 	[atlas-incdir],
 	[AC_HELP_STRING([--with-atlas-incdir=<ATLAS include DIR>],
 	[ATLAS include directory])],
 	[atlas_incdir="$withval"],
 	[atlas_incdir=""])
 if test "$atlas_incdir"; then
-	CPPFLAGS="$CPPFLAGS -L$atlas_incdir"
-	use_atlas=yes
+	CPPFLAGS="$CPPFLAGS -I$atlas_incdir"
 fi
 
 AC_ARG_WITH(
@@ -102,8 +123,7 @@ AC_ARG_WITH(
 	[mkl_incdir="$withval"],
 	[mkl_incdir=""])
 if test "$mkl_incdir"; then
-	CPPFLAGS="$CPPFLAGS -L$mkl_incdir"
-	use_mkl=yes
+	CPPFLAGS="$CPPFLAGS -I$mkl_incdir"
 fi
 
 AC_ARG_WITH(
@@ -123,11 +143,15 @@ AC_ARG_WITH(
 	[blas_incdir="$withval"],
 	[blas_incdir=""])
 if test "$blas_incdir"; then
-	CPPFLAGS="$CPPFLAGS -L$blas_incdir"
+	CPPFLAGS="$CPPFLAGS -I$blas_incdir"
 fi
 
 if test "x$use_atlas" == xyes; then
 	AC_CHECK_LIB([f77blas],[main],[])
+elif test "x$use_tatlas" == xyes; then
+	AC_CHECK_LIB([tatlas],[main],[])
+elif test "x$use_satlas" == xyes; then
+	AC_CHECK_LIB([satlas],[main],[])
 elif test "x$use_mkl" == xyes; then
 	AC_CHECK_LIB([mkl_intel_lp64],
 	[main],
@@ -137,6 +161,8 @@ elif test "x$use_mkl" == xyes; then
 else
 	AC_CHECK_LIB([blas],[main],[])
 fi
+
+AC_SUBST(AM_CPPFLAGS, "$CPPFLAGS")
 
 AC_ARG_ENABLE(
 	[openmp],
