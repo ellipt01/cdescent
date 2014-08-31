@@ -64,7 +64,7 @@ AC_CHECK_LIB([gfortran],[main],[])
 
 AC_ARG_WITH(
 	[atlas],
-	[AC_HELP_STRING([--with-atlas=<ATLAS library DIR>],
+	[AC_HELP_STRING([--with-atlas[[=DIR]]],
 	[ATLAS library directory])],
 	[atlas_libdir="$withval"],
 	[atlas_libdir=""])
@@ -75,7 +75,7 @@ fi
 
 AC_ARG_WITH(
 	[tatlas],
-	[AC_HELP_STRING([--with-tatlas=<parallel ATLAS library DIR>],
+	[AC_HELP_STRING([--with-tatlas[[=DIR]]],
 	[parallel ATLAS library directory])],
 	[tatlas_libdir="$withval"],
 	[tatlas_libdir=""])
@@ -86,7 +86,7 @@ fi
 
 AC_ARG_WITH(
 	[satlas],
-	[AC_HELP_STRING([--with-satlas=<serial ATLAS library DIR>],
+	[AC_HELP_STRING([--with-satlas[[=DIR]]],
 	[serial ATLAS library directory])],
 	[satlas_libdir="$withval"],
 	[satlas_libdir=""])
@@ -97,7 +97,7 @@ fi
 
 AC_ARG_WITH(
 	[atlas-incdir],
-	[AC_HELP_STRING([--with-atlas-incdir=<ATLAS include DIR>],
+	[AC_HELP_STRING([--with-atlas-incdir[[=DIR]]],
 	[ATLAS include directory])],
 	[atlas_incdir="$withval"],
 	[atlas_incdir=""])
@@ -107,7 +107,7 @@ fi
 
 AC_ARG_WITH(
 	[mkl],
-	[AC_HELP_STRING([--with-mkl=<MKL library DIR>],
+	[AC_HELP_STRING([--with-mkl[[=DIR]]],
 	[Intel math kernel library directory])],
 	[mkl_libdir="$withval"],
 	[mkl_libdir=""])
@@ -118,7 +118,7 @@ fi
 
 AC_ARG_WITH(
 	[mkl-incdir],
-	[AC_HELP_STRING([--with-mkl-incdir=<MKL include DIR>],
+	[AC_HELP_STRING([--with-mkl-incdir[[=DIR]]],
 	[Intel math kernel library include directory])],
 	[mkl_incdir="$withval"],
 	[mkl_incdir=""])
@@ -128,7 +128,7 @@ fi
 
 AC_ARG_WITH(
 	[blas],
-	[AC_HELP_STRING([--with-blas=<BLAS library DIR>],
+	[AC_HELP_STRING([--with-blas[[=DIR]]],
 	[BLAS library directory])],
 	[blas_libdir="$withval"],
 	[blas_libdir=""])
@@ -138,7 +138,7 @@ fi
 
 AC_ARG_WITH(
 	[blas-incdir],
-	[AC_HELP_STRING([--with-blas-incdir=<BLAS include DIR>],
+	[AC_HELP_STRING([--with-blas-incdir[[=DIR]]],
 	[BLAS include directory])],
 	[blas_incdir="$withval"],
 	[blas_incdir=""])
@@ -161,8 +161,6 @@ elif test "x$use_mkl" == xyes; then
 else
 	AC_CHECK_LIB([blas],[main],[])
 fi
-
-AC_SUBST(AM_CPPFLAGS, "$CPPFLAGS")
 
 AC_ARG_ENABLE(
 	[openmp],
@@ -190,6 +188,9 @@ if test "x$enable_openmp" != xno; then
 	CFLAGS="$CFLAGS $OMPFLAGS"
 fi
 AC_SUBST([OMPFLAGS])
+
+AC_SUBST(AM_LDFLAGS, "$LDFLAGS")
+AC_SUBST(AM_CPPFLAGS, "$CPPFLAGS")
 
 # Checks for header files.
 AC_CHECK_HEADER([stdlib.h])
