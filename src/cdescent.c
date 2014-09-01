@@ -11,7 +11,8 @@
 
 #include "private.h"
 
-cdescent *
+/* allocate cdescent object */
+static cdescent *
 cdescent_alloc (void)
 {
 	cdescent	*cd = (cdescent *) malloc (sizeof (cdescent));
@@ -33,6 +34,7 @@ cdescent_alloc (void)
 	return cd;
 }
 
+/* create new cdescent object */
 cdescent *
 cdescent_new (const linregmodel *lreg, const double tol, bool parallel)
 {
@@ -72,6 +74,7 @@ cdescent_new (const linregmodel *lreg, const double tol, bool parallel)
 	return cd;
 }
 
+/* destroy cdescent object */
 void
 cdescent_free (cdescent *cd)
 {
@@ -84,6 +87,7 @@ cdescent_free (cdescent *cd)
 	return;
 }
 
+/* set cd->lambda1 */
 void
 cdescent_set_lambda1 (cdescent *cd, const double lambda1)
 {
@@ -91,6 +95,7 @@ cdescent_set_lambda1 (cdescent *cd, const double lambda1)
 	return;
 }
 
+/* cd->lambda1 is set to 10^log10_lambda1 */
 void
 cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1)
 {

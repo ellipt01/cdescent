@@ -62,7 +62,6 @@ struct s_linregmodel {
 };
 
 /* linregmodel.c */
-linregmodel	*linregmodel_alloc (void);
 linregmodel	*linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d,
 		bool has_copy, bool do_ycentering, bool do_xcentering, bool do_xnormalizing);
 void			linregmodel_free (linregmodel *l);

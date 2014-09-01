@@ -61,8 +61,7 @@ calc_degree_of_freedom (const cdescent *cd)
  * m		: number of data (num rows of b and Z)
  * n		: number of variables (num cols of Z and num rows of beta)
  *
- * 	if gamma = 0, eBIC is identical with the classical BIC
-*/
+ * 	if gamma = 0, eBIC is identical with the classical BIC */
 double
 cdescent_eval_bic (const cdescent *cd, double gamma)
 {

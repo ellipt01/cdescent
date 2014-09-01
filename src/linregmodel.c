@@ -47,7 +47,8 @@ do_normalizing (mm_real *x)
 	return;
 }
 
-linregmodel *
+/* allocate linregmodel object */
+static linregmodel *
 linregmodel_alloc (void)
 {
 	linregmodel	*lreg = (linregmodel *) malloc (sizeof (linregmodel));
@@ -73,9 +74,10 @@ linregmodel_alloc (void)
 	return lreg;
 }
 
+/* create new linregmodel object */
 linregmodel *
-linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool has_copy,
-		bool do_ycentering, bool do_xcentering, bool do_xnormalizing)
+linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d,
+		bool has_copy, bool do_ycentering, bool do_xcentering, bool do_xnormalizing)
 {
 	double			camax;
 	linregmodel	*lreg;
@@ -89,25 +91,30 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool
 
 	lreg = linregmodel_alloc ();
 
+	/* has_copy */
 	lreg->has_copy = has_copy;
-	if (has_copy) {
+	if (has_copy) {	// copy y, x and d
 		lreg->y = mm_real_copy (y);
 		lreg->x = mm_real_copy (x);
 		if (d) lreg->d = mm_real_copy (d);
-	} else {
+	} else {	// only store pointers
 		lreg->x = x;
 		lreg->y = y;
 		lreg->d = d;
 	}
 
+	/* lambda2 */
 	if (lambda2 > DBL_EPSILON) lreg->lambda2 = lambda2;
 
+	/* if lambda2 > 0 && d != NULL, regression type is NOT lasso: is_regtype_lasso = false */
 	if (lreg->lambda2 > DBL_EPSILON && lreg->d) lreg->is_regtype_lasso = false;
 
+	/* centering y */
 	if (do_ycentering) {
 		do_centering (lreg->y);
 		lreg->ycentered = true;
 	}
+	/* standardizing x */
 	if (do_xcentering) {
 		if (mm_real_is_sparse (lreg->x)) 	mm_real_replace_sparse_to_dense (lreg->x);
 		do_centering (lreg->x);
@@ -152,6 +159,7 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool
 	return lreg;
 }
 
+/* destroy linregmodel object */
 void
 linregmodel_free (linregmodel *lreg)
 {

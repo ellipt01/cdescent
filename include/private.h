@@ -32,7 +32,7 @@ extern void	dgemm_ (const char *transa, const char *transb, const int *m, const 
 		const double *beta, double *c, const int *ldc);
 #endif
 
-/* following constants are set in linreg.c */
+/* following constants are set in private.c */
 extern const int		ione;	//  1
 extern const double	dzero;	//  0.
 extern const double	done;	//  1.

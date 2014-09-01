@@ -627,7 +627,7 @@ mm_real_fwrite_sparse (FILE *stream, mm_sparse *s, const char *format)
 	mm_write_mtx_crd_size (stream, s->m, s->n, s->nz);
 	for (j = 0; j < s->n; j++) {
 		for (k = s->p[j]; k < s->p[j + 1]; k++) {
-			fprintf (stream, "%d %d ", s->i[k] + 1, j + 1);
+			fprintf (stream, "%d %d ", s->i[k] + 1, j + 1);	// c -> fortran
 			fprintf (stream, format, s->data[k]);
 			fprintf (stream, "\n");
 		}

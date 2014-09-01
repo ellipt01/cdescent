@@ -14,13 +14,13 @@
 #include "example.h"
 
 /*** default settings ***/
-double			lambda2 = 0.;
-double			log10_lambda1 = -2.;
-double			dlog10_lambda1 = 0.1;
-double			gamma_bic = 0.;	// traditional BIC
+double	lambda2 = 0.;
+double	log10_lambda1 = -2.;
+double	dlog10_lambda1 = 0.1;
+double	gamma_bic = 0.;	// traditional BIC
 
-double			tolerance = 1.e-3;
-int				maxiter = 100000;
+double	tolerance = 1.e-3;
+int		maxiter = 100000;
 
 extern char	*optarg;
 
@@ -106,12 +106,18 @@ read_params (int argc, char **argv)
 linregmodel *
 create_linregmodel (void)
 {
-	mm_dense		*x;
-	mm_dense		*y;
-	mm_real		*d;
-	linregmodel	*lreg;
+	mm_dense	*x;
+	mm_dense	*y;
+	mm_real	*d;
 
-	FILE			*fp;
+	bool		has_copy = true;
+	bool		do_ycentering = true;
+	bool		do_xcentering = true;
+	bool		do_xnormalizing = true;
+
+	FILE		*fp;
+
+	linregmodel	*lreg;
 
 	if ((fp = fopen (infn_y, "r")) == NULL) {
 		fprintf (stderr, "ERROR: cannot open file %s.\n", infn_y);
@@ -132,7 +138,7 @@ create_linregmodel (void)
 	d = mm_real_eye (MM_REAL_SPARSE, x->n);	// elastic net
 	//	d = mm_real_penalty_smooth (MM_REAL_SPARSE, x->n);	// s-lasso
 
-	lreg = linregmodel_new (y, x, lambda2, d, true, true, true, true);
+	lreg = linregmodel_new (y, x, lambda2, d, has_copy, do_ycentering, do_xcentering, do_xnormalizing);
 
 	mm_real_free (x);
 	mm_real_free (y);

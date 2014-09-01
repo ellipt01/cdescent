@@ -42,7 +42,7 @@ mm_real_penalty_ssmooth (const int n)
 static mm_dense *
 mm_real_penalty_dsmooth (const int n)
 {
-	int			j;
+	int		j;
 	mm_dense	*d = mm_real_new (MM_REAL_DENSE, false, n - 1, n, (n - 1) * n);
 	d->data = (double *) malloc (d->nz * sizeof (double));
 	mm_real_set_all (d, 0.);

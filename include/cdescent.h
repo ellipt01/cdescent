@@ -37,7 +37,6 @@ struct s_cdescent {
 };
 
 /* cdescent.c */
-cdescent	*cdescent_alloc (void);
 cdescent	*cdescent_new (const linregmodel *lreg, const double tol, bool parallel);
 void		cdescent_free (cdescent *cd);
 void		cdescent_set_lambda1 (cdescent *cd, const double lambda1);
