@@ -6,6 +6,8 @@ AC_INIT([cdescent], [0.1.2])
 AC_CONFIG_SRCDIR([example/example.h])
 AC_CONFIG_HEADERS([config.h])
 
+AM_INIT_AUTOMAKE
+
 # Checks for programs.
 AC_PROG_CC
 AM_PROG_CC_C_O
@@ -17,8 +19,6 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_RANLIB
 AC_PROG_LIBTOOL
-
-AM_INIT_AUTOMAKE
 
 # checks gcc version
 AC_DEFUN([AX_GCC_VERSION], [
