@@ -109,12 +109,7 @@ create_linregmodel (void)
 	mm_dense	*x;
 	mm_dense	*y;
 	mm_real	*d;
-
 	bool		has_copy = true;
-	bool		do_ycentering = true;
-	bool		do_xcentering = true;
-	bool		do_xnormalizing = true;
-
 	FILE		*fp;
 
 	linregmodel	*lreg;
@@ -138,7 +133,7 @@ create_linregmodel (void)
 	d = mm_real_eye (MM_REAL_SPARSE, x->n);	// elastic net
 	//	d = mm_real_penalty_smooth (MM_REAL_SPARSE, x->n);	// s-lasso
 
-	lreg = linregmodel_new (y, x, lambda2, d, has_copy, do_ycentering, do_xcentering, do_xnormalizing);
+	lreg = linregmodel_new (y, x, lambda2, d, has_copy, DO_CENTERING_Y | DO_STANDARDIZING_X);
 
 	mm_real_free (x);
 	mm_real_free (y);

@@ -17,6 +17,16 @@ extern "C" {
 #include <stdbool.h>
 #include <mmreal.h>
 
+/* flag of pre-processing for the data */
+enum {
+	DO_CENTERING_Y   = 1 << 0,	// do centering of y
+	DO_CENTERING_X   = 1 << 1,	// do centering of x
+	DO_NORMALIZING_X = 1 << 2,	// do normalizing of x
+	// do standardizing of x
+	DO_STANDARDIZING_X = DO_CENTERING_X | DO_NORMALIZING_X,
+	DO_NOTHING       = 0x0,	// do nothing
+};
+
 typedef struct s_linregmodel	linregmodel;
 
 /* Object of L1 regularized linear regression problem
@@ -62,8 +72,7 @@ struct s_linregmodel {
 };
 
 /* linregmodel.c */
-linregmodel	*linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d,
-		bool has_copy, bool do_ycentering, bool do_xcentering, bool do_xnormalizing);
+linregmodel	*linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool has_copy, int preproc);
 void			linregmodel_free (linregmodel *l);
 
 #ifdef __cplusplus
