@@ -76,7 +76,7 @@ linregmodel_alloc (void)
 
 /* create new linregmodel object */
 linregmodel *
-linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool has_copy, int preproc)
+linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool has_copy, PreProc proc)
 {
 	double			camax;
 	linregmodel	*lreg;
@@ -109,17 +109,17 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool
 	if (lreg->lambda2 > DBL_EPSILON && lreg->d) lreg->is_regtype_lasso = false;
 
 	/* centering y */
-	if (preproc & DO_CENTERING_Y) {
+	if (proc & DO_CENTERING_Y) {
 		do_centering (lreg->y);
 		lreg->ycentered = true;
 	}
 	/* standardizing x */
-	if (preproc & DO_CENTERING_X) {
+	if (proc & DO_CENTERING_X) {
 		if (mm_real_is_sparse (lreg->x)) 	mm_real_replace_sparse_to_dense (lreg->x);
 		do_centering (lreg->x);
 		lreg->xcentered = true;
 	}
-	if (preproc & DO_NORMALIZING_X) {
+	if (proc & DO_NORMALIZING_X) {
 		do_normalizing (lreg->x);
 		lreg->xnormalized = true;
 	}

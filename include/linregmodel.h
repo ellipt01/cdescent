@@ -18,14 +18,14 @@ extern "C" {
 #include <mmreal.h>
 
 /* flag of pre-processing for the data */
-enum {
+typedef enum {
 	DO_CENTERING_Y   = 1 << 0,	// do centering of y
 	DO_CENTERING_X   = 1 << 1,	// do centering of x
 	DO_NORMALIZING_X = 1 << 2,	// do normalizing of x
 	// do standardizing of x
 	DO_STANDARDIZING_X = DO_CENTERING_X | DO_NORMALIZING_X,
 	DO_NOTHING       = 0x0,	// do nothing
-};
+} PreProc;
 
 typedef struct s_linregmodel	linregmodel;
 
@@ -72,7 +72,7 @@ struct s_linregmodel {
 };
 
 /* linregmodel.c */
-linregmodel	*linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool has_copy, int preproc);
+linregmodel	*linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool has_copy, PreProc proc);
 void			linregmodel_free (linregmodel *l);
 
 #ifdef __cplusplus
