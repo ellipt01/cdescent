@@ -90,7 +90,7 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool
 
 	lreg = linregmodel_alloc ();
 
-	/* has_copy */
+	/* has copy y, x and d ? */
 	lreg->has_copy = has_copy;
 	if (has_copy) {	// copy y, x and d
 		lreg->y = mm_real_copy (y);

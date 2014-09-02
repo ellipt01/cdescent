@@ -60,13 +60,13 @@ cdescent_new (const linregmodel *lreg, const double tol, bool parallel)
 	// mu = X * beta
 	cd->mu = mm_real_new (MM_REAL_DENSE, false, lreg->x->m, 1, lreg->x->m);
 	cd->mu->data = (double *) malloc (lreg->x->m * sizeof (double));
-	mm_real_set_all (cd->mu, 0.);
+	mm_real_set_all (cd->mu, 0.);	// in initial, set to 0
 
 	// nu = D * beta
 	if (!cd->lreg->is_regtype_lasso) {
 		cd->nu = mm_real_new (MM_REAL_DENSE, false, lreg->d->m, 1, lreg->d->m);
 		cd->nu->data = (double *) malloc (lreg->d->nz * sizeof (double));
-		mm_real_set_all (cd->nu, 0.);
+		mm_real_set_all (cd->nu, 0.);	// in initial, set to 0
 	}
 
 	cd->parallel = parallel;
@@ -87,7 +87,7 @@ cdescent_free (cdescent *cd)
 	return;
 }
 
-/* set cd->lambda1 */
+/* cd->lambda1 = lambda1 */
 void
 cdescent_set_lambda1 (cdescent *cd, const double lambda1)
 {
@@ -95,7 +95,7 @@ cdescent_set_lambda1 (cdescent *cd, const double lambda1)
 	return;
 }
 
-/* cd->lambda1 is set to 10^log10_lambda1 */
+/* cd->lambda1 = 10^log10_lambda1 */
 void
 cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1)
 {

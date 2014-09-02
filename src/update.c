@@ -31,10 +31,12 @@ update_intercept (cdescent *cd)
 static void
 update_mm_dense (bool atomic, mm_dense *mm, int j, mm_real *x, const double val)
 {
-	return (atomic) ? mm_real_axjpy_atomic (val, j, x, mm) : mm_real_axjpy (val, j, x, mm);
+	if (atomic) mm_real_axjpy_atomic (val, j, x, mm)
+	else mm_real_axjpy (val, j, x, mm);
+	return;
 }
 
-/* update abs max */
+/* update abs max: *amax = max (*amax, absval) */
 static void
 update_amax (bool atomic, double *amax, double absval)
 {

@@ -20,6 +20,7 @@ union dlptr {
 	long	*lp;
 };
 
+/* atomic add operation */
 void
 atomic_add (double *data, double delta)
 {
@@ -36,6 +37,7 @@ atomic_add (double *data, double delta)
 	return;
 }
 
+/* atomic max function */
 void
 atomic_max (double *data, double val)
 {
