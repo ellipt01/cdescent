@@ -5,8 +5,8 @@
  *      Author: utsugi
  */
 
-#ifndef LINREG_PRIVATE_H_
-#define LINREG_PRIVATE_H_
+#ifndef PRIVATE_H
+#define PRIVATE_H
 
 /* Private macros, constants and headers
  * which are only used internally */
@@ -43,4 +43,4 @@ void	error_and_exit (const char * function_name, const char *error_msg, const ch
 /* print warning message */
 void	print_warning (const char * function_name, const char *error_msg, const char *file, const int line);
 
-#endif /* LINREG_PRIVATE_H_ */
+#endif /* PRIVATE_H */

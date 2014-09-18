@@ -5,8 +5,8 @@
  *      Author: utsugi
  */
 
-#ifndef MM_REAL_H_
-#define MM_REAL_H_
+#ifndef MMREAL_H_
+#define MMREAL_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,4 +73,4 @@ void		mm_real_fwrite (FILE *stream, mm_real *x, const char *format);
 }
 #endif
 
-#endif /* MM_REAL_H_ */
+#endif /* MMREAL_H_ */

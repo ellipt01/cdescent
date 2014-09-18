@@ -6,8 +6,8 @@
 *
 */
 
-#ifndef MM_IO_H
-#define MM_IO_H
+#ifndef MMIO_H
+#define MMIO_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -138,4 +138,4 @@ int		mm_read_unsymmetric_sparse(const char *fname, int *M_, int *N_, int *nz_,
 }
 #endif
 
-#endif	// MM_IO_H
+#endif	// MMIO_H

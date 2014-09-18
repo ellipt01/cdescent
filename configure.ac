@@ -2,9 +2,15 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT([cdescent], [0.1.2])
+AC_INIT([cdescent], [0.2])
 AC_CONFIG_SRCDIR([example/example.h])
 AC_CONFIG_HEADERS([config.h])
+
+CDESCENT_CURRENT=1
+CDESCENT_REVISION=0
+CDESCENT_AGE=0
+CDESCENT_LT_VERSION="${CDESCENT_CURRENT}:${CDESCENT_REVISION}:${CDESCENT_AGE}"
+AC_SUBST(CDESCENT_LT_VERSION)
 
 AM_INIT_AUTOMAKE
 
