@@ -17,7 +17,7 @@
 double	lambda2 = 0.;
 double	log10_lambda1 = -2.;
 double	dlog10_lambda1 = 0.1;
-double	gamma_bic = 0.;	// traditional BIC
+double	gamma_bic = 0.;	// classical BIC
 
 double	tolerance = 1.e-3;
 int		maxiter = 100000;

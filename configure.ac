@@ -2,12 +2,12 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT([cdescent], [0.2])
+AC_INIT([cdescent], [0.2.1])
 AC_CONFIG_SRCDIR([example/example.h])
 AC_CONFIG_HEADERS([config.h])
 
 CDESCENT_CURRENT=1
-CDESCENT_REVISION=0
+CDESCENT_REVISION=1
 CDESCENT_AGE=0
 CDESCENT_LT_VERSION="${CDESCENT_CURRENT}:${CDESCENT_REVISION}:${CDESCENT_AGE}"
 AC_SUBST(CDESCENT_LT_VERSION)
@@ -171,7 +171,7 @@ fi
 AC_ARG_ENABLE(
 	[openmp],
 	[AC_HELP_STRING([--enable-openmp],
-	[enable openMP support [[default=yes]]])],
+	[enable openMP support [default=yes]])],
 	[],
 	[enable_openmp=yes]
 )

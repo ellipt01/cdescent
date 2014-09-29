@@ -16,6 +16,32 @@
 
 #include "private.h"
 
+static bic_info *
+bic_info_alloc (void)
+{
+	return (bic_info *) malloc (sizeof (bic_info));
+}
+
+bic_info *
+bic_info_new (void)
+{
+	bic_info	*info = bic_info_alloc ();
+	info->m = 0.;
+	info->n = 0.;
+	info->rss = 0.;
+	info->df = 0.;
+	info->gamma = 0.;
+	info->bic_val = + 1.0 / 0.0;	// positive inf
+	return info;
+}
+
+void
+bic_info_free (bic_info *info)
+{
+	if (info) free (info);
+	return;
+}
+
 /*
  *   Bayesian Information Criterion for L2 reguralized
  *   linear regression model b = Z * beta
@@ -54,25 +80,25 @@ calc_degree_of_freedom (const cdescent *cd)
 }
 
 /* Extended Bayesian Information Criterion (Chen and Chen, 2008)
- * EBIC = m log(rss) + df * log(m) + 2 * gamma * df * log(n)
- * gamma	: tuning parameter for EBIC
+ * eBIC = log(rss) + df * ( log(m) + 2 * gamma * log(n) ) / m
+ * gamma	: tuning parameter for eBIC
  * rss		: residual sum of squares |b - Z * beta|^2
- * df		: degree of freedom of the system
- * m		: number of data (num rows of b and Z)
- * n		: number of variables (num cols of Z and num rows of beta)
- *
+ * df		: degree of freedom
+ * m		: number of data (number rows of b and Z)
+ * n		: number of variables (number columns of Z and number rows of beta)
  * 	if gamma = 0, eBIC is identical with the classical BIC */
-double
-cdescent_eval_bic (const cdescent *cd, double gamma)
+bic_info *
+cdescent_eval_bic (const cdescent *cd, const double gamma)
 {
-	double	rss = calc_rss (cd);
-	double	df = calc_degree_of_freedom (cd);
-	double	m = (double) cd->lreg->x->m;
-	double	n = (double) cd->lreg->x->n;
-	if (!cd->lreg->is_regtype_lasso) m += (double) cd->lreg->d->m;
-#ifdef DEBUG
-	fprintf (stdout, "rss %f df %f ", log (rss), df);
-#endif
-	return log (rss) + df * (log (m) + 2. * gamma * log (n)) / m;
+	bic_info	*info = bic_info_new ();
+	info->gamma = gamma;
+	info->rss = calc_rss (cd);
+	info->df = calc_degree_of_freedom (cd);
+	info->m = (double) cd->lreg->x->m;
+	info->n = (double) cd->lreg->x->n;
+	if (!cd->lreg->is_regtype_lasso) info->m += (double) cd->lreg->d->m;
+	info->bic_val = log (info->rss) + info->df * log (info->m) / info->m;
+	if (fabs (gamma) > DBL_EPSILON) info->bic_val += 2. * info->df * info->gamma * log (info->n) / info->m;
+	return info;
 }
 

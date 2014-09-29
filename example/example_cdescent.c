@@ -12,9 +12,7 @@
 
 #include "example.h"
 
-#ifdef DEBUG
 extern double	gamma_bic;
-#endif
 
 static void
 cdescent_output_solutionpath (int iter, const cdescent *cd)
@@ -56,6 +54,11 @@ example_cdescent_pathwise (cdescent *cd, double log10_lambda1, double dlog10_lam
 {
 	int			iter = 0;
 	double		logt;
+	bic_info	*info;
+	FILE		*fp = NULL;
+
+	/* output bic_info */
+	fp = fopen ("bic_info.data", "w");
 
 	/* warm start */
 	logt = cd->lreg->logcamax;
@@ -69,13 +72,15 @@ example_cdescent_pathwise (cdescent *cd, double log10_lambda1, double dlog10_lam
 		// output solution path
 		if (output_path) cdescent_output_solutionpath (iter++, cd);
 
-#ifdef DEBUG
-		double	bic = cdescent_eval_bic (cd, gamma_bic);
-		fprintf (stdout, "t %.4e ebic %.8e\n", cd->nrm1, bic);
-#endif
+		info = cdescent_eval_bic (cd, gamma_bic);
+		if (fp) fprintf (fp, "t %.4e ebic %.8e\n", cd->nrm1, info->bic_val);
 
 		logt -= dlog10_lambda1;
 	}
+
 	fprintf (stderr, "total iter = %d\n", cd->total_iter);
+	bic_info_free (info);
+	if (fp) fclose (fp);
+
 	return;
 }

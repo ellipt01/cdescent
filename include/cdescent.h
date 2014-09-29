@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 #include <linregmodel.h>
+#include <bic.h>
 
 typedef struct s_cdescent	cdescent;
 
@@ -50,7 +51,9 @@ bool		cdescent_update_cyclic_once_cycle (cdescent *cd);
 bool		cdescent_update_cyclic (cdescent *cd, const int maxiter);
 
 /* bic.c */
-double		cdescent_eval_bic (const cdescent *cd, double gamma);
+bic_info	*bic_info_new (void);
+void		bic_info_free (bic_info *info);
+bic_info	*cdescent_eval_bic (const cdescent *cd, double gamma);
 
 #ifdef __cplusplus
 }
