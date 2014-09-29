@@ -15,7 +15,7 @@
 #include "atomic.h"
 
 /* allocate mm_real */
-mm_real *
+static mm_real *
 mm_real_alloc (void)
 {
 	mm_real	*mm = (mm_real *) malloc (sizeof (mm_real));
@@ -142,19 +142,16 @@ mm_real_set_all (mm_real *mm, const double val)
 }
 
 /*** replace sparse -> dense ***/
-void
+bool
 mm_real_replace_sparse_to_dense (mm_real *x)
 {
 	int		j;
-	double	*data;
-	if (mm_is_dense (x->typecode)) return;
-
-	data = (double *) malloc (x->nz * sizeof (double));
-	dcopy_ (&x->nz, x->data, &ione, data, &ione);
+	double	*data = x->data;
+	if (!mm_is_sparse (x->typecode)) return false;
 
 	mm_set_dense (&x->typecode);
 	x->nz = x->m * x->n;
-	x->data = (double *) realloc (x->data, x->nz * sizeof (double));
+	x->data = (double *) malloc (x->nz * sizeof (double));
 	mm_real_set_all (x, 0.);
 
 	for (j = 0; j < x->n; j++) {
@@ -167,30 +164,30 @@ mm_real_replace_sparse_to_dense (mm_real *x)
 	}
 	free (data);
 
-	free (x->i);
+	if (x->i) free (x->i);
 	x->i = NULL;
-	free (x->p);
+	if (x->p) free (x->p);
 	x->p = NULL;
 	mm_set_general (&x->typecode);
 
-	return;
+	return true;
 }
 
 /*** replace dense -> sparse ***/
 /* the elements of x->data that fabs (x->data[j]) < threshold are set to 0 */
-void
+bool
 mm_real_replace_dense_to_sparse (mm_real *x, const double threshold)
 {
 	int		i, j, k;
-	double	*data;
-	if (!mm_is_dense (x->typecode)) return;
-
-	data = (double *) malloc (x->nz * sizeof (double));
-	dcopy_ (&x->nz, x->data, &ione, data, &ione);
+	double	*data = x->data;
+	if (!mm_is_dense (x->typecode)) return false;
 
 	mm_set_sparse (&x->typecode);
+	if (x->i) free (x->i);
 	x->i = (int *) malloc (x->nz * sizeof (int));
+	if (x->p) free (x->p);
 	x->p = (int *) malloc ((x->n + 1) * sizeof (int));
+	x->data = (double *) malloc (x->nz * sizeof (double));
 
 	k = 0;
 	x->p[0] = 0;
@@ -206,8 +203,8 @@ mm_real_replace_dense_to_sparse (mm_real *x, const double threshold)
 		x->p[j + 1] = k;
 	}
 	free (data);
-	if (x->nz != k) mm_real_realloc (x, k);
-	return;
+	if (x->nz != k) return mm_real_realloc (x, k);
+	return true;
 }
 
 /* identical sparse matrix */

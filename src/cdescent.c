@@ -87,18 +87,23 @@ cdescent_free (cdescent *cd)
 	return;
 }
 
-/* cd->lambda1 = lambda1 */
-void
+/* set cd->lambda1
+ * if designated lambda1 >= cd->lambda1_max, cd->lambda1 is set to cd->lambda1_max and return false
+ * else cd->lambda1 is set to lambda1 and return true */
+bool
 cdescent_set_lambda1 (cdescent *cd, const double lambda1)
 {
-	cd->lambda1 = (cd->lambda1_max <= lambda1) ? cd->lambda1_max : lambda1;
-	return;
+	if (cd->lambda1_max <= lambda1) {
+		cd->lambda1 = cd->lambda1_max;
+		return false;
+	}
+	cd->lambda1 = lambda1;
+	return true;
 }
 
-/* cd->lambda1 = 10^log10_lambda1 */
-void
+/* set cd->lambda1 to 10^log10_lambda1 */
+ bool
 cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1)
 {
-	cdescent_set_lambda1 (cd, pow (10., log10_lambda1));
-	return;
+	return cdescent_set_lambda1 (cd, pow (10., log10_lambda1));
 }

@@ -35,6 +35,20 @@ cdescent_output_solutionpath (int iter, const cdescent *cd)
 	return;
 }
 
+/* set log(t):
+ * if new_logt <= logt_lower, *logt = logt_lower and return true
+ * else *logt = new_logt */
+static bool
+cdescent_set_logt (const double logt_lower, const double new_logt, double *logt)
+{
+	if (new_logt <= logt_lower) {
+		*logt = logt_lower;
+		return true;
+	}
+	*logt = new_logt;
+	return false;
+}
+
 /* Evaluate the regression coefficients beta
  * correspond to the specified L1 regularization parameter log_lambda1.
  *
@@ -48,13 +62,13 @@ cdescent_output_solutionpath (int iter, const cdescent *cd)
  *
  * if output_path == true, solution path is output in files beta0xx.res
  */
-
 void
-example_cdescent_pathwise (cdescent *cd, double log10_lambda1, double dlog10_lambda1, int maxiter, bool output_path)
+example_cdescent_pathwise (cdescent *cd, double log10_lambda1_lower, double dlog10_lambda1, int maxiter, bool output_path)
 {
 	int			iter = 0;
 	double		logt;
-	bic_info	*info;
+	bool		stop_flag = false;
+
 	FILE		*fp = NULL;
 
 	/* output bic_info */
@@ -62,8 +76,10 @@ example_cdescent_pathwise (cdescent *cd, double log10_lambda1, double dlog10_lam
 
 	/* warm start */
 	logt = cd->lreg->logcamax;
+	if (cd->lreg->logcamax <= log10_lambda1_lower) stop_flag = true;
 
-	while (log10_lambda1 <= logt) {
+	while (1) {
+		bic_info	*info;
 
 		cdescent_set_log10_lambda1 (cd, logt);
 
@@ -74,12 +90,17 @@ example_cdescent_pathwise (cdescent *cd, double log10_lambda1, double dlog10_lam
 
 		info = cdescent_eval_bic (cd, gamma_bic);
 		if (fp) fprintf (fp, "t %.4e ebic %.8e\n", cd->nrm1, info->bic_val);
+		bic_info_free (info);
 
-		logt -= dlog10_lambda1;
+		if (stop_flag) break;
+
+		/* if logt - dlog10_lambda1 < log10_lambda1, logt = log10_lambda1 and stop_flag is set to true
+		   else logt -= dlog10_lambda1 */
+		stop_flag = cdescent_set_logt (log10_lambda1_lower, logt - dlog10_lambda1, &logt);
+
 	}
 
 	fprintf (stderr, "total iter = %d\n", cd->total_iter);
-	bic_info_free (info);
 	if (fp) fclose (fp);
 
 	return;

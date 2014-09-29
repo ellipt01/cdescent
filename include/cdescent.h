@@ -40,8 +40,8 @@ struct s_cdescent {
 /* cdescent.c */
 cdescent	*cdescent_new (const linregmodel *lreg, const double tol, bool parallel);
 void		cdescent_free (cdescent *cd);
-void		cdescent_set_lambda1 (cdescent *cd, const double lambda1);
-void		cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1);
+bool		cdescent_set_lambda1 (cdescent *cd, const double lambda1);
+bool		cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1);
 
 /* update.c */
 double		cdescent_beta_stepsize (const cdescent *cd, const int j);
