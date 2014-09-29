@@ -8,6 +8,10 @@
 #ifndef BIC_H_
 #define BIC_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Extended Bayesian Information Criterion (Chen and Chen, 2008)
  * eBIC = log(rss) + df * (log(m) + 2 * gamma * log(n)) / m
  * 	if gamma = 0, eBIC is identical with the classical BIC */
@@ -22,5 +26,9 @@ struct s_bic_info
 	double	gamma;	// tuning parameter for eBIC
 	double	bic_val;	// value of eBIC
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* BIC_H_ */

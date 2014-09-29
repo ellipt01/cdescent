@@ -1,0 +1,155 @@
+# Commits on Sep 30, 2014, Mitsuru Utsugi
+* 140929-iss003: modify includes
+
+# Commits on Sep 29, 2014, Mitsuru Utsugi
+* 140929-iss002: modify example
+* 140929-iss001: add bic_info structure
+
+# Commits on Sep 19, 2014, Mitsuru Utsugi
+* 140919-iss001: change lt version
+
+# Commits on Sep 02, 2014, Mitsuru Utsugi
+* 140902-iss002: change enum name
+* 140902-iss001: modify comments
+
+# Commits on Sep 01, 2014, Mitsuru Utsugi
+* 140901-iss003: introduce new enum
+* 140901-iss002: modify comments
+* 140901-iss001: modify configure.ac
+
+# Commits on Aug 31, 2014, Mitsuru Utsugi
+* 140831-iss001: modify configure.ac
+ 
+# Commits on Aug 30, 2014, Mitsuru Utsugi
+* 140830-iss001: modify configure.ac
+
+# Commits on Aug 09, 2014, Mitsuru Utsugi
+* 140809-iss001: modify configure.ac and atomic.c
+
+# Commits on Aug 01, 2014, Mitsuru Utsugi
+* 140801-iss001: modify configure.ac
+
+# Commits on Jul 31, 2014, Mitsuru Utsugi
+* 140731-iss001: add mkl support to configure.ac
+* 140730-iss001: remove link to lapack
+
+# Commits on Jul 29, 2014, Mitsuru Utsugi
+* 140729-iss001: modify COPYING
+
+# Commits on Jul 20, 2014, Mitsuru Utsugi
+* 140720-iss001: modify run_example.sh
+
+# Commits on Jul 18, 2014, Mitsuru Utsugi
+* 140718-iss002: modify example
+* 140718-iss001: modify bic
+
+# Commits on Jul 17, 2014, Mitsuru Utsugi
+* 140718-iss001: modify bic
+* 140717-iss002: add mm_real_fread / fwrite functions
+* 140717-iss001: modify example/main.c and some comments
+
+# Commits on Jul 16, 2014, Mitsuru Utsugi
+* 140716-iss001: add sample script
+
+# Commits on Jul 15, 2014, Mitsuru Utsugi
+* 140715-iss001: add eval_bic routine
+
+# Commits on Jul 11, 2014, Mitsuru Utsugi
+* 140711-iss001: remove MMRealSymmetric
+
+# Commits on Jul 10, 2014, Mitsuru Utsugi
+* 140710-iss001: modify configure.ac and mmreal.c
+* 140709-iss005: replace cdescent_error -> error_and_exit
+
+# Commits on Jul 09, 2014, Mitsuru Utsugi
+* 140709-iss004: symmetric sparse matrix has entries of below diagonal
+* 140709-iss003: modify mmio.c
+* 140709-iss002: modify configure.ac
+* 140709-iss001: modify comments
+* 140708-iss001: add support for symmetric sparse matrix
+
+# Commits on Jul 07, 2014, Mitsuru Utsugi
+* 140707-iss002: add regtype_is_lasso flag to linregmodel and remove li… …
+* 140707-iss001: change stop criterion
+* 140706-iss001: use dcopy in mm_real_copy_dense routine
+
+# Commits on Jul 06, 2014, Mitsuru Utsugi
+* 140705-iss001: replace parallel.c -> atomic.c
+
+# Commits on Jul 04, 2014, Mitsuru Utsugi
+* 140704-iss004: add parallel.c
+* 140704-iss003: modify configure.ac
+* 140704-iss002: replace cas_add to cdescent_cas_add
+* 140704-iss001: modify configure.ac
+
+# Commits on Jul 03, 2014, Mitsuru Utsugi
+* 140703-iss001:fix bug of configure.ac
+* 140702-iss003: modify configure.ac and fix bug of read_params
+
+# Commits on Jul 02, 2014, Mitsuru Utsugi
+* 140702-iss002: modify configure.ac
+* 140702-iss001: modify read_params
+* 140701-iss002: add cd->parallel
+
+# Commits on Jul 01, 2014, Mitsuru Utsugi
+* 140701-iss001: add omp support
+
+# Commits on Jun 30, 2014, Mitsuru Utsugi
+* 140630-iss001: modify mm_real.c
+
+# Commits on Jun 29, 2014, Mitsuru Utsugi
+* 140627-iss002: modify mmio.h and mmio.cs
+
+# Commits on Jun 27, 2014, Mitsuru Utsugi
+* 140627-iss001: replace linreg -> linregmodel
+
+# Commits on Jun 26, 2014, Mitsuru Utsugi
+* 140625-iss003: replace mm_mtx to mm_real
+
+# Commits on Jun 25, 2014, Mitsuru Utsugi
+* 140625-iss002: now lambda1 is specified in log-scale
+* 140625-iss001: add some mm_mtx functions
+
+# Commits on Jun 24, 2014, Mitsuru Utsugi
+* 140624-iss002: modify comments
+* 140624-iss001: modify cdescent_scale2
+
+# Commits on Jun 23, 2014, Mitsuru Utsugi
+* 140623-iss002: add mm_mtx_{sparse, dense} typedef
+* 140623-iss001: modify linreg_alloc
+
+# Commits on Jun 22, 2014, Mitsuru Utsugi
+* 140622-iss001: fix buf of centering
+* 140621-iss002: modify mm_mtx routines
+* 140621-iss001: add mm_mtx routines
+
+# Commits on Jun 17, 2014, Mitsuru Utsugi
+* 140617-iss002: modify array_set_all
+* 140617-iss001: modify typo LinegPenaltyType -> LinRegPenaltyType
+
+# Commits on Jun 16, 2014, Mitsuru Utsugi
+* 140616-iss001: modify cleanup
+ 
+# Commits on Jun 03, 2014, Mitsuru Utsugi
+* 140603-iss001: modify soft_threshold
+
+# Commits on Jun 02, 2014, Mitsuru Utsugi
+* 140602-iss003: modify comments
+* 140602-iss002: modify cdescent_gradient
+* 140602-iss001: add intercept_updater and beta_updater
+
+# Commits on Jun 01, 2014, Mitsuru Utsugi
+* 140601-iss001: remove scaling
+* 140531-iss001: modify copy_beta, rename pen->r -> pen->d
+
+# Commits on May 30, 2014, Mitsuru Utsugi
+* 140530-iss002: modify camax
+* 140530-iss001: modify eval_intercept
+
+# Commits on May 29, 2014, Mitsuru Utsugi
+* 140529-iss003: replace intercept cd->h -> cd->b
+* 140529-iss002: replace size_t -> int
+* 140529-iss001: remove liblinreg
+* 140528-iss001: add gitignore
+* first commit
+
