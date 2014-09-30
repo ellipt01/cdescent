@@ -18,7 +18,7 @@ static mm_sparse *
 mm_real_penalty_ssmooth (const int n)
 {
 	int		i, j, k;
-	mm_sparse	*s = mm_real_new (MM_REAL_SPARSE, false, n - 1, n, 2 * (n - 1));
+	mm_sparse	*s = mm_real_new (MM_REAL_SPARSE, MM_REAL_GENERAL, n - 1, n, 2 * (n - 1));
 	s->i = (int *) malloc (s->nz * sizeof (int));
 	s->p = (int *) malloc ((s->n + 1) * sizeof (int));
 	s->data = (double *) malloc (s->nz * sizeof (double));
@@ -43,7 +43,7 @@ static mm_dense *
 mm_real_penalty_dsmooth (const int n)
 {
 	int		j;
-	mm_dense	*d = mm_real_new (MM_REAL_DENSE, false, n - 1, n, (n - 1) * n);
+	mm_dense	*d = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, n - 1, n, (n - 1) * n);
 	d->data = (double *) malloc (d->nz * sizeof (double));
 	mm_real_set_all (d, 0.);
 	for (j = 0; j < n; j++) {

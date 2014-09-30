@@ -30,10 +30,18 @@ is_type_supported (MM_typecode typecode)
 	// skew and hermitian are not supported
 	if (mm_is_skew (typecode) || mm_is_hermitian (typecode)) return false;
 
-	// for dense matrix, only general is supported
-	if (mm_is_dense (typecode) && !mm_is_general (typecode)) return false;
-
 	return true;
+}
+
+static bool
+is_format_valid (MMRealFormat format) {
+	return (format == MM_REAL_SPARSE || format == MM_REAL_DENSE);
+}
+
+static bool
+is_symm_valid (MMRealSymm symm)
+{
+	return (MM_REAL_GENERAL <= symm && symm <= MM_REAL_SYMMETRIC_LOWER);
 }
 
 /* allocate mm_real */
@@ -48,7 +56,7 @@ mm_real_alloc (void)
 	mm->p = NULL;
 	mm->data = NULL;
 
-	mm->uplo = MM_REAL_FULL;
+	mm->symm = MM_REAL_GENERAL;
 
 	/* set typecode = "M_RG" : Matrix Real General */
 	// typdecode[3] = 'G' : General
@@ -62,16 +70,14 @@ mm_real_alloc (void)
 }
 
 mm_real *
-mm_real_new (MMRealFormat format, MMRealSymm symmetric, const int m, const int n, const int nz)
+mm_real_new (MMRealFormat format, MMRealSymm symm, const int m, const int n, const int nz)
 {
 	mm_real	*mm;
 
-	if (!(format == MM_REAL_SPARSE || format == MM_REAL_DENSE))
-		error_and_exit ("mm_real_new", "format must be MM_REAL_SPARSE or MM_REAL_DENSE", __FILE__, __LINE__);
-	if (format == MM_REAL_DENSE && (symmetric & MM_SYMMETRIC)) {
-		printf_warning ("mm_real_new", "dense symmetric is not supported, assume dense unsymmetric.", __FILE__, __LINE__);
-		symmetric = MM_REAL_GENERAL;
-	}
+	if (!is_format_valid (format))
+		error_and_exit ("mm_real_new", "invalid format", __FILE__, __LINE__);
+	if (!is_symm_valid (symm))
+		error_and_exit ("mm_real_new", "invalid symm", __FILE__, __LINE__);
 
 	mm = mm_real_alloc ();
 	mm->m = m;
@@ -81,12 +87,10 @@ mm_real_new (MMRealFormat format, MMRealSymm symmetric, const int m, const int n
 	// typecode[1] = 'C' or 'A'
 	if (format == MM_REAL_SPARSE) mm_set_coordinate (&mm->typecode);
 	else mm_set_array (&mm->typecode);
+
+	mm->symm = symm;
 	// typecode[3] = 'S'
-	if (symmetric & MM_SYMMETRIC) {
-		mm_set_symmetric (&mm->typecode);
-		if (symmetric & MM_REAL_UPPER) mm_real_set_upper (mm);
-		else if (symmetric & MM_REAL_LOWER) mm_real_set_lower (mm);
-	}
+	if (symm & MM_SYMMETRIC) mm_set_symmetric (&mm->typecode);
 
 	if (!is_type_supported (mm->typecode)) {
 		char	msg[128];
@@ -131,12 +135,11 @@ static mm_sparse *
 mm_real_copy_sparse (const mm_sparse *src)
 {
 	int			k;
-	mm_sparse	*dest = mm_real_new (MM_REAL_SPARSE, mm_is_symmetric (src->typecode), src->m, src->n, src->nz);
+	mm_sparse	*dest = mm_real_new (MM_REAL_SPARSE, src->symm, src->m, src->n, src->nz);
 
 	dest->i = (int *) malloc (src->nz * sizeof (int));
 	dest->p = (int *) malloc ((src->n + 1) * sizeof (int));
 	dest->data = (double *) malloc (src->nz * sizeof (double));
-	dest->uplo = src->uplo;
 
 	for (k = 0; k < src->nz; k++) {
 		dest->i[k] = src->i[k];
@@ -151,7 +154,7 @@ mm_real_copy_sparse (const mm_sparse *src)
 static mm_dense *
 mm_real_copy_dense (const mm_dense *src)
 {
-	mm_dense	*dest = mm_real_new (MM_REAL_DENSE, false, src->m, src->n, src->nz);
+	mm_dense	*dest = mm_real_new (MM_REAL_DENSE, src->symm, src->m, src->n, src->nz);
 	dest->data = (double *) malloc (src->nz * sizeof (double));
 	dcopy_ (&src->nz, src->data, &ione, dest->data, &ione);
 	return dest;
@@ -199,7 +202,6 @@ mm_real_replace_sparse_to_dense (mm_real *x)
 		for (k = x->p[j]; k < x->p[j + 1]; k++) {
 			int		i = x->i[k];
 			x->data[i + j * x->m] = data[k];
-			if (mm_real_is_symmetric (x)) x->data[j + i * x->m] = data[k];
 		}
 	}
 	free (data);
@@ -208,8 +210,6 @@ mm_real_replace_sparse_to_dense (mm_real *x)
 	x->i = NULL;
 	if (x->p) free (x->p);
 	x->p = NULL;
-	mm_set_general (&x->typecode);
-	mm_real_set_full (x);
 
 	return true;
 }
@@ -219,7 +219,7 @@ mm_real_replace_sparse_to_dense (mm_real *x)
 bool
 mm_real_replace_dense_to_sparse (mm_real *x, const double threshold)
 {
-	int		i, j, k;
+	int		j, k;
 	double	*data = x->data;
 	if (!mm_is_dense (x->typecode)) return false;
 
@@ -233,7 +233,15 @@ mm_real_replace_dense_to_sparse (mm_real *x, const double threshold)
 	k = 0;
 	x->p[0] = 0;
 	for (j = 0; j < x->n; j++) {
-		for (i = 0; i < x->m; i++) {
+		int		i;
+		int		i0 = 0;
+		int		i1 = x->m;
+
+		if (mm_real_is_symmetric (x)) {
+			if (mm_real_is_lower (x)) i0 = j;
+			if (mm_real_is_upper (x)) i1 = j + 1;
+		}
+		for (i = i0; i < i1; i++) {
 			double	dij = data[i + j * x->m];
 			if (fabs (dij) >= threshold) {
 				x->i[k] = i;
@@ -253,7 +261,7 @@ static mm_sparse *
 mm_real_seye (const int n)
 {
 	int			k;
-	mm_sparse	*s = mm_real_new (MM_REAL_SPARSE, false, n, n, n);
+	mm_sparse	*s = mm_real_new (MM_REAL_SPARSE, MM_REAL_GENERAL, n, n, n);
 	s->i = (int *) malloc (n * sizeof (int));
 	s->data = (double *) malloc (n * sizeof (double));
 	s->p = (int *) malloc ((n + 1) * sizeof (int));
@@ -272,7 +280,7 @@ static mm_dense *
 mm_real_deye (const int n)
 {
 	int			k;
-	mm_dense	*d = mm_real_new (MM_REAL_DENSE, false, n, n, n * n);
+	mm_dense	*d = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, n, n, n * n);
 	d->data = (double *) malloc (d->nz * sizeof (double));
 	mm_real_set_all (d, 0.);
 	for (k = 0; k < n; k++) d->data[k + k * n] = 1.;
@@ -295,8 +303,8 @@ mm_real_sj_asum (const int j, const mm_sparse *s)
 	double	asum = dasum_ (&size, s->data + s->p[j], &ione);
 	if (mm_real_is_symmetric (s)) {
 		int		l;
-		int		l0 = (s->uplo == MM_REAL_UPPER) ? j + 1 : 0;
-		int		l1 = (s->uplo == MM_REAL_UPPER) ? s->n : j;
+		int		l0 = (mm_real_is_upper (s)) ? j + 1 : 0;
+		int		l1 = (mm_real_is_upper (s)) ? s->n : j;
 		for (l = l0; l < l1; l++) {
 			int		k;
 			for (k = s->p[l]; k < s->p[l + 1]; k++) {
@@ -314,7 +322,23 @@ mm_real_sj_asum (const int j, const mm_sparse *s)
 static double
 mm_real_dj_asum (const int j, const mm_dense *d)
 {
-	return dasum_ (&d->m, d->data + j * d->m, &ione);
+	double	val = 0.;
+	if (!mm_real_is_symmetric (d)) val = dasum_ (&d->m, d->data + j * d->m, &ione);
+	else {
+		int		len;
+		if (mm_real_is_upper (d)) {
+			len = j;
+			val = dasum_ (&len, d->data + j * d->m, &ione);
+			len = d->m - j;
+			val += dasum_ (&len, d->data + j * d->m + j, &d->m);
+		} else if (d->symm & MM_LOWER) {
+			len = d->m - j;
+			val = dasum_ (&len, d->data + j * d->m + j, &ione);
+			len = j;
+			val += dasum_ (&len, d->data + j, &d->m);
+		}
+	}
+	return val;
 }
 
 /*** sum |x(:,j)| ***/
@@ -334,8 +358,8 @@ mm_real_sj_sum (const int j, const mm_sparse *s)
 	for (k = s->p[j]; k < s->p[j + 1]; k++) sum += s->data[k];
 	if (mm_real_is_symmetric (s)) {
 		int		l;
-		int		l0 = (s->uplo == MM_REAL_UPPER) ? j + 1 : 0;
-		int		l1 = (s->uplo == MM_REAL_UPPER) ? s->n : j;
+		int		l0 = (mm_real_is_upper (s)) ? j + 1 : 0;
+		int		l1 = (mm_real_is_upper (s)) ? s->n : j;
 		for (l = l0; l < l1; l++) {
 			for (k = s->p[l]; k < s->p[l + 1]; k++) {
 				if (s->i[k] == j) {
@@ -354,7 +378,22 @@ mm_real_dj_sum (const int j, const mm_dense *d)
 {
 	int		k;
 	double	sum = 0.;
-	for (k = 0; k < d->m; k++) sum += d->data[k + j * d->m];
+	if (!mm_real_is_symmetric (d))
+		for (k = 0; k < d->m; k++) sum += d->data[k + j * d->m];
+	else {
+		int		len;
+		if (mm_real_is_upper (d)) {
+			len = j;
+			for (k = 0; k < len; k++) sum += d->data[k + j * d->m];
+			len = d->m - j;
+			for (k = 0; k < len; k++) sum += d->data[k * d->m + j * d->m + j];
+		} else if (d->symm & MM_LOWER) {
+			len = d->m - j;
+			for (k = 0; k < len; k++) sum += d->data[k + j * d->m + j];
+			len = j;
+			for (k = 0; k < len; k++) sum += d->data[k * d->m + j];
+		}
+	}
 	return sum;
 }
 
@@ -375,8 +414,8 @@ mm_real_sj_nrm2 (const int j, const mm_sparse *s)
 	if (mm_real_is_symmetric (s)) {
 		double	sum = pow (nrm2, 2.);
 		int		l;
-		int		l0 = (s->uplo == MM_REAL_UPPER) ? j + 1 : 0;
-		int		l1 = (s->uplo == MM_REAL_UPPER) ? s->n : j;
+		int		l0 = (mm_real_is_upper (s)) ? j + 1 : 0;
+		int		l1 = (mm_real_is_upper (s)) ? s->n : j;
 		for (l = l0; l < l1; l++) {
 			int		k;
 			for (k = s->p[l]; k < s->p[l + 1]; k++) {
@@ -395,7 +434,24 @@ mm_real_sj_nrm2 (const int j, const mm_sparse *s)
 static double
 mm_real_dj_nrm2 (const int j, const mm_dense *d)
 {
-	return dnrm2_ (&d->m, d->data + j * d->m, &ione);
+	double	val = 0.;
+	if (!mm_real_is_symmetric (d)) val = dnrm2_ (&d->m, d->data + j * d->m, &ione);
+	else {
+		int		len;
+		if (mm_real_is_upper (d)) {
+			len = j;
+			val = pow (dnrm2_ (&len, d->data + j * d->m, &ione), 2.);
+			len = d->m - j;
+			val += pow (dnrm2_ (&len, d->data + j * d->m + j, &d->m), 2.);
+		} else if (d->symm & MM_LOWER) {
+			len = d->m - j;
+			val = pow (dnrm2_ (&len, d->data + j * d->m + j, &ione), 2.);
+			len = j;
+			val += pow (dnrm2_ (&len, d->data + j, &d->m), 2.);
+		}
+		val = sqrt (val);
+	}
+	return val;
 }
 
 /*** norm2 x(:,j) ***/
@@ -415,7 +471,7 @@ mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_de
 	mm_dense	*d;
 	m = (trans) ? s->n : s->m;
 	
-	d = mm_real_new (MM_REAL_DENSE, false, m, 1, m);
+	d = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, m, 1, m);
 	d->data = (double *) malloc (d->nz * sizeof (double));
 	mm_real_set_all (d, beta);
 
@@ -439,11 +495,15 @@ mm_real_d_dot_y (bool trans, const double alpha, const mm_dense *d, const mm_den
 	mm_dense	*c;
 	m = (trans) ? d->n : d->m;
 
-	c = mm_real_new (MM_REAL_DENSE, false, m, 1, m);
+	c = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, m, 1, m);
 	c->data = (double *) malloc (c->nz * sizeof (double));
 
-	dgemv_ ((trans) ? "T" : "N", &d->m, &d->n, &alpha, d->data, &d->m, y->data, &ione, &beta, c->data, &ione);
-
+	if (!mm_real_is_symmetric (d))
+		dgemv_ ((trans) ? "T" : "N", &d->m, &d->n, &alpha, d->data, &d->m, y->data, &ione, &beta, c->data, &ione);
+	else {
+		char	uplo = (mm_real_is_upper (d)) ? 'U' : 'L';
+		dsymv_ (&uplo, &d->m, &alpha, d->data, &d->m, y->data, &ione, &beta, c->data, &ione);
+	}
 	return c;
 }
 
@@ -463,13 +523,13 @@ mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dens
 static double
 mm_real_sj_trans_dot_y (const int j, const mm_sparse *s, const mm_dense *y)
 {
-	int		k;
+	int	k;
 	double	val = 0;
 	for (k = s->p[j]; k < s->p[j + 1]; k++) val += s->data[k] * y->data[s->i[k]];
 	if (mm_real_is_symmetric (s)) {
 		int		l;
-		int		l0 = (s->uplo == MM_REAL_UPPER) ? j + 1 : 0;
-		int		l1 = (s->uplo == MM_REAL_UPPER) ? s->n : j;
+		int		l0 = (mm_real_is_upper (s)) ? j + 1 : 0;
+		int		l1 = (mm_real_is_upper (s)) ? s->n : j;
 		for (l = l0; l < l1; l++) {
 			for (k = s->p[l]; k < s->p[l + 1]; k++) {
 				if (s->i[k] == j) {
@@ -486,7 +546,23 @@ mm_real_sj_trans_dot_y (const int j, const mm_sparse *s, const mm_dense *y)
 static double
 mm_real_dj_trans_dot_y (const int j, const mm_dense *d, const mm_dense *y)
 {
-	return ddot_ (&d->m, d->data + j * d->m, &ione, y->data, &ione);
+	double	val = 0.;
+	if (!mm_real_is_symmetric (d)) val = ddot_ (&d->m, d->data + j * d->m, &ione, y->data, &ione);
+	else {
+		int		len;
+		if (mm_real_is_upper (d)) {
+			len = j;
+			val = ddot_ (&len, d->data + j * d->m, &ione, y->data, &ione);
+			len = d->m - j;
+			val += ddot_ (&len, d->data + j * d->m + j, &d->m, y->data + j, &ione);
+		} else if (d->symm & MM_LOWER) {
+			len = d->m - j;
+			val = ddot_ (&len, d->data + j * d->m + j, &ione, y->data + j, &ione);
+			len = j;
+			val += ddot_ (&len, d->data + j, &d->m, y->data, &ione);
+		}
+	}
+	return val;
 }
 
 /*** x(:,j)' * y ***/
@@ -510,8 +586,8 @@ mm_real_asjpy (const double alpha, const int j, const mm_sparse *s, mm_dense *y)
 	for (k = s->p[j]; k < s->p[j + 1]; k++) y->data[s->i[k]] += alpha * s->data[k];
 	if (mm_real_is_symmetric (s)) {
 		int		l;
-		int		l0 = (s->uplo == MM_REAL_UPPER) ? j + 1 : 0;
-		int		l1 = (s->uplo == MM_REAL_UPPER) ? s->n : j;
+		int		l0 = (mm_real_is_upper (s)) ? j + 1 : 0;
+		int		l1 = (mm_real_is_upper (s)) ? s->n : j;
 		for (l = l0; l < l1; l++) {
 			for (k = s->p[l]; k < s->p[l + 1]; k++) {
 				if (s->i[k] == j) {
@@ -528,7 +604,21 @@ mm_real_asjpy (const double alpha, const int j, const mm_sparse *s, mm_dense *y)
 static void
 mm_real_adjpy (const double alpha, const int j, const mm_dense *d, mm_dense *y)
 {
-	daxpy_ (&d->m, &alpha, d->data + j * d->m, &ione, y->data, &ione);
+	if (!mm_real_is_symmetric (d)) daxpy_ (&d->m, &alpha, d->data + j * d->m, &ione, y->data, &ione);
+	else {
+		int		len;
+		if (mm_real_is_upper (d)) {
+			len = j;
+			daxpy_ (&len, &alpha, d->data + j * d->m, &ione, y->data, &ione);
+			len = d->m - j;
+			daxpy_ (&len, &alpha, d->data + j * d->m + j, &d->m, y->data + j, &ione);
+		} else if (d->symm & MM_LOWER) {
+			len = d->m - j;
+			daxpy_ (&len, &alpha, d->data + j * d->m + j, &ione, y->data + j, &ione);
+			len = j;
+			daxpy_ (&len, &alpha, d->data + j, &d->m, y->data, &ione);
+		}
+	}
 	return;
 }
 
@@ -552,8 +642,8 @@ mm_real_asjpy_atomic (const double alpha, const int j, const mm_sparse *s, mm_de
 	for (k = s->p[j]; k < s->p[j + 1]; k++) atomic_add (y->data + s->i[k], alpha * s->data[k]);
 	if (mm_real_is_symmetric (s)) {
 		int		l;
-		int		l0 = (s->uplo == MM_REAL_UPPER) ? j + 1 : 0;
-		int		l1 = (s->uplo == MM_REAL_UPPER) ? s->n : j;
+		int		l0 = (mm_real_is_upper (s)) ? j + 1 : 0;
+		int		l1 = (mm_real_is_upper (s)) ? s->n : j;
 		for (l = l0; l < l1; l++) {
 			for (k = s->p[l]; k < s->p[l + 1]; k++) {
 				if (s->i[k] == j) {
@@ -571,8 +661,28 @@ static void
 mm_real_adjpy_atomic (const double alpha, const int j, const mm_dense *d, mm_dense *y)
 {
 	int		k;
-	double	*dj = d->data + j * d->m;
-	for (k = 0; k < d->m; k++) atomic_add (y->data + k, alpha * dj[k]);
+	double	*dj;
+	if (!mm_real_is_symmetric (d)) {
+		dj = d->data + j * d->m;
+		for (k = 0; k < d->m; k++) atomic_add (y->data + k, alpha * dj[k]);
+	} else {
+		int		len;
+		if (mm_real_is_upper (d)) {
+			len = j;
+			dj = d->data + j * d->m;
+			for (k = 0; k < len; k++) atomic_add (y->data + k, alpha * dj[k]);
+			len = d->m - j;
+			dj = d->data + j * d->m + j;
+			for (k = 0; k < len; k++) atomic_add (y->data + j + k, alpha * dj[k * d->m]);
+		} else if (d->symm & MM_LOWER) {
+			len = d->m - j;
+			dj = d->data + j * d->m + j;
+			for (k = 0; k < len; k++) atomic_add (y->data + j + k, alpha * dj[k]);
+			len = j;
+			dj = d->data + j;
+			for (k = 0; k < len; k++) atomic_add (y->data + k, alpha * dj[k * d->m]);
+		}
+	}
 	return;
 }
 
@@ -598,7 +708,7 @@ mm_real_fread_sparse (FILE *fp, MM_typecode typecode)
 	mm_sparse	*s;
 
 	mm_read_mtx_crd_size (fp, &m, &n, &nz);
-	s = mm_real_new (MM_REAL_SPARSE, mm_is_symmetric (typecode), m, n, nz);
+	s = mm_real_new (MM_REAL_SPARSE, MM_REAL_GENERAL, m, n, nz);
 	s->i = (int *) malloc (s->nz * sizeof (int));
 	s->data = (double *) malloc (s->nz * sizeof (double));
 	s->p = (int *) malloc ((s->n + 1) * sizeof (int));
@@ -613,10 +723,12 @@ mm_real_fread_sparse (FILE *fp, MM_typecode typecode)
 	}
 	s->p[n] = k;
 
-	for (k = 0; k < s->nz; k++) {
-		if (s->i[k] == j[k]) continue;
-		(s->i[k] < j[k]) ? mm_real_set_upper (s) : mm_real_set_lower (s);
-		break;
+	if (mm_real_is_symmetric (s)) {
+		for (k = 0; k < s->nz; k++) {
+			if (s->i[k] == j[k]) continue;
+			s->symm = MM_SYMMETRIC | (s->i[k] < j[k]) ? MM_UPPER : MM_LOWER;
+			break;
+		}
 	}
 	free (j);
 
@@ -633,7 +745,7 @@ mm_real_fread_dense (FILE *fp, MM_typecode typecode)
 	mm_dense	*d;
 
 	mm_read_mtx_array_size (fp, &m, &n);
-	d = mm_real_new (MM_REAL_DENSE, false, m, n, m * n);
+	d = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, m, n, m * n);
 	d->data = (double *) malloc (d->nz * sizeof (double));
 
 	k = 0;
