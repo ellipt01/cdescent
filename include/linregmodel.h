@@ -14,7 +14,6 @@
 extern "C" {
 #endif
 
-#include <stdbool.h>
 #include <mmreal.h>
 
 /* flag of pre-processing for the data */

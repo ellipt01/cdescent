@@ -89,13 +89,13 @@ example_cdescent_pathwise (cdescent *cd, double log10_lambda1_lower, double dlog
 		if (output_path) cdescent_output_solutionpath (iter++, cd);
 
 		info = cdescent_eval_bic (cd, gamma_bic);
-		if (fp) fprintf (fp, "t %.4e ebic %.8e\n", cd->nrm1, info->bic_val);
+		if (fp) fprintf (fp, "t %.4e ebic %.8e rss %.8e df %.3e\n", cd->nrm1, info->bic_val, info->rss, info->df);
 		bic_info_free (info);
 
 		if (stop_flag) break;
 
 		/* if logt - dlog10_lambda1 < log10_lambda1, logt = log10_lambda1 and stop_flag is set to true
-		   else logt -= dlog10_lambda1 */
+		 * else logt -= dlog10_lambda1 */
 		stop_flag = cdescent_set_logt (log10_lambda1_lower, logt - dlog10_lambda1, &logt);
 
 	}

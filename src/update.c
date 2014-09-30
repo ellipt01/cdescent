@@ -45,12 +45,32 @@ update_amax (bool atomic, double *amax, double absval)
 	return;
 }
 
+static void
+cdescent_update (cdescent *cd, int j, bool atomic, double *amax_change)
+{
+	// eta(j) = beta_new(j) - beta_prev(j)
+	double	etaj = cdescent_beta_stepsize (cd, j);
+	double	abs_etaj = fabs (etaj);
+
+	if (abs_etaj > 0.) {
+		// update beta: beta(j) += eta(j)
+		cd->beta->data[j] += etaj;
+		// update mu (= X * beta): mu += X(:,j) * etaj
+		update_mm_dense (atomic, cd->mu, j, cd->lreg->x, etaj);
+		// update nu (= D * beta) if lambda2 != 0 && cd->nu != NULL: nu += D(:,j) * etaj
+		if (!cd->lreg->is_regtype_lasso) update_mm_dense (atomic, cd->nu, j, cd->lreg->d, etaj);
+		// update max( |eta| )
+		update_amax (atomic, amax_change, abs_etaj);
+	}
+	return;
+}
+
 /*** progress coordinate descent update for one full cycle ***/
 bool
 cdescent_update_cyclic_once_cycle (cdescent *cd)
 {
 	int		j;
-	bool	atomic;
+	bool	atomic = false;
 	double	amax_change;	// max of |eta(j)| = |beta_new(j) - beta_prev(j)|
 
 	/* b = (sum(y) - sum(X) * beta) / n.
@@ -63,46 +83,16 @@ cdescent_update_cyclic_once_cycle (cdescent *cd)
 
 	/*** single "one-at-a-time" update of cyclic coordinate descent ***/
 #ifdef _OPENMP
-	if (cd->parallel) {	// multiple threads
-		atomic = true;
+
+	if (cd->parallel) atomic = true;	// multiple threads
 
 #pragma omp parallel for
-		for (j = 0; j < cd->lreg->x->n; j++) {
-			// eta(j) = beta_new(j) - beta_prev(j)
-			double	etaj = cdescent_beta_stepsize (cd, j);
-			double	abs_etaj = fabs (etaj);
-
-			if (abs_etaj > 0.) {
-				// update beta: beta(j) += eta(j)
-				cd->beta->data[j] += etaj;
-				// update mu (= X * beta): mu += X(:,j) * etaj
-				update_mm_dense (atomic, cd->mu, j, cd->lreg->x, etaj);
-				// update nu (= D * beta) if lambda2 != 0 && cd->nu != NULL: nu += D(:,j) * etaj
-				if (!cd->lreg->is_regtype_lasso) update_mm_dense (atomic, cd->nu, j, cd->lreg->d, etaj);
-				// update max( |eta| )
-				update_amax (atomic, &amax_change, abs_etaj);
-			}
-		}
-
-	} else {	// single thread
+	for (j = 0; j < cd->lreg->x->n; j++) {
+#else
+	for (j = 0; j < cd->lreg->x->n; j++) {
 #endif
-		atomic = false;
-
-		for (j = 0; j < cd->lreg->x->n; j++) {
-			double	etaj = cdescent_beta_stepsize (cd, j);
-			double	abs_etaj = fabs (etaj);
-
-			if (abs_etaj > 0.) {
-				cd->beta->data[j] += etaj;
-				update_mm_dense (atomic, cd->mu, j, cd->lreg->x, etaj);
-				if (!cd->lreg->is_regtype_lasso) update_mm_dense (atomic, cd->nu, j, cd->lreg->d, etaj);
-				update_amax (atomic, &amax_change, abs_etaj);
-			}
-		}
-#ifdef _OPENMP
+		cdescent_update (cd, j, atomic, &amax_change);
 	}
-#endif
-
 	cd->nrm1 = mm_real_xj_asum (0, cd->beta);
 
 	return (amax_change < cd->tolerance);
@@ -121,7 +111,7 @@ cdescent_update_cyclic (cdescent *cd, const int maxiter)
 		converged = cdescent_update_cyclic_once_cycle (cd);
 
 		if (++iter >= maxiter) {
-			print_warning ("cdescent_cyclic", "reaching max number of iterations.", __FILE__, __LINE__);
+			printf_warning ("cdescent_cyclic", "reaching max number of iterations.", __FILE__, __LINE__);
 			break;
 		}
 	}

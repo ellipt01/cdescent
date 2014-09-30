@@ -28,7 +28,7 @@ error_and_exit (const char * function_name, const char *error_msg, const char *f
 
 /* print warning message */
 void
-print_warning (const char * function_name, const char *error_msg, const char *file, const int line)
+printf_warning (const char * function_name, const char *error_msg, const char *file, const int line)
 {
 	fprintf (stderr, "WARNING: %s: %s:%d: %s\n", function_name, file, line, error_msg);
 	return;

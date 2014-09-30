@@ -24,6 +24,27 @@ typedef enum {
 	MM_REAL_SPARSE = 1	// sparse matrix
 } MMRealFormat;
 
+typedef enum {
+	MM_REAL_FULL  = 1 << 2,
+	MM_REAL_UPPER = 1 << 3,
+	MM_REAL_LOWER = 1 << 4
+} MMRealUplo;
+
+#define mm_real_set_full(a)		((a)->uplo = MM_REAL_FULL)
+#define mm_real_set_upper(a)	((a)->uplo = MM_REAL_UPPER)
+#define mm_real_set_lower(a)	((a)->uplo = MM_REAL_LOWER)
+
+enum {
+	MM_GENERAL   = 1 << 0,
+	MM_SYMMETRIC = 1 << 1
+};
+
+typedef enum {
+	MM_REAL_GENERAL = MM_GENERAL,
+	MM_REAL_SYMMETRIC_UPPER = MM_SYMMETRIC | MM_REAL_UPPER,
+	MM_REAL_SYMMETRIC_LOWER = MM_SYMMETRIC | MM_REAL_LOWER
+} MMRealSymm;
+
 // matrix market format matrix
 typedef struct s_mm_real	mm_real;
 typedef struct s_mm_real	mm_dense;
@@ -32,6 +53,8 @@ typedef struct s_mm_real	mm_sparse;
 // implementation of dense / sparse matrix
 struct s_mm_real {
 	MM_typecode	typecode;	// type of matrix. see mmio.h
+
+	MMRealUplo		uplo;
 
 	int				m;		// num of rows of matrix
 	int				n;		// num of columns
@@ -42,7 +65,7 @@ struct s_mm_real {
 	double			*data;	// nonzero matrix elements: size = nz
 };
 
-mm_real	*mm_real_new (MMRealFormat format, bool symmetric, const int m, const int n, const int nz);
+mm_real	*mm_real_new (MMRealFormat format, MMRealSymm symmetric, const int m, const int n, const int nz);
 void		mm_real_free (mm_real *mm);
 bool		mm_real_realloc (mm_real *mm, const int nz);
 

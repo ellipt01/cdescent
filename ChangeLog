@@ -69,7 +69,7 @@
 * 140708-iss001: add support for symmetric sparse matrix
 
 # Commits on Jul 07, 2014, Mitsuru Utsugi
-* 140707-iss002: add regtype_is_lasso flag to linregmodel and remove li… …
+* 140707-iss002: add regtype_is_lasso flag to linregmodel and remove linregmodel_is_regtype_lasso
 * 140707-iss001: change stop criterion
 * 140706-iss001: use dcopy in mm_real_copy_dense routine
 

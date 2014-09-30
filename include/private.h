@@ -41,6 +41,6 @@ extern const double	dmone;	// -1.
 /* print error message and terminate program */
 void	error_and_exit (const char * function_name, const char *error_msg, const char *file, const int line);
 /* print warning message */
-void	print_warning (const char * function_name, const char *error_msg, const char *file, const int line);
+void	printf_warning (const char * function_name, const char *error_msg, const char *file, const int line);
 
 #endif /* PRIVATE_H */
