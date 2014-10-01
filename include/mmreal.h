@@ -15,25 +15,20 @@ extern "C" {
 #include <stdbool.h>
 #include <mmio.h>
 
-#define mm_real_is_sparse(a)	mm_is_sparse((a)->typecode)
-#define mm_real_is_dense(a)		mm_is_dense((a)->typecode)
-#define mm_real_is_symmetric(a)	(mm_is_symmetric((a)->typecode) || mm_is_skew((a)->typecode))
-
 /* dense / sparse */
 typedef enum {
-	MM_REAL_DENSE  = 0,	// dense matrix
-	MM_REAL_SPARSE = 1	// sparse matrix
+	MM_REAL_SPARSE = 0,	// sparse matrix
+	MM_REAL_DENSE  = 1	// dense matrix
 } MMRealFormat;
 
 enum {
-	MM_FULL  = 1 << 2,
-	MM_UPPER = 1 << 3,
-	MM_LOWER = 1 << 4
+	MM_GENERAL   = 0,
+	MM_SYMMETRIC = 1 << 0
 };
 
 enum {
-	MM_GENERAL   = 1 << 0,
-	MM_SYMMETRIC = 1 << 1
+	MM_UPPER = 1 << 1,
+	MM_LOWER = 1 << 2
 };
 
 /* symmetric */
@@ -43,8 +38,17 @@ typedef enum {
 	MM_REAL_SYMMETRIC_LOWER = MM_SYMMETRIC | MM_LOWER	// symmetric lower triangular
 } MMRealSymm;
 
-#define mm_real_is_upper(a) ((a)->symm & MM_UPPER)
-#define mm_real_is_lower(a) ((a)->symm & MM_LOWER)
+#define mm_real_is_sparse(a)		mm_is_sparse((a)->typecode)
+#define mm_real_is_dense(a)			mm_is_dense((a)->typecode)
+#define mm_real_is_symmetric(a)		mm_is_symmetric((a)->typecode)
+#define mm_real_is_upper(a) 		((a)->symm & MM_UPPER)
+#define mm_real_is_lower(a) 		((a)->symm & MM_LOWER)
+
+#define mm_real_set_sparse(a)		mm_set_sparse(&(a)->typecode)
+#define mm_real_set_dense(a)		mm_set_dense(&(a)->typecode)
+#define mm_real_set_symmetric(a)	mm_set_symmetric(&(a)->typecode)
+#define mm_real_set_upper(a) 		((a)->symm = (MM_SYMMETRIC | MM_UPPER))
+#define mm_real_set_lower(a) 		((a)->symm = (MM_SYMMETRIC | MM_LOWER))
 
 // matrix market format matrix
 typedef struct s_mm_real	mm_real;

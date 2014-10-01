@@ -1,4 +1,9 @@
-# Commits on Sep 30, 2014, Mitsuru Utsugi
+# Commits on Oct 01, 2014 Mitsuru Utsugi
+* 141001-iss002: fix bug of mm_real_fread
+* 141001-iss001: mm_real supports sparse/dense general/symmetric matrix
+
+# Commits on Sep 30, 2014 Mitsuru Utsugi
+* 140930-iss001: sparse symm upper and lower matrix is supported
 * 140929-iss003: modify includes
 
 # Commits on Sep 29, 2014, Mitsuru Utsugi
@@ -69,7 +74,8 @@
 * 140708-iss001: add support for symmetric sparse matrix
 
 # Commits on Jul 07, 2014, Mitsuru Utsugi
-* 140707-iss002: add regtype_is_lasso flag to linregmodel and remove linregmodel_is_regtype_lasso
+* 140707-iss002: add regtype_is_lasso flag to linregmodel
+  and remove linregmodel_is_regtype_lasso
 * 140707-iss001: change stop criterion
 * 140706-iss001: use dcopy in mm_real_copy_dense routine
 

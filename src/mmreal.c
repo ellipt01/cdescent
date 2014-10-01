@@ -190,9 +190,9 @@ mm_real_replace_sparse_to_dense (mm_real *x)
 {
 	int		j;
 	double	*data = x->data;
-	if (!mm_is_sparse (x->typecode)) return false;
+	if (!mm_real_is_sparse (x)) return false;
 
-	mm_set_dense (&x->typecode);
+	mm_real_set_dense (x);
 	x->nz = x->m * x->n;
 	x->data = (double *) malloc (x->nz * sizeof (double));
 	mm_real_set_all (x, 0.);
@@ -221,9 +221,9 @@ mm_real_replace_dense_to_sparse (mm_real *x, const double threshold)
 {
 	int		j, k;
 	double	*data = x->data;
-	if (!mm_is_dense (x->typecode)) return false;
+	if (!mm_real_is_dense (x)) return false;
 
-	mm_set_sparse (&x->typecode);
+	mm_real_set_sparse (x);
 	if (x->i) free (x->i);
 	x->i = (int *) malloc (x->nz * sizeof (int));
 	if (x->p) free (x->p);
@@ -511,7 +511,7 @@ mm_real_d_dot_y (bool trans, const double alpha, const mm_dense *d, const mm_den
 mm_dense *
 mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dense *y, const double beta)
 {
-	if (!mm_is_dense (y->typecode)) error_and_exit ("mm_real_x_dot_y", "y must be dense.", __FILE__, __LINE__);
+	if (!mm_real_is_dense (y)) error_and_exit ("mm_real_x_dot_y", "y must be dense.", __FILE__, __LINE__);
 	if (y->n != 1) error_and_exit ("mm_real_x_dot_y", "y must be vector.", __FILE__, __LINE__);
 	if ((trans && x->m != y->m) || (!trans && x->n != y->m))
 		error_and_exit ("mm_real_x_dot_y", "vector and matrix dimensions do not match.", __FILE__, __LINE__);
@@ -570,7 +570,7 @@ double
 mm_real_xj_trans_dot_y (const int j, const mm_real *x, const mm_dense *y)
 {
 	if (j < 0 || x->n <= j) error_and_exit ("mm_real_xj_trans_dot_y", "index out of range.", __FILE__, __LINE__);
-	if (!mm_is_dense (y->typecode))
+	if (!mm_real_is_dense (y))
 		error_and_exit ("mm_real_xj_trans_dot_y", "y must be dense.", __FILE__, __LINE__);
 	if (y->n != 1) error_and_exit ("mm_real_xj_trans_dot_y", "y must be vector.", __FILE__, __LINE__);
 	if (x->m != y->m) error_and_exit ("mm_real_xj_trans_dot_y", "vector and matrix dimensions do not match.", __FILE__, __LINE__);
@@ -627,7 +627,7 @@ void
 mm_real_axjpy (const double alpha, const int j, const mm_real *x, mm_dense *y)
 {
 	if (j < 0 || x->n <= j) error_and_exit ("mm_real_axjpy", "index out of range.", __FILE__, __LINE__);
-	if (!mm_is_dense (y->typecode)) error_and_exit ("mm_real_axjpy", "y must be dense.", __FILE__, __LINE__);
+	if (!mm_real_is_dense (y)) error_and_exit ("mm_real_axjpy", "y must be dense.", __FILE__, __LINE__);
 	if (y->n != 1) error_and_exit ("mm_real_axjpy", "y must be vector.", __FILE__, __LINE__);
 	if (x->m != y->m) error_and_exit ("mm_real_axjpy", "vector and matrix dimensions do not match.", __FILE__, __LINE__);
 
@@ -691,7 +691,7 @@ void
 mm_real_axjpy_atomic (const double alpha, const int j, const mm_real *x, mm_dense *y)
 {
 	if (j < 0 || x->n <= j) error_and_exit ("mm_real_axjpy_atomic", "index out of range.", __FILE__, __LINE__);
-	if (!mm_is_dense (y->typecode)) error_and_exit ("mm_real_axjpy_atomic", "y must be dense.", __FILE__, __LINE__);
+	if (!mm_real_is_dense (y)) error_and_exit ("mm_real_axjpy_atomic", "y must be dense.", __FILE__, __LINE__);
 	if (y->n != 1) error_and_exit ("mm_real_axjpy_atomic", "y must be vector.", __FILE__, __LINE__);
 	if (x->m != y->m) error_and_exit ("mm_real_axjpy_atomic", "vector and matrix dimensions do not match.", __FILE__, __LINE__);
 
@@ -702,7 +702,7 @@ mm_real_axjpy_atomic (const double alpha, const int j, const mm_real *x, mm_dens
 static mm_sparse *
 mm_real_fread_sparse (FILE *fp, MM_typecode typecode)
 {
-	int			k;
+	int			k, l;
 	int			m, n, nz;
 	int			*j;
 	mm_sparse	*s;
@@ -716,17 +716,18 @@ mm_real_fread_sparse (FILE *fp, MM_typecode typecode)
 	j = (int *) malloc (s->nz * sizeof (int));
 	mm_read_mtx_crd_data (fp, s->m, s->n, s->nz, s->i, j, s->data, typecode);
 
-	s->p[0] = 0;
+	l = 0;
 	for (k = 0; k < s->nz; k++) {
 		s->i[k]--;		// fortran -> c
-		if (k > 0 && j[k] != j[k - 1]) s->p[j[k] - 1] = k;
+		while (l < j[k]) s->p[l++] = k;
 	}
-	s->p[n] = k;
+	while (l <= n) s->p[l++] = k;
 
-	if (mm_real_is_symmetric (s)) {
+	if (mm_is_symmetric (typecode)) {
+		mm_real_set_symmetric (s);
 		for (k = 0; k < s->nz; k++) {
-			if (s->i[k] == j[k]) continue;
-			s->symm = MM_SYMMETRIC | (s->i[k] < j[k]) ? MM_UPPER : MM_LOWER;
+			if (s->i[k] == j[k] - 1) continue;
+			(s->i[k] < j[k] - 1) ? mm_real_set_upper (s) : mm_real_set_lower (s);
 			break;
 		}
 	}
@@ -806,5 +807,5 @@ mm_real_fwrite_dense (FILE *stream, mm_dense *d, const char *format)
 void
 mm_real_fwrite (FILE *stream, mm_real *x, const char *format)
 {
-	return (mm_is_sparse (x->typecode)) ? mm_real_fwrite_sparse (stream, x, format) : mm_real_fwrite_dense (stream, x, format);
+	return (mm_real_is_sparse (x)) ? mm_real_fwrite_sparse (stream, x, format) : mm_real_fwrite_dense (stream, x, format);
 }
