@@ -83,7 +83,7 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool
 
 	if (!y) error_and_exit ("linregmodel_new", "y is empty.", __FILE__, __LINE__);
 	if (!x) error_and_exit ("linregmodel_new", "x is empty.", __FILE__, __LINE__);
-	if (!mm_is_dense (y->typecode)) error_and_exit ("linregmodel_new", "y must be dense.", __FILE__, __LINE__);
+	if (!mm_real_is_dense (y)) error_and_exit ("linregmodel_new", "y must be dense.", __FILE__, __LINE__);
 	if (y->n != 1) error_and_exit ("linregmodel_new", "y must be vector.", __FILE__, __LINE__);
 	if (y->m != x->m) error_and_exit ("linregmodel_new", "dimensions of matrix x and vector y do not match.", __FILE__, __LINE__);
 	if (d && x->n != d->n) error_and_exit ("linregmodel_new", "dimensions of matrix x and d do not match.", __FILE__, __LINE__);
@@ -115,7 +115,11 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool
 	}
 	/* standardizing x */
 	if (proc & DO_CENTERING_X) {
-		if (mm_real_is_sparse (lreg->x)) 	mm_real_replace_sparse_to_dense (lreg->x);
+		if (mm_real_is_sparse (lreg->x)) {
+			mm_real	*tmp = lreg->x;
+			lreg->x = mm_real_sparse_to_dense (tmp);
+			if (lreg->has_copy) mm_real_free (tmp);
+		}
 		do_centering (lreg->x);
 		lreg->xcentered = true;
 	}

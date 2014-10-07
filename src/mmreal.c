@@ -184,76 +184,65 @@ mm_real_set_all (mm_real *mm, const double val)
 	return;
 }
 
-/*** replace sparse -> dense ***/
-bool
-mm_real_replace_sparse_to_dense (mm_real *x)
+/*** convert sparse -> dense ***/
+mm_dense *
+mm_real_sparse_to_dense (mm_sparse *s)
 {
-	int		j;
-	double	*data = x->data;
-	if (!mm_real_is_sparse (x)) return false;
+	int			j;
+	mm_dense	*d;
+	if (!mm_real_is_sparse (s)) return false;
 
-	mm_real_set_dense (x);
-	x->nz = x->m * x->n;
-	x->data = (double *) malloc (x->nz * sizeof (double));
-	mm_real_set_all (x, 0.);
+	d = mm_real_new (MM_REAL_DENSE, s->symm, s->m, s->n, s->m * s->n);
+	d->data = (double *) malloc (d->nz * sizeof (double));
+	mm_real_set_all (d, 0.);
 
-	for (j = 0; j < x->n; j++) {
+	for (j = 0; j < s->n; j++) {
 		int		k;
-		for (k = x->p[j]; k < x->p[j + 1]; k++) {
-			int		i = x->i[k];
-			x->data[i + j * x->m] = data[k];
+		for (k = s->p[j]; k < s->p[j + 1]; k++) {
+			int		i = s->i[k];
+			d->data[i + j * s->m] = s->data[k];
 		}
 	}
-	free (data);
-
-	if (x->i) free (x->i);
-	x->i = NULL;
-	if (x->p) free (x->p);
-	x->p = NULL;
-
-	return true;
+	return d;
 }
 
 /*** replace dense -> sparse ***/
 /* fabs (x->data[j]) < threshold are set to 0 */
-bool
-mm_real_replace_dense_to_sparse (mm_real *x, const double threshold)
+mm_sparse *
+mm_real_dense_to_sparse (mm_dense *d, const double threshold)
 {
-	int		j, k;
-	double	*data = x->data;
-	if (!mm_real_is_dense (x)) return false;
+	int			j, k;
+	mm_sparse	*s;
+	if (!mm_real_is_dense (d)) return false;
 
-	mm_real_set_sparse (x);
-	if (x->i) free (x->i);
-	x->i = (int *) malloc (x->nz * sizeof (int));
-	if (x->p) free (x->p);
-	x->p = (int *) malloc ((x->n + 1) * sizeof (int));
-	x->data = (double *) malloc (x->nz * sizeof (double));
+	s = mm_real_new (MM_REAL_SPARSE, d->symm, d->m, d->n, d->nz);
+	s->i = (int *) malloc (s->nz * sizeof (int));
+	s->p = (int *) malloc ((s->n + 1) * sizeof (int));
+	s->data = (double *) malloc (s->nz * sizeof (double));
 
 	k = 0;
-	x->p[0] = 0;
-	for (j = 0; j < x->n; j++) {
+	s->p[0] = 0;
+	for (j = 0; j < d->n; j++) {
 		int		i;
 		int		i0 = 0;
-		int		i1 = x->m;
+		int		i1 = d->m;
 
-		if (mm_real_is_symmetric (x)) {
-			if (mm_real_is_lower (x)) i0 = j;
-			if (mm_real_is_upper (x)) i1 = j + 1;
+		if (mm_real_is_symmetric (d)) {
+			if (mm_real_is_lower (d)) i0 = j;
+			if (mm_real_is_upper (d)) i1 = j + 1;
 		}
 		for (i = i0; i < i1; i++) {
-			double	dij = data[i + j * x->m];
+			double	dij = d->data[i + j * d->m];
 			if (fabs (dij) >= threshold) {
-				x->i[k] = i;
-				x->data[k] = dij;
+				s->i[k] = i;
+				s->data[k] = dij;
 				k++;
 			}
 		}
-		x->p[j + 1] = k;
+		s->p[j + 1] = k;
 	}
-	free (data);
-	if (x->nz != k) return mm_real_realloc (x, k);
-	return true;
+	if (s->nz != k) mm_real_realloc (s, k);
+	return s;
 }
 
 /* identity sparse matrix */
@@ -331,7 +320,7 @@ mm_real_dj_asum (const int j, const mm_dense *d)
 			val = dasum_ (&len, d->data + j * d->m, &ione);
 			len = d->m - j;
 			val += dasum_ (&len, d->data + j * d->m + j, &d->m);
-		} else if (d->symm & MM_LOWER) {
+		} else if (mm_real_is_lower (d)) {
 			len = d->m - j;
 			val = dasum_ (&len, d->data + j * d->m + j, &ione);
 			len = j;
@@ -387,7 +376,7 @@ mm_real_dj_sum (const int j, const mm_dense *d)
 			for (k = 0; k < len; k++) sum += d->data[k + j * d->m];
 			len = d->m - j;
 			for (k = 0; k < len; k++) sum += d->data[k * d->m + j * d->m + j];
-		} else if (d->symm & MM_LOWER) {
+		} else if (mm_real_is_lower (d)) {
 			len = d->m - j;
 			for (k = 0; k < len; k++) sum += d->data[k + j * d->m + j];
 			len = j;
@@ -443,7 +432,7 @@ mm_real_dj_nrm2 (const int j, const mm_dense *d)
 			val = pow (dnrm2_ (&len, d->data + j * d->m, &ione), 2.);
 			len = d->m - j;
 			val += pow (dnrm2_ (&len, d->data + j * d->m + j, &d->m), 2.);
-		} else if (d->symm & MM_LOWER) {
+		} else if (mm_real_is_lower (d)) {
 			len = d->m - j;
 			val = pow (dnrm2_ (&len, d->data + j * d->m + j, &ione), 2.);
 			len = j;
@@ -555,7 +544,7 @@ mm_real_dj_trans_dot_y (const int j, const mm_dense *d, const mm_dense *y)
 			val = ddot_ (&len, d->data + j * d->m, &ione, y->data, &ione);
 			len = d->m - j;
 			val += ddot_ (&len, d->data + j * d->m + j, &d->m, y->data + j, &ione);
-		} else if (d->symm & MM_LOWER) {
+		} else if (mm_real_is_lower (d)) {
 			len = d->m - j;
 			val = ddot_ (&len, d->data + j * d->m + j, &ione, y->data + j, &ione);
 			len = j;
@@ -612,7 +601,7 @@ mm_real_adjpy (const double alpha, const int j, const mm_dense *d, mm_dense *y)
 			daxpy_ (&len, &alpha, d->data + j * d->m, &ione, y->data, &ione);
 			len = d->m - j;
 			daxpy_ (&len, &alpha, d->data + j * d->m + j, &d->m, y->data + j, &ione);
-		} else if (d->symm & MM_LOWER) {
+		} else if (mm_real_is_lower (d)) {
 			len = d->m - j;
 			daxpy_ (&len, &alpha, d->data + j * d->m + j, &ione, y->data + j, &ione);
 			len = j;
@@ -674,7 +663,7 @@ mm_real_adjpy_atomic (const double alpha, const int j, const mm_dense *d, mm_den
 			len = d->m - j;
 			dj = d->data + j * d->m + j;
 			for (k = 0; k < len; k++) atomic_add (y->data + j + k, alpha * dj[k * d->m]);
-		} else if (d->symm & MM_LOWER) {
+		} else if (mm_real_is_lower (d)) {
 			len = d->m - j;
 			dj = d->data + j * d->m + j;
 			for (k = 0; k < len; k++) atomic_add (y->data + j + k, alpha * dj[k]);

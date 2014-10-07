@@ -104,12 +104,11 @@ read_params (int argc, char **argv)
 
 /*** read infiles and create linregmodel ***/
 linregmodel *
-create_linregmodel (void)
+create_linregmodel (bool has_copy)
 {
 	mm_dense	*x;
 	mm_dense	*y;
 	mm_real	*d;
-	bool		has_copy = true;
 	FILE		*fp;
 
 	linregmodel	*lreg;
@@ -135,10 +134,11 @@ create_linregmodel (void)
 
 	lreg = linregmodel_new (y, x, lambda2, d, has_copy, DO_CENTERING_Y | DO_STANDARDIZING_X);
 
-	mm_real_free (x);
-	mm_real_free (y);
-	if (d) mm_real_free (d);
-
+	if (has_copy) {
+		mm_real_free (x);
+		mm_real_free (y);
+		if (d) mm_real_free (d);
+	}
 	return lreg;
 }
 
@@ -152,7 +152,7 @@ main (int argc, char **argv)
 	if (!read_params (argc, argv)) usage (argv[0]);
 
 	/* create linear regression model object */
-	lreg = create_linregmodel ();
+	lreg = create_linregmodel (true);
 
 	/* create cdescent object */
 	cd = cdescent_new (lreg, tolerance, false);

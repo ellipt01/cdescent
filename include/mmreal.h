@@ -79,8 +79,8 @@ mm_real	*mm_real_copy (const mm_real *mm);
 void		mm_real_array_set_all (int n, double *data, const double val);
 void		mm_real_set_all (mm_real *mm, const double val);
 
-bool		mm_real_replace_sparse_to_dense (mm_real *x);
-bool		mm_real_replace_dense_to_sparse (mm_real *x, const double threshold);
+mm_dense	*mm_real_sparse_to_dense (mm_sparse *s);
+mm_sparse	*mm_real_dense_to_sparse (mm_dense *x, const double threshold);
 
 mm_real	*mm_real_eye (MMRealFormat type, const int n);
 
