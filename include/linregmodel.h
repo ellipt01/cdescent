@@ -18,12 +18,12 @@ extern "C" {
 
 /* flag of pre-processing for the data */
 typedef enum {
-	DO_CENTERING_Y   = 1 << 0,	// do centering of y
-	DO_CENTERING_X   = 1 << 1,	// do centering of x
-	DO_NORMALIZING_X = 1 << 2,	// do normalizing of x
-	// do standardizing of x
-	DO_STANDARDIZING_X = DO_CENTERING_X | DO_NORMALIZING_X,
-	DO_NOTHING       = 0x0,	// do nothing
+	DO_NOTHING       = 0x0,		// do nothing
+	DO_CENTERING_Y   = 1 << 0,	// do centering y
+	DO_CENTERING_X   = 1 << 1,	// do centering x
+	DO_NORMALIZING_X = 1 << 2,	// do normalizing x
+	// do standardizing x
+	DO_STANDARDIZING_X = DO_CENTERING_X | DO_NORMALIZING_X
 } PreProc;
 
 typedef struct s_linregmodel	linregmodel;
@@ -41,7 +41,7 @@ struct s_linregmodel {
 
 	mm_real	*x;		// matrix of predictors X
 	mm_dense	*y;		// observed data vector y (must be dense)
-	/* penalty term. */
+	/* penalty term */
 	mm_real	*d;		// linear operator matrix D
 
 	/* weight of penalty term */

@@ -24,7 +24,7 @@ is_type_supported (MM_typecode typecode)
 	// pattern is not supported
 	if (mm_is_pattern (typecode)) return false;
 
-	// integer and complex are not supported
+	// integer and complex matrix are not supported
 	if (mm_is_integer (typecode) || mm_is_complex (typecode)) return false;
 
 	// skew and hermitian are not supported
@@ -33,11 +33,13 @@ is_type_supported (MM_typecode typecode)
 	return true;
 }
 
+/* check format */
 static bool
 is_format_valid (MMRealFormat format) {
 	return (format == MM_REAL_SPARSE || format == MM_REAL_DENSE);
 }
 
+/* check symmetric */
 static bool
 is_symm_valid (MMRealSymm symm)
 {
@@ -69,6 +71,11 @@ mm_real_alloc (void)
 	return mm;
 }
 
+/*** create new mm_real object
+ * MMRealFormat	format: MM_REAL_DENSE or MM_REAL_SPARSE
+ * MMRealSymm		symm  : MM_REAL_GENERAL, MM_REAL_SYMMETRIC_UPPER or MM_REAL_SYMMETRIC_LOWER
+ * int				m, n  : rows and columns of the matrix
+ * int				nz    : number of nonzero elements of the matrix ***/
 mm_real *
 mm_real_new (MMRealFormat format, MMRealSymm symm, const int m, const int n, const int nz)
 {
@@ -101,6 +108,7 @@ mm_real_new (MMRealFormat format, MMRealSymm symm, const int m, const int n, con
 	return mm;
 }
 
+/*** free mm_real ***/
 void
 mm_real_free (mm_real *mm)
 {
@@ -115,7 +123,7 @@ mm_real_free (mm_real *mm)
 	return;
 }
 
-/* reallocate mm_real */
+/*** reallocate mm_real ***/
 bool
 mm_real_realloc (mm_real *mm, const int nz)
 {
@@ -167,8 +175,8 @@ mm_real_copy (const mm_real *src)
 	return (mm_real_is_sparse (src)) ? mm_real_copy_sparse (src) : mm_real_copy_dense (src);
 }
 
-/*** set all array to val ***/
-void
+/* set all elements of array to val */
+static void
 mm_real_array_set_all (const int n, double *data, const double val)
 {
 	int		k;
@@ -206,7 +214,7 @@ mm_real_sparse_to_dense (mm_sparse *s)
 	return d;
 }
 
-/*** replace dense -> sparse ***/
+/*** convert dense -> sparse ***/
 /* fabs (x->data[j]) < threshold are set to 0 */
 mm_sparse *
 mm_real_dense_to_sparse (mm_dense *d, const double threshold)
@@ -243,6 +251,85 @@ mm_real_dense_to_sparse (mm_dense *d, const double threshold)
 	}
 	if (s->nz != k) mm_real_realloc (s, k);
 	return s;
+}
+
+/* convert sparse symmetric -> sparse general */
+static mm_sparse *
+mm_real_symmetric_to_general_sparse (mm_sparse *x)
+{
+	int			j, m;
+	mm_sparse	*s;
+	if (!mm_real_is_symmetric (x)) return mm_real_copy (x);
+
+	s = mm_real_new (MM_REAL_SPARSE, MM_REAL_GENERAL, x->m, x->n, 2 * x->nz);
+	s->i = (int *) malloc (s->nz * sizeof (int));
+	s->data = (double *) malloc (s->nz * sizeof (double));
+	s->p = (int *) malloc ((s->n + 1) * sizeof (int));
+
+	m = 0;
+	s->p[0] = 0;
+	for (j = 0; j < x->n; j++) {
+		int		k, l;
+		if (mm_real_is_upper (x)) {
+			for (k = x->p[j]; k < x->p[j + 1]; k++) {
+				s->i[m] = x->i[k];
+				s->data[m++] = x->data[k];
+			}
+			for (l = j + 1; l < x->n; l++) {
+				for (k = x->p[l]; k < x->p[l + 1]; k++) {
+					if (x->i[k] == j) {
+						s->i[m] = l;
+						s->data[m++] = x->data[k];
+						break;
+					}
+				}
+			}
+		} else if (mm_real_is_lower (x)) {
+			for (l = 0; l < j; l++) {
+				for (k = x->p[l]; k < x->p[l + 1]; k++) {
+					if (x->i[k] == j) {
+						s->i[m] = l;
+						s->data[m++] = x->data[k];
+						break;
+					}
+				}
+			}
+			for (k = x->p[j]; k < x->p[j + 1]; k++) {
+				s->i[m] = x->i[k];
+				s->data[m++] = x->data[k];
+			}
+		}
+		s->p[j + 1] = m;
+	}
+	if (s->nz != m) mm_real_realloc (s, m);
+	return s;
+}
+
+/* convert dense symmetric -> dense general */
+static mm_dense *
+mm_real_symmetric_to_general_dense (mm_dense *x)
+{
+	int			i, j;
+	mm_dense	*d = mm_real_copy (x);
+	if (!mm_real_is_symmetric (x)) return d;
+
+	for (j = 0; j < x->n; j++) {
+		if (mm_real_is_upper (x)) {
+			for (i = j + 1; i < x->m; i++) d->data[i + j * d->m] = x->data[j + i * x->m];
+		} else if (mm_real_is_lower (x)) {
+			for (i = 0; i < j; i++) d->data[i + j * d->m] = x->data[j + i * x->m];
+		}
+	}
+	mm_set_general (&d->typecode);
+	d->symm = MM_REAL_GENERAL;
+	return d;
+}
+
+/* convert symmetric -> general */
+mm_real *
+mm_real_symmetric_to_general (mm_real *x)
+{
+	return (mm_real_is_sparse (x)) ? mm_real_symmetric_to_general_sparse (x) : mm_real_symmetric_to_general_dense (x);
 }
 
 /* identity sparse matrix */
@@ -707,7 +794,7 @@ mm_real_fread_sparse (FILE *fp, MM_typecode typecode)
 
 	l = 0;
 	for (k = 0; k < s->nz; k++) {
-		s->i[k]--;		// fortran -> c
+		s->i[k]--;	// fortran -> c
 		while (l < j[k]) s->p[l++] = k;
 	}
 	while (l <= n) s->p[l++] = k;

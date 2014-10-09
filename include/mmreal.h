@@ -73,14 +73,12 @@ struct s_mm_real {
 mm_real	*mm_real_new (MMRealFormat format, MMRealSymm symmetric, const int m, const int n, const int nz);
 void		mm_real_free (mm_real *mm);
 bool		mm_real_realloc (mm_real *mm, const int nz);
-
 mm_real	*mm_real_copy (const mm_real *mm);
-
-void		mm_real_array_set_all (int n, double *data, const double val);
 void		mm_real_set_all (mm_real *mm, const double val);
 
 mm_dense	*mm_real_sparse_to_dense (mm_sparse *s);
 mm_sparse	*mm_real_dense_to_sparse (mm_dense *x, const double threshold);
+mm_real	*mm_real_symmetric_to_general (mm_real *x);
 
 mm_real	*mm_real_eye (MMRealFormat type, const int n);
 

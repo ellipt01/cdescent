@@ -34,7 +34,7 @@ cdescent_alloc (void)
 	return cd;
 }
 
-/* create new cdescent object */
+/*** create new cdescent object ***/
 cdescent *
 cdescent_new (const linregmodel *lreg, const double tol, bool parallel)
 {
@@ -74,7 +74,7 @@ cdescent_new (const linregmodel *lreg, const double tol, bool parallel)
 	return cd;
 }
 
-/* destroy cdescent object */
+/*** free cdescent object ***/
 void
 cdescent_free (cdescent *cd)
 {
@@ -87,9 +87,9 @@ cdescent_free (cdescent *cd)
 	return;
 }
 
-/* set cd->lambda1
+/*** set cd->lambda1
  * if designated lambda1 >= cd->lambda1_max, cd->lambda1 is set to cd->lambda1_max and return false
- * else cd->lambda1 is set to lambda1 and return true */
+ * else cd->lambda1 is set to lambda1 and return true ***/
 bool
 cdescent_set_lambda1 (cdescent *cd, const double lambda1)
 {
@@ -101,7 +101,7 @@ cdescent_set_lambda1 (cdescent *cd, const double lambda1)
 	return true;
 }
 
-/* set cd->lambda1 to 10^log10_lambda1 */
+/*** set cd->lambda1 to 10^log10_lambda1 ***/
  bool
 cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1)
 {

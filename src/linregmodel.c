@@ -74,7 +74,7 @@ linregmodel_alloc (void)
 	return lreg;
 }
 
-/* create new linregmodel object */
+/*** create new linregmodel object ***/
 linregmodel *
 linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool has_copy, PreProc proc)
 {
@@ -84,15 +84,19 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool
 	if (!y) error_and_exit ("linregmodel_new", "y is empty.", __FILE__, __LINE__);
 	if (!x) error_and_exit ("linregmodel_new", "x is empty.", __FILE__, __LINE__);
 	if (!mm_real_is_dense (y)) error_and_exit ("linregmodel_new", "y must be dense.", __FILE__, __LINE__);
+	if (mm_real_is_symmetric (y)) error_and_exit ("linregmodel_new", "y must be general.", __FILE__, __LINE__);
 	if (y->n != 1) error_and_exit ("linregmodel_new", "y must be vector.", __FILE__, __LINE__);
 	if (y->m != x->m) error_and_exit ("linregmodel_new", "dimensions of matrix x and vector y do not match.", __FILE__, __LINE__);
 	if (d && x->n != d->n) error_and_exit ("linregmodel_new", "dimensions of matrix x and d do not match.", __FILE__, __LINE__);
 
 	lreg = linregmodel_alloc ();
 
-	/* has copy y, x and d ? */
-	lreg->has_copy = has_copy;
-	if (has_copy) {	// copy y, x and d
+	/* has copy of y, x and d ?
+	 * if DO_CENTERING_Y or DO_CENTERING_X flag is set to proc, lreg->has_copy is set to true */
+	if ((proc & DO_CENTERING_Y) || (proc & DO_CENTERING_X)) lreg->has_copy = true;
+	else lreg->has_copy = has_copy;
+
+	if (lreg->has_copy) {	// copy y, x and d
 		lreg->y = mm_real_copy (y);
 		lreg->x = mm_real_copy (x);
 		if (d) lreg->d = mm_real_copy (d);
@@ -102,31 +106,46 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool
 		lreg->d = d;
 	}
 
+	/* centering y */
+	if (proc & DO_CENTERING_Y) {	// lreg->has_copy = true
+		do_centering (lreg->y);
+		lreg->ycentered = true;
+	}
+	/* centering x */
+	if (proc & DO_CENTERING_X) {	// lreg->has_copy = true
+		/* if lreg->x is sparse, convert to dense matrix */
+		if (mm_real_is_sparse (lreg->x)) {
+			mm_real	*tmp = lreg->x;
+			lreg->x = mm_real_sparse_to_dense (tmp);
+			mm_real_free (tmp);
+		}
+		/* if lreg->x is symmetric, convert to general matrix */
+		if (mm_real_is_symmetric (lreg->x)) {
+			mm_real	*tmp = lreg->x;
+			lreg->x = mm_real_symmetric_to_general (tmp);
+			mm_real_free (tmp);
+		}
+		do_centering (lreg->x);
+		lreg->xcentered = true;
+	}
+
+	/* normalizing x */
+	if (proc & DO_NORMALIZING_X) {
+		/* if lreg->x is symmetric, convert to general matrix */
+		if (mm_real_is_symmetric (lreg->x)) {
+			mm_real	*tmp = lreg->x;
+			lreg->x = mm_real_symmetric_to_general (tmp);
+			mm_real_free (tmp);
+		}
+		do_normalizing (lreg->x);
+		lreg->xnormalized = true;
+	}
+
 	/* lambda2 */
 	if (lambda2 > DBL_EPSILON) lreg->lambda2 = lambda2;
 
 	/* if lambda2 > 0 && d != NULL, regression type is NOT lasso: is_regtype_lasso = false */
 	if (lreg->lambda2 > DBL_EPSILON && lreg->d) lreg->is_regtype_lasso = false;
-
-	/* centering y */
-	if (proc & DO_CENTERING_Y) {
-		do_centering (lreg->y);
-		lreg->ycentered = true;
-	}
-	/* standardizing x */
-	if (proc & DO_CENTERING_X) {
-		if (mm_real_is_sparse (lreg->x)) {
-			mm_real	*tmp = lreg->x;
-			lreg->x = mm_real_sparse_to_dense (tmp);
-			if (lreg->has_copy) mm_real_free (tmp);
-		}
-		do_centering (lreg->x);
-		lreg->xcentered = true;
-	}
-	if (proc & DO_NORMALIZING_X) {
-		do_normalizing (lreg->x);
-		lreg->xnormalized = true;
-	}
 
 	// c = X' * y
 	lreg->c = mm_real_x_dot_y (true, 1., lreg->x, lreg->y, 0.);
@@ -162,7 +181,7 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool
 	return lreg;
 }
 
-/* destroy linregmodel object */
+/*** free linregmodel object ***/
 void
 linregmodel_free (linregmodel *lreg)
 {
