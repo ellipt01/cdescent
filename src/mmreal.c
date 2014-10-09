@@ -234,7 +234,6 @@ mm_real_dense_to_sparse (mm_dense *d, const double threshold)
 		int		i;
 		int		i0 = 0;
 		int		i1 = d->m;
-
 		if (mm_real_is_symmetric (d)) {
 			if (mm_real_is_lower (d)) i0 = j;
 			if (mm_real_is_upper (d)) i1 = j + 1;
@@ -320,8 +319,7 @@ mm_real_symmetric_to_general_dense (mm_dense *x)
 			for (i = 0; i < j; i++) d->data[i + j * d->m] = x->data[j + i * x->m];
 		}
 	}
-	mm_set_general (&d->typecode);
-	d->symm = MM_REAL_GENERAL;
+	mm_real_set_general (d);
 	return d;
 }
 

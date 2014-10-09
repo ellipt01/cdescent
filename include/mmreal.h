@@ -46,6 +46,7 @@ typedef enum {
 
 #define mm_real_set_sparse(a)		mm_set_sparse(&(a)->typecode)
 #define mm_real_set_dense(a)		mm_set_dense(&(a)->typecode)
+#define mm_real_set_general(a)		{mm_set_general(&(a)->typecode);((a)->symm=MM_REAL_GENERAL);}
 #define mm_real_set_symmetric(a)	mm_set_symmetric(&(a)->typecode)
 #define mm_real_set_upper(a) 		((a)->symm = (MM_SYMMETRIC | MM_UPPER))
 #define mm_real_set_lower(a) 		((a)->symm = (MM_SYMMETRIC | MM_LOWER))
