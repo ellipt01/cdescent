@@ -33,7 +33,7 @@ cdescent_scale2 (const cdescent *cd, const int j)
 }
 
 /*** return gradient of objective function with respect to beta_j ***/
-/* z = d L_j
+/* z = d L / d beta_j
  *   = c(j) - X(:,j)' * mu - X(:,j)' * b - lambda2 * D(:,j)' * D * beta
  *     + scale2 * beta_j,
  * however, the last term scale2 * beta_j is omitted */
