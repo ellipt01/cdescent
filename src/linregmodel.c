@@ -83,7 +83,7 @@ linregmodel_alloc (void)
  * bool      has_copy_y: whether linregmodel object has own copy of y
  * mm_sparse         *x: sparse general / symmetric matrix
  * bool      has_copy_x: whether linregmodel object has own copy of x
- * const double lambda2: reguralization parameter
+ * const double lambda2: regularization parameter
  * const mm_real     *d: general linear operator of penalty
  * PreProc         proc: specify pre-processing for y and x
  *                       DO_CENTERING_Y: do centering of y

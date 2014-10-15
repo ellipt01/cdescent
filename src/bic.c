@@ -5,10 +5,6 @@
  *      Author: utsugi
  */
 
-#ifdef DEBUG
-#include <stdio.h>
-#endif
-
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
@@ -43,7 +39,7 @@ bic_info_free (bic_info *info)
 }
 
 /*
- *   Bayesian Information Criterion for L2 reguralized
+ *   Bayesian Information Criterion for L2 regularized
  *   linear regression model b = Z * beta
  *   where b = [y ; 0], Z = [x ; sqrt(lambda2) * D]
  */
