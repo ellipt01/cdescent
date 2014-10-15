@@ -37,12 +37,13 @@ typedef struct s_linregmodel	linregmodel;
  *   	Z = scale * [X; sqrt(lambda2) * D]
  */
 struct s_linregmodel {
-	bool		has_copy;	// has copy of x, y and d
+	bool		has_copy_y;	// has copy of y
+	bool		has_copy_x;	// has copy of x
 
 	mm_real	*x;		// matrix of predictors X
 	mm_dense	*y;		// observed data vector y (must be dense)
 	/* penalty term */
-	mm_real	*d;		// linear operator matrix D
+	mm_real	*d;		// general linear operator D
 
 	/* weight of penalty term */
 	double		lambda2;
@@ -71,7 +72,7 @@ struct s_linregmodel {
 };
 
 /* linregmodel.c */
-linregmodel	*linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, mm_real *d, bool has_copy, PreProc proc);
+linregmodel	*linregmodel_new (mm_dense *y, bool has_copy_y, mm_real *x, bool has_copy_x, const double lambda2, const mm_real *d, PreProc proc);
 void			linregmodel_free (linregmodel *l);
 
 #ifdef __cplusplus

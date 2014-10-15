@@ -51,15 +51,15 @@ cdescent_new (const linregmodel *lreg, const double tol, bool parallel)
 	cd->lambda1_max = pow (10., lreg->logcamax);
 	cd->lambda1 = cd->lambda1_max;
 
-	cd->b = lreg->sy / (double) lreg->y->m;
+	if (!lreg->ycentered) cd->b = lreg->sy / (double) lreg->y->m;
 
 	cd->beta = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, lreg->x->n, 1, lreg->x->n);
 	cd->beta->data = (double *) malloc (cd->beta->nz * sizeof (double));
-	mm_real_set_all (cd->beta, 0.);
+	mm_real_set_all (cd->beta, 0.);	// in initial, set to 0
 
 	// mu = X * beta
 	cd->mu = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, lreg->x->m, 1, lreg->x->m);
-	cd->mu->data = (double *) malloc (lreg->x->m * sizeof (double));
+	cd->mu->data = (double *) malloc (lreg->x->nz * sizeof (double));
 	mm_real_set_all (cd->mu, 0.);	// in initial, set to 0
 
 	// nu = D * beta

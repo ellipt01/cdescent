@@ -29,10 +29,10 @@ update_intercept (cdescent *cd)
 
 /* update mm_dense *mm: mm += x(:,j) * val */
 static void
-update_mm_dense (bool atomic, mm_dense *mm, int j, mm_real *x, const double val)
+update_mm_dense (bool atomic, mm_dense *mm, int j, const mm_real *x, const double val)
 {
-	if (atomic) mm_real_axjpy_atomic (val, j, x, mm);
-	else mm_real_axjpy (val, j, x, mm);
+	if (atomic) mm_real_axjpy_atomic (val, x, j, mm);
+	else mm_real_axjpy (val, x, j, mm);
 	return;
 }
 
@@ -93,7 +93,7 @@ cdescent_update_cyclic_once_cycle (cdescent *cd)
 #endif
 		cdescent_update (cd, j, atomic, &amax_change);
 	}
-	cd->nrm1 = mm_real_xj_asum (0, cd->beta);
+	cd->nrm1 = mm_real_xj_asum (cd->beta, 0);
 
 	return (amax_change < cd->tolerance);
 }

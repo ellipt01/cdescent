@@ -40,16 +40,9 @@ typedef enum {
 
 #define mm_real_is_sparse(a)		mm_is_sparse((a)->typecode)
 #define mm_real_is_dense(a)			mm_is_dense((a)->typecode)
-#define mm_real_is_symmetric(a)		mm_is_symmetric((a)->typecode)
+#define mm_real_is_symmetric(a)		(mm_is_symmetric((a)->typecode) && ((a)->symm & MM_SYMMETRIC))
 #define mm_real_is_upper(a) 		((a)->symm & MM_UPPER)
 #define mm_real_is_lower(a) 		((a)->symm & MM_LOWER)
-
-#define mm_real_set_sparse(a)		mm_set_sparse(&(a)->typecode)
-#define mm_real_set_dense(a)		mm_set_dense(&(a)->typecode)
-#define mm_real_set_general(a)		{mm_set_general(&(a)->typecode); ((a)->symm=MM_REAL_GENERAL);}
-#define mm_real_set_symmetric(a)	mm_set_symmetric(&(a)->typecode)
-#define mm_real_set_upper(a) 		((a)->symm = (MM_SYMMETRIC | MM_UPPER))
-#define mm_real_set_lower(a) 		((a)->symm = (MM_SYMMETRIC | MM_LOWER))
 
 // matrix market format matrix
 typedef struct s_mm_real	mm_real;
@@ -74,6 +67,14 @@ struct s_mm_real {
 mm_real	*mm_real_new (MMRealFormat format, MMRealSymm symmetric, const int m, const int n, const int nz);
 void		mm_real_free (mm_real *mm);
 bool		mm_real_realloc (mm_real *mm, const int nz);
+
+void		mm_real_set_sparse (mm_real *x);
+void		mm_real_set_dense (mm_real *x);
+void		mm_real_set_general (mm_real *x);
+void		mm_real_set_symmetric (mm_real *x);
+void		mm_real_set_upper (mm_real *x);
+void		mm_real_set_lower (mm_real *x);
+
 mm_real	*mm_real_copy (const mm_real *mm);
 void		mm_real_set_all (mm_real *mm, const double val);
 
@@ -83,14 +84,14 @@ mm_real	*mm_real_symmetric_to_general (mm_real *x);
 
 mm_real	*mm_real_eye (MMRealFormat type, const int n);
 
-double		mm_real_xj_asum (const int j, const mm_real *x);
-double		mm_real_xj_sum (const int j, const mm_real *x);
-double		mm_real_xj_nrm2 (const int j, const mm_real *x);
+double		mm_real_xj_asum (const mm_real *x, const int j);
+double		mm_real_xj_sum (const mm_real *x, const int j);
+double		mm_real_xj_nrm2 (const mm_real *x, const int j);
 
 mm_dense	*mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dense *y, const double beta);
-double		mm_real_xj_trans_dot_y (const int j, const mm_real *x, const mm_dense *y);
-void		mm_real_axjpy (const double alpha, const int j, const mm_real *x, mm_dense *y);
-void		mm_real_axjpy_atomic (const double alpha, const int j, const mm_real *x, mm_dense *y);
+double		mm_real_xj_trans_dot_y (const mm_real *x, const int j, const mm_dense *y);
+void		mm_real_axjpy (const double alpha, const mm_real *x, const int j, mm_dense *y);
+void		mm_real_axjpy_atomic (const double alpha, const mm_real *x, const int j, mm_dense *y);
 
 mm_real	*mm_real_fread (FILE *fp);
 void		mm_real_fwrite (FILE *stream, mm_real *x, const char *format);

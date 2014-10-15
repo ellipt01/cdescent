@@ -41,7 +41,7 @@ static double
 cdescent_gradient (const cdescent *cd, const int j)
 {
 	double	cj = cd->lreg->c->data[j];	// X' * y
-	double	xjmu = mm_real_xj_trans_dot_y (j, cd->lreg->x, cd->mu);	// X(:,j)' * mu
+	double	xjmu = mm_real_xj_trans_dot_y (cd->lreg->x, j, cd->mu);	// X(:,j)' * mu
 	double	lambda2 = cd->lreg->lambda2;
 
 	//	z = c(j) - X(:,j)' * mu
@@ -51,7 +51,7 @@ cdescent_gradient (const cdescent *cd, const int j)
 	if (!cd->lreg->xcentered && !cd->lreg->ycentered) z -= cd->lreg->sx[j] * cd->b;
 
 	// not lasso, z -= lambda2 * D(:,j)' * nu (nu = D * beta)
-	if (!cd->lreg->is_regtype_lasso) z -= lambda2 * mm_real_xj_trans_dot_y (j, cd->lreg->d, cd->nu);
+	if (!cd->lreg->is_regtype_lasso) z -= lambda2 * mm_real_xj_trans_dot_y (cd->lreg->d, j, cd->nu);
 
 	return z;
 }

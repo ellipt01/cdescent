@@ -10,17 +10,19 @@
 
 #define atomic_bool_compare_and_swap(p, f, t) __sync_bool_compare_and_swap((p), (f), (t))
 
+/* union with double and long */
 union dlvar {
 	double	dv;
 	long	lv;
 };
 
+/* union with double and long pointer */
 union dlptr {
 	double	*dp;
 	long	*lp;
 };
 
-/* atomic add operation */
+/*** atomic add operation ***/
 void
 atomic_add (double *data, double delta)
 {
@@ -37,7 +39,7 @@ atomic_add (double *data, double delta)
 	return;
 }
 
-/* atomic max function */
+/*** atomic max function ***/
 void
 atomic_max (double *data, double val)
 {
