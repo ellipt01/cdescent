@@ -163,7 +163,7 @@ main (int argc, char **argv)
 		t1 = omp_get_wtime ();
 #endif
 
-		example_cdescent_pathwise (cd, log10_lambda1, dlog10_lambda1, maxiter, true);
+		example_cdescent_pathwise (cd, log10_lambda1, dlog10_lambda1, maxiter, true, true);
 
 #ifdef _OPENMP
 		t2 = omp_get_wtime ();

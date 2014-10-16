@@ -17,6 +17,6 @@ char		infn_y[80];
 mm_real	*mm_real_penalty_smooth (MMRealFormat format, const int n);
 
 /* example_cdescent.c */
-void		example_cdescent_pathwise (cdescent *cd, double log10_lambda1_lower, double dlog10_lambda1, int maxiter, bool output_path);
+void		example_cdescent_pathwise (cdescent *cd, double log10_lambda1_lower, double dlog10_lambda1, int maxiter, bool output_path, bool output_bic);
 
 #endif /* EXAMPLE_H_ */

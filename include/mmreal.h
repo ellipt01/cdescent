@@ -22,7 +22,7 @@ typedef enum {
 } MMRealFormat;
 
 enum {
-	MM_GENERAL   = 0,
+	MM_GENERAL   = 0x0,
 	MM_SYMMETRIC = 1 << 0
 };
 

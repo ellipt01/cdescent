@@ -36,13 +36,14 @@ do_normalizing (mm_real *x)
 {
 	int		j;
 	for (j = 0; j < x->n; j++) {
-		double	alpha;
 		double	nrmj;
 		int		size = (mm_real_is_sparse (x)) ? x->p[j + 1] - x->p[j] : x->m;
 		double	*xj = x->data + ((mm_real_is_sparse (x)) ? x->p[j] : j * x->m);
 		nrmj = dnrm2_ (&size, xj, &ione);
-		alpha = 1. / nrmj;
-		dscal_ (&size, &alpha, xj, &ione);
+		if (nrmj > DBL_EPSILON) {
+			double	alpha = 1. / nrmj;
+			dscal_ (&size, &alpha, xj, &ione);
+		}
 	}
 	return;
 }

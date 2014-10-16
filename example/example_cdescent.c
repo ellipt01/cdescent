@@ -63,7 +63,7 @@ cdescent_set_logt (const double logt_lower, const double new_logt, double *logt)
  * if output_path == true, solution path is output in files beta0xx.res
  */
 void
-example_cdescent_pathwise (cdescent *cd, double log10_lambda1_lower, double dlog10_lambda1, int maxiter, bool output_path)
+example_cdescent_pathwise (cdescent *cd, double log10_lambda1_lower, double dlog10_lambda1, int maxiter, bool output_path, bool output_bic)
 {
 	int			iter = 0;
 	double		logt;
@@ -72,14 +72,13 @@ example_cdescent_pathwise (cdescent *cd, double log10_lambda1_lower, double dlog
 	FILE		*fp = NULL;
 
 	/* output bic_info */
-	fp = fopen ("bic_info.data", "w");
+	if (output_bic) fp = fopen ("bic_info.data", "w");
 
 	/* warm start */
 	logt = cd->lreg->logcamax;
 	if (cd->lreg->logcamax <= log10_lambda1_lower) stop_flag = true;
 
 	while (1) {
-		bic_info	*info;
 
 		cdescent_set_log10_lambda1 (cd, logt);
 
@@ -88,10 +87,11 @@ example_cdescent_pathwise (cdescent *cd, double log10_lambda1_lower, double dlog
 		// output solution path
 		if (output_path) cdescent_output_solutionpath (iter++, cd);
 
-		info = cdescent_eval_bic (cd, gamma_bic);
-		if (fp) fprintf (fp, "t %.4e ebic %.8e rss %.8e df %.3e\n", cd->nrm1, info->bic_val, info->rss, info->df);
-		bic_info_free (info);
-
+		if (fp) {
+			bic_info	*info = cdescent_eval_bic (cd, gamma_bic);
+			fprintf (fp, "t %.4e ebic %.8e rss %.8e df %.3e\n", cd->nrm1, info->bic_val, info->rss, info->df);
+			bic_info_free (info);
+		}
 		if (stop_flag) break;
 
 		/* if logt - dlog10_lambda1 < log10_lambda1, logt = log10_lambda1 and stop_flag is set to true

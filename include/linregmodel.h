@@ -40,13 +40,11 @@ struct s_linregmodel {
 	bool		has_copy_y;	// has copy of y
 	bool		has_copy_x;	// has copy of x
 
-	mm_real	*x;		// matrix of predictors X
-	mm_dense	*y;		// observed data vector y (must be dense)
-	/* penalty term */
-	mm_real	*d;		// general linear operator D
+	mm_dense	*y;		// dense general: observed data vector y (must be dense)
+	mm_real	*x;		// sparse/dense symmetric/general: matrix of predictors X
+	mm_real	*d;		// sparse/dense symmetric/general: linear operator of penalty D
 
-	/* weight of penalty term */
-	double		lambda2;
+	double		lambda2;	// weight for penalty term
 
 	bool		is_regtype_lasso;	// = (d == NULL || lambda2 < eps)
 
