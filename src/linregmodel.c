@@ -23,8 +23,10 @@ do_centering (mm_dense *x)
 		int		i;
 		double	meanj = 0.;
 		for (i = 0; i < x->m; i++) meanj += x->data[i + j * x->m];
-		meanj /= (double) x->m;
-		for (i = 0; i < x->m; i++) x->data[i + j * x->m] -= meanj;
+		if (fabs (meanj) > DBL_EPSILON) {
+			meanj /= (double) x->m;
+			for (i = 0; i < x->m; i++) x->data[i + j * x->m] -= meanj;
+		}
 	}
 	return;
 }
@@ -110,19 +112,17 @@ linregmodel_new (mm_dense *y, bool has_copy_y, mm_real *x, bool has_copy_x, cons
 	if (mm_real_is_symmetric (x) && x->m != x->n) error_and_exit ("linregmodel_new", "symmetric matrix must be square.", __FILE__, __LINE__);
 	if (d && mm_real_is_symmetric (d) && d->m != d->n) error_and_exit ("linregmodel_new", "symmetric matrix must be square.", __FILE__, __LINE__);
 
-	/* check dimensions */
+	/* check dimensions of vector and matrix */
 	if (y->m != x->m) error_and_exit ("linregmodel_new", "dimensions of matrix x and vector y do not match.", __FILE__, __LINE__);
 	if (d && x->n != d->n) error_and_exit ("linregmodel_new", "dimensions of matrix x and d do not match.", __FILE__, __LINE__);
 
 	lreg = linregmodel_alloc ();
 
-	/* has copy of y
-	 * if DO_CENTERING_Y is set to proc, lreg->has_copy_y is set to true */
+	/* If DO_CENTERING_Y is set to proc, lreg->has_copy_y is set to true */
 	if (proc & DO_CENTERING_Y) lreg->has_copy_y = true;
 	else lreg->has_copy_y = has_copy_y;
 
-	/* has copy of x
-	 * if DO_CENTERING_X flag is set to proc, or DO_NORMALIZING_X flag is set to proc and x is symmetric,
+	/* If DO_CENTERING_X flag is set to proc, or DO_NORMALIZING_X flag is set to proc and x is symmetric,
 	 * lreg->has_copy_x is set to true */
 	if (proc & DO_CENTERING_X) lreg->has_copy_x = true;
 	else if ((proc & DO_NORMALIZING_X) && mm_real_is_symmetric (x)) lreg->has_copy_x = true;
