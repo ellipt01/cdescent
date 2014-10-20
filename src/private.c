@@ -16,8 +16,6 @@ const double	dzero =  0.;
 const double	done  =  1.;
 const double	dmone = -1.;
 
-double	_double_eps_ = -1.;
-
 /* print an error message and exit */
 void
 error_and_exit (const char * function_name, const char *error_msg, const char *file, const int line)
