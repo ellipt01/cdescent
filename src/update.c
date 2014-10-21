@@ -18,16 +18,16 @@ axjpy (bool atomic, const double alpha, const mm_real *x, const int j, mm_dense 
 	return (atomic) ? mm_real_axjpy_atomic (alpha, x, j, y) : mm_real_axjpy (alpha, x, j, y);
 }
 
-/*** update intercept: (sum (y) - sum(X) * beta) / n ***/
+/* update intercept: (sum (y) - sum(X) * beta) / n */
 static void
 update_intercept (cdescent *cd)
 {
 	cd->b = 0.;
-	if (!cd->lreg->ycentered) cd->b += cd->lreg->sy / (double) cd->lreg->x->m;	// b += bar(y)
-	if (!cd->lreg->xcentered) {	// b -= bar(X) * beta
-		double	sx_beta = ddot_ (&cd->lreg->x->n, cd->lreg->sx, &ione, cd->beta->data, &ione);
-		cd->b -= sx_beta / (double) cd->lreg->x->m;
-	}
+	// b += bar(y)
+	if (!cd->lreg->ycentered) cd->b += cd->lreg->sy;
+	// b -= bar(X) * beta
+	if (!cd->lreg->xcentered) cd->b -= ddot_ (&cd->lreg->x->n, cd->lreg->sx, &ione, cd->beta->data, &ione);
+	if (fabs (cd->b) > 0.) cd->b /= (double) cd->lreg->x->m;
 	return;
 }
 
@@ -93,8 +93,8 @@ cdescent_update_cyclic_once_cycle (cdescent *cd)
 	return (amax_eta < cd->tolerance);
 }
 
-/*** cyclic coordinate descent ***/
-/* repeat coordinate descent until solution is converged */
+/*** cyclic coordinate descent
+ * repeat coordinate descent until solution is converged ***/
 bool
 cdescent_update_cyclic (cdescent *cd, const int maxiter)
 {
