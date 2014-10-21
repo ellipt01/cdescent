@@ -28,10 +28,10 @@ struct s_cdescent {
 
 	double				b;				// intercept
 	double				nrm1;			// = sum_j |beta_j|
-	mm_real			*beta;			// dense : solution
+	mm_dense			*beta;			// solution
 
-	mm_real			*mu;			// dense : mu = X * beta, estimate of y
-	mm_real			*nu;			// dense : nu = D * beta
+	mm_dense			*mu;			// mu = X * beta, estimate of y
+	mm_dense			*nu;			// nu = D * beta
 
 	bool				parallel;		// enable parallel calculation
 	int					total_iter;	// total number of iterations

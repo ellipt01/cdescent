@@ -103,6 +103,9 @@ linregmodel_new (mm_dense *y, bool has_copy_y, mm_real *x, bool has_copy_x, cons
 	if (!y) error_and_exit ("linregmodel_new", "y is empty.", __FILE__, __LINE__);
 	if (!x) error_and_exit ("linregmodel_new", "x is empty.", __FILE__, __LINE__);
 
+	/* check whether lambda2 >= 0. */
+	if (lambda2 < 0.) error_and_exit ("linregmodel_new", "lambda2 must be >= 0.", __FILE__, __LINE__);
+
 	/* check whether y is dense unsymmetric vector */
 	if (!mm_real_is_dense (y)) error_and_exit ("linregmodel_new", "y must be dense.", __FILE__, __LINE__);
 	if (mm_real_is_symmetric (y)) error_and_exit ("linregmodel_new", "y must be general.", __FILE__, __LINE__);
@@ -172,10 +175,10 @@ linregmodel_new (mm_dense *y, bool has_copy_y, mm_real *x, bool has_copy_x, cons
 	}
 
 	/* lambda2 */
-	if (lambda2 > DBL_EPSILON) lreg->lambda2 = lambda2;
+	if (lambda2 > 0.) lreg->lambda2 = lambda2;
 
 	/* if lambda2 > 0 && d != NULL, regression type is NOT lasso: is_regtype_lasso = false */
-	if (lreg->lambda2 > DBL_EPSILON && lreg->d) lreg->is_regtype_lasso = false;
+	if (lreg->lambda2 > 0. && lreg->d) lreg->is_regtype_lasso = false;
 
 	// c = X' * y
 	lreg->c = mm_real_x_dot_y (true, 1., lreg->x, lreg->y, 0.);
