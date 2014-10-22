@@ -10,6 +10,9 @@
 
 #include "private.h"
 
+/* cdescent.c */
+extern double	cdescent_scale2 (const cdescent *cd, const int j);
+
 /* soft thresholding
  * S(z, gamma) = sign(z)(|z| - gamma)+
  *             = 0, -gamma <= z <= gamma,

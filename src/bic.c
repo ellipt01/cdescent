@@ -11,6 +11,9 @@
 
 #include "private.h"
 
+/* cdescent.c */
+extern double	cdescent_scale2 (const cdescent *cd, const int j);
+
 static bic_info *
 bic_info_alloc (void)
 {
@@ -37,11 +40,9 @@ bic_info_free (bic_info *info)
 	return;
 }
 
-/*
- *   Bayesian Information Criterion for L2 regularized
+/*   Bayesian Information Criterion for L2 regularized
  *   linear regression model b = Z * beta
- *   where b = [y ; 0], Z = [x ; sqrt(lambda2) * D]
- */
+ *   where b = [y ; 0], Z = [x ; sqrt(lambda2) * D] */
 
 /* residual sum of squares
  * rss = | b - Z * beta |^2
@@ -64,7 +65,7 @@ calc_rss (const cdescent *cd)
 /* degree of freedom
  * A = {j ; beta_j != 0}
  * df = sum_{j in A} 1 (Efron et al., 2004)
- * df = sum_{j in A} 1 / (xtx[j] + lambda2 * dtd[j]) (Hebiri, 2008) */
+ * df = sum_{j in A} 1 / (xtx[j] + lambda2 * dtd[j]) (Hebiri, 2008, Theorem 5.) */
 static double
 calc_degree_of_freedom (const cdescent *cd)
 {
@@ -72,8 +73,7 @@ calc_degree_of_freedom (const cdescent *cd)
 	double	df = 0.;
 	for (j = 0; j < cd->beta->nz; j++) {
 		if (fabs (cd->beta->data[j]) > 0.) {
-			if (cd->lreg->is_regtype_lasso) df += 1.;
-			else df += 1. / cdescent_scale2 (cd, j);
+			df += (cd->lreg->is_regtype_lasso) ? 1. : 1. / cdescent_scale2 (cd, j);
 		}
 	}
 	return df;

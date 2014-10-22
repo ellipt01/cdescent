@@ -5,7 +5,6 @@
  *      Author: utsugi
  */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <stdbool.h>
@@ -43,7 +42,16 @@ is_format_valid (MMRealFormat format) {
 static bool
 is_symm_valid (MMRealSymm symm)
 {
-	return (MM_REAL_GENERAL <= symm && symm <= MM_REAL_SYMMETRIC_LOWER);
+	// neither general nor symmetric: false
+	if (!(symm & MM_REAL_GENERAL) && !(symm & MM_SYMMETRIC)) return false;
+	// general and symmetric: false
+	if ((symm & MM_REAL_GENERAL) && (symm & MM_SYMMETRIC)) return false;
+
+	if (symm & MM_REAL_GENERAL) return true;
+	else if (symm & MM_SYMMETRIC) {
+		if ((symm & MM_UPPER) || (symm & MM_LOWER)) return true;
+	}
+	return false;
 }
 
 /* allocate mm_real */

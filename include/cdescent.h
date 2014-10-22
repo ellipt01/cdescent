@@ -42,7 +42,6 @@ cdescent	*cdescent_new (const linregmodel *lreg, const double tol, bool parallel
 void		cdescent_free (cdescent *cd);
 bool		cdescent_set_lambda1 (cdescent *cd, const double lambda1);
 bool		cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1);
-double		cdescent_scale2 (const cdescent *cd, const int j);
 
 
 /* update.c */
