@@ -63,27 +63,18 @@ calc_rss (const cdescent *cd)
 
 /* degree of freedom
  * A = {j ; beta_j != 0}
- * df = sum_{k in A} 1 (Efron et al., 2004)
- * df = sum_{k in A} 1 / (1 + dtd[k] * lambda2) (Hebiri, 2008)
- * */
-/*
-static double
-calc_degree_of_freedom (const cdescent *cd)
-{
-	int		i;
-	int		sizeA = 0;	// size of active set
-	for (i = 0; i < cd->beta->m; i++) if (fabs (cd->beta->data[i]) > 0.) sizeA++;
-	return (double) sizeA;
-}
-*/
+ * df = sum_{j in A} 1 (Efron et al., 2004)
+ * df = sum_{j in A} 1 / (xtx[j] + lambda2 * dtd[j]) (Hebiri, 2008) */
 static double
 calc_degree_of_freedom (const cdescent *cd)
 {
 	int		j;
 	double	df = 0.;
 	for (j = 0; j < cd->beta->nz; j++) {
-		if (fabs (cd->beta->data[j]) > 0.)
-			df += (!cd->lreg->is_regtype_lasso) ? 1. : 1. / (1. + cd->lreg->dtd[j] * cd->lreg->lambda2);
+		if (fabs (cd->beta->data[j]) > 0.) {
+			if (cd->lreg->is_regtype_lasso) df += 1.;
+			else df += 1. / cdescent_scale2 (cd, j);
+		}
 	}
 	return df;
 }
@@ -95,7 +86,7 @@ calc_degree_of_freedom (const cdescent *cd)
  * df		: degree of freedom
  * m		: number of data (number rows of b and Z)
  * n		: number of variables (number columns of Z and number rows of beta)
- * 	if gamma = 0, eBIC is identical with the classical BIC ***/
+ * if gamma = 0, eBIC is identical with the classical BIC ***/
 bic_info *
 cdescent_eval_bic (const cdescent *cd, const double gamma)
 {

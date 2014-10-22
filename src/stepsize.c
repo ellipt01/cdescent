@@ -10,8 +10,8 @@
 
 #include "private.h"
 
-/*** soft thresholding ***/
-/* S(z, gamma) = sign(z)(|z| - gamma)+
+/* soft thresholding
+ * S(z, gamma) = sign(z)(|z| - gamma)+
  *             = 0, -gamma <= z <= gamma,
  *               z - gamma, z >  gamma (> 0)
  *               z + gamma, z < -gamma (< 0) */
@@ -23,17 +23,8 @@ soft_threshold (const double z, const double gamma)
 	return val;
 }
 
-/*** return X(:,j)' * X(:,j) + D(:,j)' * D(:,j) * lambda2 ***/
-static double
-cdescent_scale2 (const cdescent *cd, const int j)
-{
-	double	scale2 = (cd->lreg->xnormalized) ? 1. : cd->lreg->xtx[j];
-	if (!cd->lreg->is_regtype_lasso) scale2 += cd->lreg->dtd[j] * cd->lreg->lambda2;
-	return scale2;
-}
-
-/*** return gradient of objective function with respect to beta_j ***/
-/* z = d L / d beta_j
+/* return gradient of objective function with respect to beta_j
+ * z = d L / d beta_j
  *   = c(j) - X(:,j)' * mu - X(:,j)' * b - lambda2 * D(:,j)' * D * beta
  *     + scale2 * beta_j,
  * however, the last term scale2 * beta_j is omitted */
