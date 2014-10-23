@@ -11,6 +11,12 @@
 
 #include "private.h"
 
+/*c*******************************************************
+ *c    Bayesian Information Criterion for L2 regularized
+ *c   linear regression model b = Z * beta
+ *c   where b = [y ; 0], Z = [x ; sqrt(lambda2) * D]
+ *c*******************************************************/
+
 /* cdescent.c */
 extern double	cdescent_scale2 (const cdescent *cd, const int j);
 
@@ -20,6 +26,7 @@ bic_info_alloc (void)
 	return (bic_info *) malloc (sizeof (bic_info));
 }
 
+/*** create bic_info object ***/
 bic_info *
 bic_info_new (void)
 {
@@ -33,16 +40,13 @@ bic_info_new (void)
 	return info;
 }
 
+/*** free bic_info object ***/
 void
 bic_info_free (bic_info *info)
 {
 	if (info) free (info);
 	return;
 }
-
-/*   Bayesian Information Criterion for L2 regularized
- *   linear regression model b = Z * beta
- *   where b = [y ; 0], Z = [x ; sqrt(lambda2) * D] */
 
 /* residual sum of squares
  * rss = | b - Z * beta |^2

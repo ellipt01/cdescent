@@ -15,6 +15,7 @@ extern "C" {
 #include <linregmodel.h>
 #include <bic.h>
 
+/*** coordinate descent object ***/
 typedef struct s_cdescent	cdescent;
 
 struct s_cdescent {
@@ -28,12 +29,12 @@ struct s_cdescent {
 
 	double				b;				// intercept
 	double				nrm1;			// = sum_j |beta_j|
-	mm_dense			*beta;			// solution
+	mm_dense			*beta;			// estimated regression coefficients
 
 	mm_dense			*mu;			// mu = X * beta, estimate of y
 	mm_dense			*nu;			// nu = D * beta
 
-	bool				parallel;		// enable parallel calculation
+	bool				parallel;		// whether enable parallel calculation
 	int					total_iter;	// total number of iterations
 };
 
@@ -43,11 +44,10 @@ void		cdescent_free (cdescent *cd);
 bool		cdescent_set_lambda1 (cdescent *cd, const double lambda1);
 bool		cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1);
 
-
-/* update.c */
+/* stepsize.c */
 double		cdescent_beta_stepsize (const cdescent *cd, const int j);
 
-/* cdescent.c */
+/* update.c */
 bool		cdescent_update_cyclic_once_cycle (cdescent *cd);
 bool		cdescent_update_cyclic (cdescent *cd, const int maxiter);
 

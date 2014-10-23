@@ -16,7 +16,7 @@ extern "C" {
 
 #include <mmreal.h>
 
-/* flag of pre-processing for the data */
+/* flag of data preprocessing */
 typedef enum {
 	DO_NOTHING       = 0x0,		// do nothing
 	DO_CENTERING_Y   = 1 << 0,	// do centering y
@@ -26,16 +26,15 @@ typedef enum {
 	DO_STANDARDIZING_X = DO_CENTERING_X | DO_NORMALIZING_X
 } PreProc;
 
-typedef struct s_linregmodel	linregmodel;
-
-/* Object of L1 regularized linear regression problem
+/*** Object of L1 regularized linear regression problem
  *
  *   argmin(beta) || b - Z * beta ||^2 + lambda_1 sum |beta|
  *
  *   where
  *   	b = [y; 0]
- *   	Z = scale * [X; sqrt(lambda2) * D]
- */
+ *   	Z = scale * [X; sqrt(lambda2) * D] ***/
+typedef struct s_linregmodel	linregmodel;
+
 struct s_linregmodel {
 	bool		has_copy_y;	// has copy of y
 	bool		has_copy_x;	// has copy of x

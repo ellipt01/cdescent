@@ -44,12 +44,14 @@ typedef enum {
 #define mm_real_is_upper(a) 		((a)->symm & MM_UPPER)
 #define mm_real_is_lower(a) 		((a)->symm & MM_LOWER)
 
-// matrix market format matrix
+// MatrixMarket format matrix
 typedef struct s_mm_real	mm_real;
 typedef struct s_mm_real	mm_dense;
 typedef struct s_mm_real	mm_sparse;
 
-// implementation of dense / sparse matrix
+/*** implementation of dense / sparse matrix
+ * In the case of dense matrix, nz = m * n and
+ * i = NULL, p = NULL. ***/
 struct s_mm_real {
 	MM_typecode	typecode;	// type of matrix. see mmio.h
 
