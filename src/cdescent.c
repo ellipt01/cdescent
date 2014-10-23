@@ -48,7 +48,7 @@ cdescent_new (const linregmodel *lreg, const double tol, bool parallel)
 
 	cd->tolerance = tol;
 
-	cd->lambda1_max = pow (10., lreg->logcamax);
+	cd->lambda1_max = pow (10., lreg->log10camax);
 	cd->lambda1 = cd->lambda1_max;
 
 	if (!lreg->ycentered) cd->b = lreg->sy / (double) lreg->y->m;

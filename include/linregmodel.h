@@ -48,7 +48,7 @@ struct s_linregmodel {
 	bool		is_regtype_lasso;	// = (d == NULL || lambda2 < eps)
 
 	mm_dense	*c;				// = x' * y: correlation (constant) vector
-	double		logcamax;		// log10 ( amax(c) )
+	double		log10camax;	// log10 ( amax(c) )
 
 	bool		ycentered;		// y is centered?
 	bool		xcentered;		// x is centered?

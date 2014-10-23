@@ -23,7 +23,7 @@ struct s_bic_info
 	double	n;		// number of variables
 	double	rss;	// residual sum of squares
 	double	df;		// degree of freedom
-	double	gamma;	// tuning parameter for eBIC
+	double	gamma;	// tuning parameter for eBIC (0 <= gamma <= 1)
 	double	bic_val;	// value of eBIC
 };
 

@@ -66,7 +66,7 @@ linregmodel_alloc (void)
 	lreg->is_regtype_lasso = true;
 
 	lreg->c = NULL;
-	lreg->logcamax = 0.;
+	lreg->log10camax = 0.;
 
 	lreg->ycentered = false;
 	lreg->xcentered = false;
@@ -185,7 +185,7 @@ linregmodel_new (mm_dense *y, bool has_copy_y, mm_real *x, bool has_copy_x, cons
 
 	// camax = max ( abs (c) )
 	camax = fabs (lreg->c->data[idamax_ (&lreg->c->nz, lreg->c->data, &ione) - 1]);
-	lreg->logcamax = floor (log10 (camax)) + 1.;
+	lreg->log10camax = floor (log10 (camax)) + 1.;
 
 	/* sum y */
 	if (!lreg->ycentered) lreg->sy = mm_real_xj_sum (lreg->y, 0);

@@ -75,8 +75,8 @@ example_cdescent_pathwise (cdescent *cd, double log10_lambda1_lower, double dlog
 	if (output_bic) fp = fopen ("bic_info.data", "w");
 
 	/* warm start */
-	logt = cd->lreg->logcamax;
-	if (cd->lreg->logcamax <= log10_lambda1_lower) stop_flag = true;
+	logt = cd->lreg->log10camax;
+	if (cd->lreg->log10camax <= log10_lambda1_lower) stop_flag = true;
 
 	while (1) {
 
