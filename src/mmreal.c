@@ -553,7 +553,7 @@ mm_real_sj_nrm2 (const mm_sparse *s, const int j)
 	int		size = s->p[j + 1] - s->p[j];
 	double	nrm2 = dnrm2_ (&size, s->data + s->p[j], &ione);
 	if (mm_real_is_symmetric (s)) {
-		double	sum = pow (nrm2, 2.);
+		double	val = pow (nrm2, 2.);
 		int		l;
 		int		l0 = (mm_real_is_upper (s)) ? j + 1 : 0;
 		int		l1 = (mm_real_is_upper (s)) ? s->n : j;
@@ -561,12 +561,12 @@ mm_real_sj_nrm2 (const mm_sparse *s, const int j)
 			int		k;
 			for (k = s->p[l]; k < s->p[l + 1]; k++) {
 				if (s->i[k] == j) {
-					sum += pow (s->data[k], 2.);
+					val += pow (s->data[k], 2.);
 					break;
 				}
 			}
 		}
-		nrm2 = sqrt (sum);
+		nrm2 = sqrt (val);
 	}
 	return nrm2;
 }
@@ -575,24 +575,25 @@ mm_real_sj_nrm2 (const mm_sparse *s, const int j)
 static double
 mm_real_dj_nrm2 (const mm_dense *d, const int j)
 {
-	double	val = 0.;
-	if (!mm_real_is_symmetric (d)) val = dnrm2_ (&d->m, d->data + j * d->m, &ione);
+	double	nrm2;
+	if (!mm_real_is_symmetric (d)) nrm2 = dnrm2_ (&d->m, d->data + j * d->m, &ione);
 	else {
 		int		len;
+		double	val;
 		if (mm_real_is_upper (d)) {
 			len = j;
-			val = pow (dnrm2_ (&len, d->data + j * d->m, &ione), 2.);
+			val = ddot_ (&len, d->data + j * d->m, &ione, d->data + j * d->m, &ione);
 			len = d->m - j;
-			val += pow (dnrm2_ (&len, d->data + j * d->m + j, &d->m), 2.);
+			val += ddot_ (&len, d->data + j * d->m + j, &d->m, d->data + j * d->m + j, &d->m);
 		} else if (mm_real_is_lower (d)) {
 			len = d->m - j;
-			val = pow (dnrm2_ (&len, d->data + j * d->m + j, &ione), 2.);
+			val = ddot_ (&len, d->data + j * d->m + j, &ione, d->data + j * d->m + j, &ione);
 			len = j;
-			val += pow (dnrm2_ (&len, d->data + j, &d->m), 2.);
+			val += ddot_ (&len, d->data + j, &d->m, d->data + j, &d->m);
 		}
-		val = sqrt (val);
+		nrm2 = sqrt (val);
 	}
-	return val;
+	return nrm2;
 }
 
 /*** norm2 x(:,j) ***/

@@ -89,8 +89,10 @@ example_cdescent_pathwise (cdescent *cd, double log10_lambda1_lower, double dlog
 
 		if (fp) {
 			bic_info	*info = cdescent_eval_bic (cd, gamma_bic);
-			fprintf (fp, "t %.4e ebic %.8e rss %.8e df %.3e\n", cd->nrm1, info->bic_val, info->rss, info->df);
-			bic_info_free (info);
+			if (info) {
+				fprintf (fp, "t %.4e ebic %.8e rss %.8e df %.3e\n", cd->nrm1, info->bic_val, info->rss, info->df);
+				bic_info_free (info);
+			}
 		}
 		if (stop_flag) break;
 

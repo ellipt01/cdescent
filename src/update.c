@@ -65,7 +65,6 @@ bool
 cdescent_update_cyclic_once_cycle (cdescent *cd)
 {
 	int		j;
-	bool	atomic = false;
 	double	amax_eta;	// max of |eta(j)| = |beta_new(j) - beta_prev(j)|
 
 	/* b = (sum(y) - sum(X) * beta) / n.
@@ -78,16 +77,16 @@ cdescent_update_cyclic_once_cycle (cdescent *cd)
 
 	/*** single "one-at-a-time" update of cyclic coordinate descent ***/
 #ifdef _OPENMP
-
-	if (cd->parallel) atomic = true;	// multiple threads
-
+	if (cd->parallel) {
 #pragma omp parallel for
-	for (j = 0; j < cd->lreg->x->n; j++) {
-#else
-	for (j = 0; j < cd->lreg->x->n; j++) {
-#endif
-		cdescent_update (cd, j, atomic, &amax_eta);
+		for (j = 0; j < cd->lreg->x->n; j++) cdescent_update (cd, j, true, &amax_eta);
+	} else {
+		for (j = 0; j < cd->lreg->x->n; j++) cdescent_update (cd, j, false, &amax_eta);
 	}
+#else
+	for (j = 0; j < cd->lreg->x->n; j++) cdescent_update (cd, j, false, &amax_eta);
+#endif
+
 	cd->nrm1 = mm_real_xj_asum (cd->beta, 0);
 
 	return (amax_eta < cd->tolerance);

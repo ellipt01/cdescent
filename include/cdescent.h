@@ -28,8 +28,8 @@ struct s_cdescent {
 	double				lambda1_max;	// maximum value of lambda1
 
 	double				b;				// intercept
-	double				nrm1;			// = sum_j |beta_j|
 	mm_dense			*beta;			// estimated regression coefficients
+	double				nrm1;			// L1 norm of beta (= sum_j |beta_j|)
 
 	mm_dense			*mu;			// mu = X * beta, estimate of y
 	mm_dense			*nu;			// nu = D * beta

@@ -12,7 +12,7 @@
 #include "private.h"
 
 /*c*******************************************************
- *c    Bayesian Information Criterion for L2 regularized
+ *c   Bayesian Information Criterion for L2 regularized
  *c   linear regression model b = Z * beta
  *c   where b = [y ; 0], Z = [x ; sqrt(lambda2) * D]
  *c*******************************************************/
@@ -58,11 +58,11 @@ calc_rss (const cdescent *cd)
 	double	*r = (double *) malloc (cd->lreg->y->nz * sizeof (double));
 	dcopy_ (&cd->lreg->y->nz, cd->lreg->y->data, &ione, r, &ione);	// r = y
 	daxpy_ (&cd->mu->nz, &dmone, cd->mu->data, &ione, r, &ione);	// r = y - mu
-	rss = pow (dnrm2_ (&cd->lreg->y->nz, r, &ione), 2.);	// rss = | y - mu |^2
+	rss = ddot_ (&cd->lreg->y->nz, r, &ione, r, &ione);	// rss = | y - mu |^2
 	free (r);
 	// rss += | 0 - sqrt(lambda2) * nu |^2
 	if (!cd->lreg->is_regtype_lasso)
-		rss += cd->lreg->lambda2 * pow (dnrm2_ (&cd->nu->nz, cd->nu->data, &ione), 2.);
+		rss += cd->lreg->lambda2 * ddot_ (&cd->nu->nz, cd->nu->data, &ione, cd->nu->data, &ione);
 	return rss;
 }
 
@@ -88,14 +88,17 @@ calc_degree_of_freedom (const cdescent *cd)
  * gamma	: tuning parameter for eBIC
  * rss		: residual sum of squares |b - Z * beta|^2
  * df		: degree of freedom
- * m		: number of data (number rows of b and Z)
- * n		: number of variables (number columns of Z and number rows of beta)
+ * m		: number of data (number of rows of b and Z)
+ * n		: number of variables (number of columns of Z and number of rows of beta)
  * if gamma = 0, eBIC is identical with the classical BIC ***/
 bic_info *
 cdescent_eval_bic (const cdescent *cd, const double gamma)
 {
 	bic_info	*info;
-	if (gamma < 0.) error_and_exit ("cdescent_eval_bic", "gamma must be >= 0.", __FILE__, __LINE__);
+	if (gamma < 0.) {
+		printf_warning ("cdescent_eval_bic", "gamma must be >= 0.", __FILE__, __LINE__);
+		return NULL;
+	}
 	info = bic_info_new ();
 	info->gamma = gamma;
 	info->rss = calc_rss (cd);
