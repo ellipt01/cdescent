@@ -67,10 +67,12 @@ cdescent_update_cyclic_once_cycle (cdescent *cd)
 	int		j;
 	double	amax_eta;	// max of |eta(j)| = |beta_new(j) - beta_prev(j)|
 
-	/* b = (sum(y) - sum(X) * beta) / n.
-	 * so, if y or X are not centered,
-	 * i.e. sum(y) != 0 or sum(X) != 0,
-	 * b must be updated on each cycle. */
+	/* b = (sum(y) - sum(X) * beta) / m.
+	 * If y or X are not centered, i.e. sum(y) != 0 or sum(X) != 0,
+	 * b must be updated on each coordinate descent cycle.
+	 * However, if X is centered (regardless whether y is centered),
+	 * b has no contribution to update of eta(j). So, if X is centered,
+	 * estimation of b is omitted in this program. */
 	if (!cd->lreg->xcentered) update_intercept (cd);
 
 	amax_eta = 0.;

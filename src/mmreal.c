@@ -42,7 +42,8 @@ is_format_valid (MMRealFormat format) {
 static bool
 is_symm_valid (MMRealSymm symm)
 {
-	return (symm == MM_REAL_GENERAL || symm == MM_REAL_SYMMETRIC_UPPER || symm == MM_REAL_SYMMETRIC_LOWER);
+	return (symm == MM_REAL_GENERAL || symm == MM_REAL_SYMMETRIC_UPPER
+			|| symm == MM_REAL_SYMMETRIC_LOWER);
 }
 
 /* allocate mm_real */
@@ -132,13 +133,13 @@ bool
 mm_real_realloc (mm_real *mm, const int nz)
 {
 	if (mm->nz == nz) return true;
-	mm->nz = nz;
 	mm->data = (double *) realloc (mm->data, nz * sizeof (double));
 	if (mm->data == NULL) return false;
 	if (mm_real_is_sparse (mm)) {
 		mm->i = (int *) realloc (mm->i, nz * sizeof (int));
 		if (mm->i == NULL) return false;
 	}
+	mm->nz = nz;
 	return true;
 }
 
