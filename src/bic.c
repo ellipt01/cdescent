@@ -17,9 +17,6 @@
  *c   where b = [y ; 0], Z = [x ; sqrt(lambda2) * D]
  *c*******************************************************/
 
-/* cdescent.c */
-extern double	cdescent_scale2 (const cdescent *cd, const int j);
-
 static bic_info *
 bic_info_alloc (void)
 {
@@ -77,7 +74,8 @@ calc_degree_of_freedom (const cdescent *cd)
 	double	df = 0.;
 	for (j = 0; j < cd->beta->nz; j++) {
 		if (fabs (cd->beta->data[j]) > 0.) {
-			df += (cd->lreg->is_regtype_lasso) ? 1. : 1. / cdescent_scale2 (cd, j);
+			if (cd->lreg->is_regtype_lasso) df += 1.;
+			else df += 1. / (1. + cd->lreg->lambda2 * cd->lreg->dtd[j]);
 		}
 	}
 	return df;

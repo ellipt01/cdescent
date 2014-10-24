@@ -10,9 +10,6 @@
 
 #include "private.h"
 
-/* cdescent.c */
-extern double	cdescent_scale2 (const cdescent *cd, const int j);
-
 /* soft thresholding
  * S(z, gamma) = sign(z)(|z| - gamma)+
  *             = 0, -gamma <= z <= gamma,
@@ -48,6 +45,15 @@ cdescent_gradient (const cdescent *cd, const int j)
 		z -= cd->lreg->lambda2 * mm_real_xj_trans_dot_y (cd->lreg->d, j, cd->nu);
 
 	return z;
+}
+
+/* return X(:,j)' * X(:,j) + D(:,j)' * D(:,j) * lambda2 */
+static double
+cdescent_scale2 (const cdescent *cd, const int j)
+{
+	double	scale2 = (cd->lreg->xnormalized) ? 1. : cd->lreg->xtx[j];
+	if (!cd->lreg->is_regtype_lasso) scale2 += cd->lreg->dtd[j] * cd->lreg->lambda2;
+	return scale2;
 }
 
 /*** return step-size for updating beta ***/

@@ -107,12 +107,3 @@ cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1)
 {
 	return cdescent_set_lambda1 (cd, pow (10., log10_lambda1));
 }
-
-/*** return X(:,j)' * X(:,j) + D(:,j)' * D(:,j) * lambda2 ***/
-double
-cdescent_scale2 (const cdescent *cd, const int j)
-{
-	double	scale2 = (cd->lreg->xnormalized) ? 1. : cd->lreg->xtx[j];
-	if (!cd->lreg->is_regtype_lasso) scale2 += cd->lreg->dtd[j] * cd->lreg->lambda2;
-	return scale2;
-}
