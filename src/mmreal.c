@@ -262,7 +262,7 @@ mm_real_set_all (mm_real *mm, const double val)
 
 /*** convert sparse -> dense ***/
 mm_dense *
-mm_real_sparse_to_dense (mm_sparse *s)
+mm_real_sparse_to_dense (const mm_sparse *s)
 {
 	int			j;
 	mm_dense	*d;
@@ -285,7 +285,7 @@ mm_real_sparse_to_dense (mm_sparse *s)
 /*** convert dense -> sparse ***/
 /* fabs (x->data[j]) < threshold are set to 0 */
 mm_sparse *
-mm_real_dense_to_sparse (mm_dense *d, const double threshold)
+mm_real_dense_to_sparse (const mm_dense *d, const double threshold)
 {
 	int			j, k;
 	mm_sparse	*s;
@@ -322,7 +322,7 @@ mm_real_dense_to_sparse (mm_dense *d, const double threshold)
 
 /* convert sparse symmetric -> sparse general */
 static mm_sparse *
-mm_real_symmetric_to_general_sparse (mm_sparse *x)
+mm_real_symmetric_to_general_sparse (const mm_sparse *x)
 {
 	int			j, m;
 	mm_sparse	*s;
@@ -374,7 +374,7 @@ mm_real_symmetric_to_general_sparse (mm_sparse *x)
 
 /* convert dense symmetric -> dense general */
 static mm_dense *
-mm_real_symmetric_to_general_dense (mm_dense *x)
+mm_real_symmetric_to_general_dense (const mm_dense *x)
 {
 	int			i, j;
 	mm_dense	*d = mm_real_copy (x);
@@ -393,7 +393,7 @@ mm_real_symmetric_to_general_dense (mm_dense *x)
 
 /* convert symmetric -> general */
 mm_real *
-mm_real_symmetric_to_general (mm_real *x)
+mm_real_symmetric_to_general (const mm_real *x)
 {
 	return (mm_real_is_sparse (x)) ? mm_real_symmetric_to_general_sparse (x) : mm_real_symmetric_to_general_dense (x);
 }

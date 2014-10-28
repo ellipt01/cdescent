@@ -38,5 +38,5 @@
 
 # display resultant solution path
 # USAGE: plot_path <dim of beta> <lambda2>
-../bin/plot_path 9 0
+./plot_path 9 0
 
