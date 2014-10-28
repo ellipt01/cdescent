@@ -1,5 +1,6 @@
 cdescent
 ============
 
-A pure C implementation of a library to obtain lasso, elastic net L1 regularized linear regression and variable selection estimator based on coordinate descent algorithm.
+A pure C implementation of a library to obtain lasso, elastic net, smooth lasso,
+the L1 regularized linear regression and variable selection estimator based on coordinate descent algorithm.
 
