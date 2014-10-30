@@ -1,0 +1,76 @@
+
+            Compiling and Installing cdescent library
+
+Note: The cdescent library is a work in progress and frequently updated.
+Check out the latest information on the site:
+https://sourceforge.jp/projects/cdescent/
+
+
+Quick Start
+---------------------------------------------------
+
+   % ./configure
+   % make
+   % make install
+
+Things will be installed under /usr/local/lib and
+/usr/local/include/cdescent.
+
+
+OpenMP Support
+---------------------------------------------------
+cdescent library supports parallel calculation using openMP.
+If you want to turn off the OMP support and parallel calculation for some reason,
+you can use the following configure options to turn off / on the support explicitly.
+
+  --enable-openmp=no     ;; turn off the OMP support
+
+
+BLAS library paths
+---------------------------------------------------
+configure script tries to find blas library automatically.
+If you want to use BLAS libraries installed in non-standard location,
+you can use the following option to specify the locations.
+
+  --with-blas=PATH
+  --with-blas-incdir=PATH
+
+This library also supports ATLAS and mkl. If you want to use these library,
+you can use the following options:
+
+  --with-atlas=PATH   // ATLAS (-lf77blas)
+  --with-tatlas=PATH  // multi-thread ATLAS (-ltaltas)
+  --with-satlas=PATH  // single-thread ATLAS (-lsatlas)
+  --with-atlas-incdir=PATH
+
+  --with-mkl=PATH     // intel math kernel library
+  --with-mkl-incdir=PATH
+
+Compiler and Optimization options
+---------------------------------------------------
+This package supports Gnu C, PGI C and Intel C compilers. You can specify
+compiler at configure time using environment variable "CC":
+
+  CC = gcc  // Gnu c compiler
+  CC = pgcc // PGI c compiler
+  CC = icc  // intel c compiler
+
+You can pass extra options at configure time, using CFLAGS.
+'configure' sets a default, but if you want to explore different
+options, just run 'configure' as follows:
+
+  % ./configure CFLAGS="--some-compiler-option --other-option"
+
+
+Customizing install location
+---------------------------------------------------
+
+Call configure with those parameters to specify where to install.
+
+   % ./configure --prefix=$PREFIX  --exec-prefix=$EXEC_PREFIX
+
+
+If --prefix option is omitted, /usr/local is assumed as PREFIX.
+If --exec-prefix option is omitted, EXEC_PREFIX is set the same as PREFIX.
+
+

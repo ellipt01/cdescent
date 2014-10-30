@@ -65,8 +65,9 @@ calc_rss (const cdescent *cd)
 
 /* degree of freedom
  * A = {j ; beta_j != 0}
- * df = sum_{j in A} 1 (Efron et al., 2004)
- * df = sum_{j in A} 1 / (xtx[j] + lambda2 * dtd[j]) (Hebiri, 2008, Theorem 5.) */
+ * df = trace( X(A) * ( X(A)'*X(A) + lambda2*D(A)'*D(A) ) * X(A)' )
+ * Under the orthogonal covariance matrix assumption (i.e., X(A)'*X(A) = I(A)),
+ * df -> sum_{j in A} 1 / (1 + lambda2 * D(:,j)' * D(:,j)) */
 static double
 calc_degree_of_freedom (const cdescent *cd)
 {
