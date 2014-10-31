@@ -153,7 +153,7 @@ main (int argc, char **argv)
 	lreg = create_linregmodel (false, false);
 
 	/* create cdescent object */
-	cd = cdescent_new (lreg, tolerance, false);
+	cd = cdescent_new (lreg, tolerance, maxiter, false);
 
 	/* evaluate regression coefficients beta
 	 * corresponding to the specified L1 regularization parameter log_lambda1 */
@@ -163,13 +163,16 @@ main (int argc, char **argv)
 		t1 = omp_get_wtime ();
 #endif
 
-		example_cdescent_pathwise (cd, log10_lambda1, dlog10_lambda1, maxiter, true, true);
+		cdescent_cyclic_pathwise_set_conditions (true, true, gamma_bic);
+		cdescent_cyclic_pathwise (cd, log10_lambda1, dlog10_lambda1);
 
 #ifdef _OPENMP
 		t2 = omp_get_wtime ();
 		fprintf (stderr, "time = %.2e\n", t2 - t1);
 #endif
 	}
+
+	fprintf (stderr, "lambda1_opt = %.2f : %.2f\n", cd->lambda1_opt, cd->nrm1_opt);
 
 	/* output beta and mu corresponding to log_lambda1, in MatrixMarket format */
 	{

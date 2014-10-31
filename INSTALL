@@ -1,5 +1,4 @@
-
-            Compiling and Installing cdescent library
+               Compiling and Installing cdescent library
 
 Note: The cdescent library is a work in progress and frequently updated.
 Check out the latest information on the site:
@@ -17,11 +16,13 @@ Things will be installed under /usr/local/lib and
 /usr/local/include/cdescent.
 
 
-OpenMP Support
+openMP Support
 ---------------------------------------------------
+
 cdescent library supports parallel calculation using openMP.
-If you want to turn off the OMP support and parallel calculation for some reason,
-you can use the following configure options to turn off / on the support explicitly.
+If you want to turn off the OMP support and to turn off parallel calculation
+for some reason, you can use the following configure options to turn off or
+turn on the support explicitly.
 
   --enable-openmp=no     ;; turn off the OMP support
 
@@ -45,21 +46,6 @@ you can use the following options:
 
   --with-mkl=PATH     // intel math kernel library
   --with-mkl-incdir=PATH
-
-Compiler and Optimization options
----------------------------------------------------
-This package supports Gnu C, PGI C and Intel C compilers. You can specify
-compiler at configure time using environment variable "CC":
-
-  CC = gcc  // Gnu c compiler
-  CC = pgcc // PGI c compiler
-  CC = icc  // intel c compiler
-
-You can pass extra options at configure time, using CFLAGS.
-'configure' sets a default, but if you want to explore different
-options, just run 'configure' as follows:
-
-  % ./configure CFLAGS="--some-compiler-option --other-option"
 
 
 Customizing install location

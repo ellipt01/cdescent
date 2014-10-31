@@ -29,11 +29,11 @@ echo "set ylabel \"{/Symbol b}\"" >> tmp.gnuplot
 
 echo -n "plot $3 $4 0 linetype 0 linewidth 2, " >> tmp.gnuplot
 
-j=1
+fn="beta_path.data"
+j=3
 for i in `seq -f %03g 0 $1`; do
-	fn=beta"$i".res
 
-	echo -n "\"$fn\" using 2:3 with line linewidth 1" >> tmp.gnuplot
+	echo -n "\"$fn\" using 2:$j with line linewidth 1" >> tmp.gnuplot
 
 	if [ $minor -ge 2 ]; then
 		echo -n " linetype 1 linecolor $j" >> tmp.gnuplot

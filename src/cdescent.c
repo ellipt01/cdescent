@@ -22,11 +22,14 @@ cdescent_alloc (void)
 	cd->lambda1_max = 0.;
 	cd->lambda1 = 0.;
 
-	cd->b = 0.;
 	cd->nrm1 = 0.;
+	cd->b = 0.;
 	cd->beta = NULL;
 	cd->mu = NULL;
 	cd->nu = NULL;
+
+	cd->lambda1_opt = 0.;
+	cd->beta_opt = NULL;
 
 	cd->parallel = false;
 	cd->total_iter = 0;
@@ -36,7 +39,7 @@ cdescent_alloc (void)
 
 /*** create new cdescent object ***/
 cdescent *
-cdescent_new (const linregmodel *lreg, const double tol, bool parallel)
+cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool parallel)
 {
 	cdescent	*cd;
 
@@ -69,6 +72,7 @@ cdescent_new (const linregmodel *lreg, const double tol, bool parallel)
 		mm_real_set_all (cd->nu, 0.);	// in initial, set to 0
 	}
 
+	cd->maxiter = maxiter;
 	cd->parallel = parallel;
 
 	return cd;
@@ -82,6 +86,7 @@ cdescent_free (cdescent *cd)
 		if (cd->beta) mm_real_free (cd->beta);
 		if (cd->mu) mm_real_free (cd->mu);
 		if (cd->nu) mm_real_free (cd->nu);
+		if (cd->beta_opt) mm_real_free (cd->beta_opt);
 		free (cd);
 	}
 	return;

@@ -15,6 +15,7 @@ libcdescent_la_SOURCES =\
 	cdescent.c\
 	stepsize.c\
 	update.c\
+	pathwise.c\
 	bic.c
 
 libcdescent_la_LIBADD = -L$(top_srcdir)/src

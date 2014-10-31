@@ -62,7 +62,7 @@ cdescent_update (cdescent *cd, int j, bool atomic, double *amax_eta)
 
 /*** progress coordinate descent update for one full cycle ***/
 bool
-cdescent_update_cyclic_once_cycle (cdescent *cd)
+cdescent_cyclic_update_once_cycle (cdescent *cd)
 {
 	int		j;
 	double	amax_eta;	// max of |eta(j)| = |beta_new(j) - beta_prev(j)|
@@ -92,16 +92,16 @@ cdescent_update_cyclic_once_cycle (cdescent *cd)
 /*** cyclic coordinate descent
  * repeat coordinate descent until solution is converged ***/
 bool
-cdescent_update_cyclic (cdescent *cd, const int maxiter)
+cdescent_cyclic_update (cdescent *cd)
 {
 	int		iter = 0;
 	bool	converged = false;
 
 	while (!converged) {
 
-		converged = cdescent_update_cyclic_once_cycle (cd);
+		converged = cdescent_cyclic_update_once_cycle (cd);
 
-		if (++iter >= maxiter) {
+		if (++iter >= cd->maxiter) {
 			printf_warning ("cdescent_cyclic", "reaching max number of iterations.", __FILE__, __LINE__);
 			break;
 		}

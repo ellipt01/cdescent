@@ -55,11 +55,16 @@ calc_rss (const cdescent *cd)
 	double	*r = (double *) malloc (cd->lreg->y->nz * sizeof (double));
 	dcopy_ (&cd->lreg->y->nz, cd->lreg->y->data, &ione, r, &ione);	// r = y
 	daxpy_ (&cd->mu->nz, &dmone, cd->mu->data, &ione, r, &ione);	// r = y - mu
+	// intercept
+	if (fabs (cd->b) > 0.) {
+		int		j;
+		for (j = 0; j < cd->mu->nz; j++) r[j] -= cd->b;
+	}
 	rss = ddot_ (&cd->lreg->y->nz, r, &ione, r, &ione);	// rss = | y - mu |^2
 	free (r);
 	// rss += | 0 - sqrt(lambda2) * nu |^2
-	if (!cd->lreg->is_regtype_lasso)
-		rss += cd->lreg->lambda2 * ddot_ (&cd->nu->nz, cd->nu->data, &ione, cd->nu->data, &ione);
+//	if (!cd->lreg->is_regtype_lasso)
+//		rss += cd->lreg->lambda2 * ddot_ (&cd->nu->nz, cd->nu->data, &ione, cd->nu->data, &ione);
 	return rss;
 }
 
@@ -104,8 +109,8 @@ cdescent_eval_bic (const cdescent *cd, const double gamma)
 	info->df = calc_degree_of_freedom (cd);
 	info->m = (double) cd->lreg->x->m;
 	info->n = (double) cd->lreg->x->n;
-	if (!cd->lreg->is_regtype_lasso) info->m += (double) cd->lreg->d->m;
-	info->bic_val = log (info->rss) + info->df * log (info->m) / info->m;
+//	if (!cd->lreg->is_regtype_lasso) info->m += (double) cd->lreg->d->m;
+	info->bic_val = log (info->rss) + info->df * log (log (info->m)) / info->m;
 	if (fabs (gamma) > 0.) info->bic_val += 2. * info->df * info->gamma * log (info->n) / info->m;
 	return info;
 }

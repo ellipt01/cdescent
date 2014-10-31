@@ -7,9 +7,7 @@ noinst_LTLIBRARIES = libexample.la
 
 noinst_HEADERS = example.h
 
-libexample_la_SOURCES =\
-	example.c\
-	example_cdescent.c
+libexample_la_SOURCES = example.c
 
 libexample_la_CPPFLAGS =\
 	-I$(top_srcdir)/include\
