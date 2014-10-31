@@ -172,7 +172,7 @@ main (int argc, char **argv)
 #endif
 	}
 
-	fprintf (stderr, "lambda1_opt = %.2f : %.2f\n", cd->lambda1_opt, cd->nrm1_opt);
+	fprintf (stderr, "lambda1_opt = %.2f, nrm1(beta_opt) = %.2f, min_bic = %.2f\n", cd->lambda1_opt, cd->nrm1_opt, cd->min_bic_val);
 
 	/* output beta and mu corresponding to log_lambda1, in MatrixMarket format */
 	{

@@ -1,3 +1,8 @@
+2014-10-31 Mitsuru Utsugi <utsugi@mountain.ocn.ne.jp>
+ * release 0.4.1
+ * add pathwise CCD routine
+ * modify BIC evaluation routines
+
 2014-10-29 Mitsuru Utsugi <utsugi@mountain.ocn.ne.jp>
  * release 0.4.0
  * modify calc_degree_of_freedom

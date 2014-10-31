@@ -17,32 +17,18 @@
  *c   where b = [y ; 0], Z = [x ; sqrt(lambda2) * D]
  *c*******************************************************/
 
+/* allocate bic_info */
 static bic_info *
 bic_info_alloc (void)
 {
-	return (bic_info *) malloc (sizeof (bic_info));
-}
-
-/*** create bic_info object ***/
-bic_info *
-bic_info_new (void)
-{
-	bic_info	*info = bic_info_alloc ();
+	bic_info	*info = (bic_info *) malloc (sizeof (bic_info));
 	info->m = 0.;
 	info->n = 0.;
 	info->rss = 0.;
 	info->df = 0.;
 	info->gamma = 0.;
-	info->bic_val = + 1.0 / 0.0;	// positive inf
+	info->bic_val = CDESCENT_POS_INF;
 	return info;
-}
-
-/*** free bic_info object ***/
-void
-bic_info_free (bic_info *info)
-{
-	if (info) free (info);
-	return;
 }
 
 /* residual sum of squares
@@ -58,13 +44,10 @@ calc_rss (const cdescent *cd)
 	// intercept
 	if (fabs (cd->b) > 0.) {
 		int		j;
-		for (j = 0; j < cd->mu->nz; j++) r[j] -= cd->b;
+		for (j = 0; j < cd->mu->nz; j++) r[j] -= cd->b;	// r = y - mu - b
 	}
 	rss = ddot_ (&cd->lreg->y->nz, r, &ione, r, &ione);	// rss = | y - mu |^2
 	free (r);
-	// rss += | 0 - sqrt(lambda2) * nu |^2
-//	if (!cd->lreg->is_regtype_lasso)
-//		rss += cd->lreg->lambda2 * ddot_ (&cd->nu->nz, cd->nu->data, &ione, cd->nu->data, &ione);
 	return rss;
 }
 
@@ -103,14 +86,13 @@ cdescent_eval_bic (const cdescent *cd, const double gamma)
 		printf_warning ("cdescent_eval_bic", "gamma must be >= 0.", __FILE__, __LINE__);
 		return NULL;
 	}
-	info = bic_info_new ();
+	info = bic_info_alloc ();
 	info->gamma = gamma;
 	info->rss = calc_rss (cd);
 	info->df = calc_degree_of_freedom (cd);
 	info->m = (double) cd->lreg->x->m;
 	info->n = (double) cd->lreg->x->n;
-//	if (!cd->lreg->is_regtype_lasso) info->m += (double) cd->lreg->d->m;
-	info->bic_val = log (info->rss) + info->df * log (log (info->m)) / info->m;
+	info->bic_val = log (info->rss) + info->df * log (info->m) / info->m;
 	if (fabs (gamma) > 0.) info->bic_val += 2. * info->df * info->gamma * log (info->n) / info->m;
 	return info;
 }

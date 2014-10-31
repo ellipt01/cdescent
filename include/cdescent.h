@@ -33,6 +33,7 @@ struct s_cdescent {
 	mm_dense			*mu;			// mu = X * beta, estimate of y
 	mm_dense			*nu;			// nu = D * beta
 
+	double				min_bic_val;	// minimum BIC
 	double				lambda1_opt;	// optimal lambda1
 	double				nrm1_opt;		// L1 norm of optimal beta
 	mm_dense			*beta_opt;		// optimal beta
@@ -61,8 +62,6 @@ void		cdescent_cyclic_pathwise_set_conditions (bool is_output_solutionpath, bool
 void		cdescent_cyclic_pathwise (cdescent *cd, const double log10_lambda1_lower, const double dlog10_lambda1);
 
 /* bic.c */
-bic_info	*bic_info_new (void);
-void		bic_info_free (bic_info *info);
 bic_info	*cdescent_eval_bic (const cdescent *cd, double gamma);
 
 #ifdef __cplusplus

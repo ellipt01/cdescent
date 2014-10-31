@@ -28,6 +28,7 @@ cdescent_alloc (void)
 	cd->mu = NULL;
 	cd->nu = NULL;
 
+	cd->min_bic_val = CDESCENT_POS_INF;
 	cd->lambda1_opt = 0.;
 	cd->beta_opt = NULL;
 

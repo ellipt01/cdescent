@@ -6,23 +6,24 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <cdescent.h>
 
 #include "private.h"
 
-// num of iterations
-int			iter = 0;
+// num of iterations. use for fprintf_solutionpath
+static int			_iter_ = 0;
 
 // default value of gamma_bic
-double		gamma_bic = 0.;
+static double		_gamma_bic_ = 0.;
 
 // solution path
-bool 		output_solutionpath = false;
-const char	fn_path[] = "beta_path.data";
+static bool 		_output_solutionpath_ = false;
+static const char	fn_path[] = "beta_path.data";
 
 // bic info
-bool		output_bic_info = false;
-const char	fn_bic[] = "bic_info.data";
+static bool		_output_bic_info_ = false;
+static const char	fn_bic[] = "bic_info.data";
 
 /*** set conditions of pathwise cyclic coordinate descent algorithm.
  * bool output_solutionpath:	if this is true, entire solution path is output to the file "beta_path.data"
@@ -32,13 +33,13 @@ void
 cdescent_cyclic_pathwise_set_conditions (bool is_output_solutionpath, bool is_output_bic_info, const double gamma_bic_val)
 {
 	// whether output solution path
-	output_solutionpath = is_output_solutionpath;
-	output_bic_info = is_output_bic_info;
+	_output_solutionpath_ = is_output_solutionpath;
+	_output_bic_info_ = is_output_bic_info;
 	// set gamma for eBIC
 	if (gamma_bic_val < 0.) {
 		printf_warning ("cdescent_cyclic_pathwise_set_gamma_bic", "gamma of eBIC must be >= 0. gamma is set to 0.\n", __FILE__, __LINE__);
-		gamma_bic = 0.;
-	} else gamma_bic = gamma_bic_val;
+		_gamma_bic_ = 0.;
+	} else _gamma_bic_ = gamma_bic_val;
 
 	return;
 }
@@ -48,7 +49,7 @@ static void
 fprintf_solutionpath (FILE *stream, const cdescent *cd)
 {
 	int		j;
-	fprintf (stream, "%d %.4e", iter++, cd->nrm1);
+	fprintf (stream, "%d %.4e", _iter_++, cd->nrm1);
 	for (j = 0; j < cd->beta->m; j++) fprintf (stream, " %.4e", cd->beta->data[j]);
 	fprintf (stream, "\n");
 	return;
@@ -68,10 +69,11 @@ set_logt (const double logt_lower, const double new_logt, double *logt)
 	return false;
 }
 
-/* update cd->lambda1_opt, cd->nrm1_opt and cd->beta_opt */
+/* update cd->min_bic, cd->lambda1_opt, cd->nrm1_opt and cd->beta_opt */
 static void
-update_beta_optimal (cdescent *cd, const double lambda1, const double nrm1, const mm_dense *beta)
+update_beta_optimal (cdescent *cd, const double bic_val, const double lambda1, const double nrm1, const mm_dense *beta)
 {
+	cd->min_bic_val = bic_val;
 	cd->lambda1_opt = lambda1;
 	cd->nrm1_opt = nrm1;
 	if (cd->beta_opt) mm_real_free (cd->beta_opt);
@@ -92,15 +94,14 @@ cdescent_cyclic_pathwise (cdescent *cd, const double log10_lambda1_lower, const 
 	double	logt;
 	bool	stop_flag = false;
 
-	double	bic_min = + 1. / 0.;
 	FILE	*fp_path = NULL;
 	FILE	*fp_bic = NULL;
 
 	/* warm start */
 	stop_flag = set_logt (log10_lambda1_lower, cd->lreg->log10camax, &logt);
 
-	if (output_solutionpath) fp_path = fopen (fn_path, "w");
-	if (output_bic_info) fp_bic = fopen (fn_bic, "w");
+	if (_output_solutionpath_) fp_path = fopen (fn_path, "w");
+	if (_output_bic_info_) fp_bic = fopen (fn_bic, "w");
 
 	// output bic info
 	if (fp_bic) fprintf (fp_bic, "t\tebic\trss\tdf\n");
@@ -116,14 +117,14 @@ cdescent_cyclic_pathwise (cdescent *cd, const double log10_lambda1_lower, const 
 		if (fp_path) fprintf_solutionpath (fp_path, cd);
 
 		// update optimal beta
-		info = cdescent_eval_bic (cd, gamma_bic);
-		if (info->bic_val < bic_min) {
-			update_beta_optimal (cd, cd->lambda1, cd->nrm1, cd->beta);
-			bic_min = info->bic_val;
+		info = cdescent_eval_bic (cd, _gamma_bic_);
+		if (info->bic_val < cd->min_bic_val) {
+			update_beta_optimal (cd, info->bic_val, cd->lambda1, cd->nrm1, cd->beta);
+			cd->min_bic_val = info->bic_val;
 		}
 		// output bic info
 		if (fp_bic) fprintf (fp_bic, "%.4e\t%.4e\t%.4e\t%.4e\n", cd->nrm1, info->bic_val, info->rss, info->df);
-		bic_info_free (info);
+		free (info);
 
 		if (stop_flag) break;
 
