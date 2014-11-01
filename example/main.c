@@ -163,7 +163,7 @@ main (int argc, char **argv)
 		t1 = omp_get_wtime ();
 #endif
 
-		cdescent_cyclic_pathwise_set_conditions (true, true, gamma_bic);
+		cdescent_cyclic_pathwise_settings (true, true, gamma_bic);
 		cdescent_cyclic_pathwise (cd, log10_lambda1, dlog10_lambda1);
 
 #ifdef _OPENMP

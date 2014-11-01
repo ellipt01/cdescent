@@ -32,8 +32,7 @@ bic_info_alloc (void)
 }
 
 /* residual sum of squares
- * rss = | b - Z * beta |^2
- *     = | y - mu |^2 + | 0 - sqrt(lambda2) * nu |^2 */
+ * rss = | b - Z * beta |^2 = | y - mu - b |^2 */
 static double
 calc_rss (const cdescent *cd)
 {

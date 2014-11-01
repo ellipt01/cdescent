@@ -58,7 +58,7 @@ bool		cdescent_cyclic_update_once_cycle (cdescent *cd);
 bool		cdescent_cyclic_update (cdescent *cd);
 
 /* pathwise.c */
-void		cdescent_cyclic_pathwise_set_conditions (bool is_output_solutionpath, bool is_output_bic_info, const double gamma_bic_val);
+void		cdescent_cyclic_pathwise_settings (bool output_solutionpath, bool output_bic_info, const double gamma_bic_val);
 void		cdescent_cyclic_pathwise (cdescent *cd, const double log10_lambda1_lower, const double dlog10_lambda1);
 
 /* bic.c */
