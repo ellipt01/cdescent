@@ -7,7 +7,6 @@
 
 #include <stdlib.h>
 #include <math.h>
-#include <float.h>
 #include <linregmodel.h>
 
 #include "private.h"
@@ -22,7 +21,7 @@ do_centering (mm_dense *x)
 		int		i;
 		double	meanj = 0.;
 		for (i = 0; i < x->m; i++) meanj += x->data[i + j * x->m];
-		if (fabs (meanj) > DBL_EPSILON) {
+		if (fabs (meanj) > CDESCENT_DBL_EPSILON) {
 			meanj /= (double) x->m;
 			for (i = 0; i < x->m; i++) x->data[i + j * x->m] -= meanj;
 		}
@@ -41,7 +40,7 @@ do_normalizing (mm_real *x)
 		int		size = (mm_real_is_sparse (x)) ? x->p[j + 1] - x->p[j] : x->m;
 		double	*xj = x->data + ((mm_real_is_sparse (x)) ? x->p[j] : j * x->m);
 		nrmj = dnrm2_ (&size, xj, &ione);
-		if (nrmj > DBL_EPSILON) {
+		if (nrmj > CDESCENT_DBL_EPSILON) {
 			double	alpha = 1. / nrmj;
 			dscal_ (&size, &alpha, xj, &ione);
 		}

@@ -8,6 +8,8 @@
 #ifndef PRIVATE_H
 #define PRIVATE_H
 
+#include <float.h>
+
 /* Private macros, constants and headers
  * which are only used internally */
 
@@ -47,6 +49,13 @@ extern const double	dmone;	// -1.
 #define CDESCENT_POS_INF	HUGE_VAL
 #else
 #define CDESCENT_POS_INF	((+1.)/(+0.))
+#endif
+
+/* DBL_EPSILOM */
+#ifdef DBL_EPSILON
+#define CDESCENT_DBL_EPSILON	DBL_EPSILON
+#else
+#define CDECENT_DBL_EPSILON		2.2204460492503131e-16
 #endif
 
 /* print error message and terminate program */

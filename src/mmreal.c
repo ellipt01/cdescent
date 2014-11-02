@@ -580,7 +580,7 @@ mm_real_dj_nrm2 (const mm_dense *d, const int j)
 	if (!mm_real_is_symmetric (d)) nrm2 = dnrm2_ (&d->m, d->data + j * d->m, &ione);
 	else {
 		int		len;
-		double	val;
+		double	val = 0.;
 		if (mm_real_is_upper (d)) {
 			len = j;
 			val = ddot_ (&len, d->data + j * d->m, &ione, d->data + j * d->m, &ione);
