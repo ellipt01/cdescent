@@ -7,6 +7,7 @@ libcdescent_include_DATA =\
 	mmreal.h\
 	linregmodel.h\
 	bic.h\
+	pathwise.h\
 	cdescent.h
 
 EXTRA_DIST = $(libcdescent_include_DATA)

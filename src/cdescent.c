@@ -28,10 +28,6 @@ cdescent_alloc (void)
 	cd->mu = NULL;
 	cd->nu = NULL;
 
-	cd->min_bic_val = CDESCENT_POS_INF;
-	cd->lambda1_opt = 0.;
-	cd->beta_opt = NULL;
-
 	cd->parallel = false;
 	cd->total_iter = 0;
 
@@ -87,7 +83,6 @@ cdescent_free (cdescent *cd)
 		if (cd->beta) mm_real_free (cd->beta);
 		if (cd->mu) mm_real_free (cd->mu);
 		if (cd->nu) mm_real_free (cd->nu);
-		if (cd->beta_opt) mm_real_free (cd->beta_opt);
 		free (cd);
 	}
 	return;

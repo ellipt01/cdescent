@@ -27,7 +27,7 @@ bic_info_alloc (void)
 	info->rss = 0.;
 	info->df = 0.;
 	info->gamma = 0.;
-	info->bic_val = CDESCENT_POS_INF;
+	info->bic_val = CDESCENT_POSINF;
 	return info;
 }
 

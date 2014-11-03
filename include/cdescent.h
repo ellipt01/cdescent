@@ -14,6 +14,7 @@ extern "C" {
 
 #include <linregmodel.h>
 #include <bic.h>
+#include <pathwise.h>
 
 /*** coordinate descent object ***/
 typedef struct s_cdescent	cdescent;
@@ -33,11 +34,6 @@ struct s_cdescent {
 	mm_dense			*mu;			// mu = X * beta, estimate of y
 	mm_dense			*nu;			// nu = D * beta
 
-	double				min_bic_val;	// minimum BIC
-	double				lambda1_opt;	// optimal lambda1
-	double				nrm1_opt;		// L1 norm of optimal beta
-	mm_dense			*beta_opt;		// optimal beta
-
 	int					total_iter;	// total number of iterations
 	int					maxiter;		// maximum number of iterations
 
@@ -53,13 +49,17 @@ bool		cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1);
 /* stepsize.c */
 double		cdescent_beta_stepsize (const cdescent *cd, const int j);
 
-/* update.c */
+/* regression.c */
 bool		cdescent_cyclic_update_once_cycle (cdescent *cd);
 bool		cdescent_cyclic_update (cdescent *cd);
+void		cdescent_cyclic_pathwise (cdescent *cd, pathwise *path);
 
 /* pathwise.c */
-void		cdescent_cyclic_pathwise_settings (bool output_solutionpath, bool output_bic_info, const double gamma_bic_val);
-void		cdescent_cyclic_pathwise (cdescent *cd, const double log10_lambda1_lower, const double dlog10_lambda1);
+pathwise	*pathwise_new (const double log10_lambda1_lower, const double dlog10_lambda1);
+void		pathwise_free (pathwise *path);
+void		pathwise_output_fullpath (pathwise *path, const char *fn);
+void		pathwise_output_bic_info (pathwise *path, const char *fn);
+void		pathwise_set_gamma_bic (pathwise *path, const double gamma_bic);
 
 /* bic.c */
 bic_info	*cdescent_eval_bic (const cdescent *cd, double gamma);

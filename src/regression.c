@@ -5,6 +5,7 @@
  *      Author: utsugi
  */
 
+#include <stdlib.h>
 #include <math.h>
 #include <cdescent.h>
 
@@ -108,4 +109,94 @@ cdescent_cyclic_update (cdescent *cd)
 	}
 	cd->total_iter += iter;
 	return converged;
+}
+
+// num of iterations. use for fprintf_solutionpath
+static int			_iter_ = 0;
+
+/* print solution path to stream */
+static void
+fprintf_solutionpath (FILE *stream, const cdescent *cd)
+{
+	int		j;
+	fprintf (stream, "%d %.4e", _iter_++, cd->nrm1);
+	for (j = 0; j < cd->beta->m; j++) fprintf (stream, " %.4e", cd->beta->data[j]);
+	fprintf (stream, "\n");
+	return;
+}
+
+/* set log(t):
+ * if new_logt <= logt_lower, *logt = logt_lower and return true
+ * else *logt = new_logt */
+static bool
+set_logt (const double logt_lower, const double new_logt, double *logt)
+{
+	if (new_logt <= logt_lower) {
+		*logt = logt_lower;
+		return true;
+	}
+	*logt = new_logt;
+	return false;
+}
+
+/*** pathwise cyclic coordinate descent algorithm.
+ * The regression is starting at the smallest value λmax for which
+ * the entire vector β = 0, and decreasing sequence of values for λ1 on
+ * the log scale while log(λ1) >= log10_lambda1_lower.
+ * log(λmax) is identical with log ( max ( abs(X' * y) ) ), where this
+ * value is stored in cd->lreg->log10camax.
+ * The interval of decreasing sequence on the log scale is dlog10_lambda1. ***/
+void
+cdescent_cyclic_pathwise (cdescent *cd, pathwise *path)
+{
+	double	logt;
+	bool	stop_flag = false;
+
+	FILE	*fp_path = NULL;
+	FILE	*fp_bic = NULL;
+
+	/* warm start */
+	stop_flag = set_logt (path->log10_lambda1_lower, cd->lreg->log10camax, &logt);
+
+	if (path->output_fullpath) fp_path = fopen (path->fn_path, "w");
+	if (path->output_bic_info) fp_bic = fopen (path->fn_bic, "w");
+
+	// output bic info
+	if (fp_bic) fprintf (fp_bic, "t\tebic\trss\tdf\n");
+
+	while (1) {
+		bic_info	*info;
+
+		cdescent_set_log10_lambda1 (cd, logt);
+
+		if (!cdescent_cyclic_update (cd)) break;
+
+		// output solution path
+		if (fp_path) fprintf_solutionpath (fp_path, cd);
+
+		// update optimal beta
+		info = cdescent_eval_bic (cd, path->gamma_bic);
+		if (info->bic_val < path->min_bic_val) {
+			path->min_bic_val = info->bic_val;
+			path->lambda1_opt = cd->lambda1;
+			path->nrm1_opt = cd->nrm1;
+			if (path->beta_opt) mm_real_free (path->beta_opt);
+			path->beta_opt = mm_real_copy (cd->beta);
+
+		}
+		// output bic info
+		if (fp_bic) fprintf (fp_bic, "%.4e\t%.4e\t%.4e\t%.4e\n", cd->nrm1, info->bic_val, info->rss, info->df);
+		free (info);
+
+		if (stop_flag) break;
+
+		/* if logt - dlog10_lambda1 < log10_lambda1, logt = log10_lambda1 and stop_flag is set to true
+		 * else logt -= dlog10_lambda1 */
+		stop_flag = set_logt (path->log10_lambda1_lower, logt - path->dlog10_lambda1, &logt);
+	}
+
+	if (fp_path) fclose (fp_path);
+	if (fp_bic) fclose (fp_bic);
+
+	return;
 }

@@ -10,12 +10,12 @@
 #include <stdbool.h>
 #include <math.h>
 
-#include "example.h"
+#include <cdescent.h>
 
 /* penalty term for s-lasso */
 
 static mm_sparse *
-mm_real_penalty_ssmooth (const int n)
+penalty_ssmooth (const int n)
 {
 	int		i, j, k;
 	mm_sparse	*s = mm_real_new (MM_REAL_SPARSE, MM_REAL_GENERAL, n - 1, n, 2 * (n - 1));
@@ -40,7 +40,7 @@ mm_real_penalty_ssmooth (const int n)
 }
 
 static mm_dense *
-mm_real_penalty_dsmooth (const int n)
+penalty_dsmooth (const int n)
 {
 	int		j;
 	mm_dense	*d = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, n - 1, n, (n - 1) * n);
@@ -55,8 +55,8 @@ mm_real_penalty_dsmooth (const int n)
 
 /* s-lasso */
 mm_real *
-mm_real_penalty_smooth (MMRealFormat format, const int n)
+penalty_smooth (MMRealFormat format, const int n)
 {
-	return (format == MM_REAL_SPARSE) ? mm_real_penalty_ssmooth (n) : mm_real_penalty_dsmooth (n);
+	return (format == MM_REAL_SPARSE) ? penalty_ssmooth (n) : penalty_dsmooth (n);
 }
 

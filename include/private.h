@@ -43,13 +43,7 @@ extern const double	done;	//  1.
 extern const double	dmone;	// -1.
 
 /* positive infinity  */
-#ifdef INFINITY
-#define CDESCENT_POS_INF	INFINITY
-#elif defined(HUGE_VAL)
-#define CDESCENT_POS_INF	HUGE_VAL
-#else
-#define CDESCENT_POS_INF	((+1.)/(+0.))
-#endif
+#define CDESCENT_POSINF	((+1.)/(+0.))
 
 /* DBL_EPSILOM */
 #ifdef DBL_EPSILON

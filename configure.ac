@@ -2,13 +2,13 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT([cdescent], [0.4.1])
+AC_INIT([cdescent], [0.4.2])
 AC_CONFIG_SRCDIR([example/example.h])
 AC_CONFIG_HEADERS([config.h])
 
-CDESCENT_CURRENT=4
+CDESCENT_CURRENT=5
 CDESCENT_REVISION=0
-CDESCENT_AGE=3
+CDESCENT_AGE=4
 CDESCENT_LT_VERSION="${CDESCENT_CURRENT}:${CDESCENT_REVISION}:${CDESCENT_AGE}"
 AC_SUBST(CDESCENT_LT_VERSION)
 

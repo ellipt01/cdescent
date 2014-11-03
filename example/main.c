@@ -11,7 +11,12 @@
 #include <unistd.h>
 #include <omp.h>
 
+#include <cdescent.h>
+
 #include "example.h"
+
+char		infn_x[80];
+char		infn_y[80];
 
 /*** default settings ***/
 double	lambda2 = 0.;
@@ -23,6 +28,7 @@ double	tolerance = 1.e-3;
 int		maxiter = 100000;
 
 extern char	*optarg;
+extern int		optind;
 
 /*** print usage ***/
 void
@@ -146,6 +152,7 @@ main (int argc, char **argv)
 {
 	linregmodel	*lreg;
 	cdescent		*cd;
+	pathwise		*path;
 
 	if (!read_params (argc, argv)) usage (argv[0]);
 
@@ -157,14 +164,17 @@ main (int argc, char **argv)
 
 	/* evaluate regression coefficients beta
 	 * corresponding to the specified L1 regularization parameter log_lambda1 */
+	path = pathwise_new (log10_lambda1, dlog10_lambda1);
+	pathwise_output_fullpath (path, NULL);
+	pathwise_output_bic_info (path, NULL);
+	pathwise_set_gamma_bic (path, gamma_bic);
 	{
 #ifdef _OPENMP
 		double	t1, t2;
 		t1 = omp_get_wtime ();
 #endif
 
-		cdescent_cyclic_pathwise_settings (true, true, gamma_bic);
-		cdescent_cyclic_pathwise (cd, log10_lambda1, dlog10_lambda1);
+		cdescent_cyclic_pathwise (cd, path);
 
 #ifdef _OPENMP
 		t2 = omp_get_wtime ();
@@ -172,23 +182,9 @@ main (int argc, char **argv)
 #endif
 	}
 
-	fprintf (stderr, "lambda1_opt = %.2f, nrm1(beta_opt) = %.2f, min_bic = %.2f\n", cd->lambda1_opt, cd->nrm1_opt, cd->min_bic_val);
+	fprintf (stderr, "lambda1_opt = %.2f, nrm1(beta_opt) = %.2f, min_bic = %.2f\n", path->lambda1_opt, path->nrm1_opt, path->min_bic_val);
 
-	/* output beta and mu corresponding to log_lambda1, in MatrixMarket format */
-	{
-		FILE	*fp;
-		/* output resultant beta */
-		if ((fp = fopen ("beta.res", "w"))) {
-			mm_real_fwrite (fp, cd->beta, "%.4e");
-			fclose (fp);
-		}
-		/* output mu (= X * beta) */
-		if ((fp = fopen ("mu.res", "w"))) {
-			mm_real_fwrite (fp, cd->mu, "%.4e");
-			fclose (fp);
-		}
-	}
-
+	pathwise_free (path);
 	cdescent_free (cd);
 	linregmodel_free (lreg);
 
