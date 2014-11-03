@@ -152,7 +152,7 @@ main (int argc, char **argv)
 {
 	linregmodel	*lreg;
 	cdescent		*cd;
-	pathwise		*path;
+	pathwiseopt	*path;
 
 	if (!read_params (argc, argv)) usage (argv[0]);
 
@@ -162,12 +162,11 @@ main (int argc, char **argv)
 	/* create cdescent object */
 	cd = cdescent_new (lreg, tolerance, maxiter, false);
 
-	/* evaluate regression coefficients beta
-	 * corresponding to the specified L1 regularization parameter log_lambda1 */
-	path = pathwise_new (log10_lambda1, dlog10_lambda1);
-	pathwise_output_fullpath (path, NULL);
-	pathwise_output_bic_info (path, NULL);
-	pathwise_set_gamma_bic (path, gamma_bic);
+	/* pathwise cyclic coordinate descent optimization */
+	path = pathwiseopt_new (log10_lambda1, dlog10_lambda1);
+	pathwiseopt_output_fullpath (path, NULL);
+	pathwiseopt_output_bic_info (path, NULL);
+	pathwiseopt_set_gamma_bic (path, gamma_bic);
 	{
 #ifdef _OPENMP
 		double	t1, t2;
@@ -184,7 +183,7 @@ main (int argc, char **argv)
 
 	fprintf (stderr, "lambda1_opt = %.2f, nrm1(beta_opt) = %.2f, min_bic = %.2f\n", path->lambda1_opt, path->nrm1_opt, path->min_bic_val);
 
-	pathwise_free (path);
+	pathwiseopt_free (path);
 	cdescent_free (cd);
 	linregmodel_free (lreg);
 

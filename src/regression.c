@@ -139,15 +139,15 @@ set_logt (const double logt_lower, const double new_logt, double *logt)
 	return false;
 }
 
-/*** pathwise cyclic coordinate descent algorithm.
+/*** pathwise cyclic coordinate descent optimization.
  * The regression is starting at the smallest value λmax for which
  * the entire vector β = 0, and decreasing sequence of values for λ1 on
- * the log scale while log(λ1) >= log10_lambda1_lower.
+ * the log scale while log(λ1) >= path->log10_lambda1_lower.
  * log(λmax) is identical with log ( max ( abs(X' * y) ) ), where this
  * value is stored in cd->lreg->log10camax.
- * The interval of decreasing sequence on the log scale is dlog10_lambda1. ***/
+ * The interval of decreasing sequence on the log scale is path->dlog10_lambda1. ***/
 void
-cdescent_cyclic_pathwise (cdescent *cd, pathwise *path)
+cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 {
 	double	logt;
 	bool	stop_flag = false;
@@ -158,11 +158,23 @@ cdescent_cyclic_pathwise (cdescent *cd, pathwise *path)
 	/* warm start */
 	stop_flag = set_logt (path->log10_lambda1_lower, cd->lreg->log10camax, &logt);
 
-	if (path->output_fullpath) fp_path = fopen (path->fn_path, "w");
-	if (path->output_bic_info) fp_bic = fopen (path->fn_bic, "w");
+	if (path->output_fullpath) {
+		if (!(fp_path = fopen (path->fn_path, "w"))) {
+			char	msg[80];
+			sprintf (msg, "cannot open file %s", path->fn_path);
+			printf_warning ("cdescent_cyclic_pathwise", msg, __FILE__, __LINE__);
+		}
+	}
+	if (path->output_bic_info) {
+		if (!(fp_bic = fopen (path->fn_bic, "w"))) {
+			char	msg[80];
+			sprintf (msg, "cannot open file %s", path->fn_bic);
+			printf_warning ("cdescent_cyclic_pathwise", msg, __FILE__, __LINE__);
+		}
+	}
 
-	// output bic info
-	if (fp_bic) fprintf (fp_bic, "t\tebic\trss\tdf\n");
+	// output BIC info headers
+	if (fp_bic) fprintf (fp_bic, "t\t\teBIC\t\tRSS\t\tdf\n");
 
 	while (1) {
 		bic_info	*info;
@@ -184,7 +196,7 @@ cdescent_cyclic_pathwise (cdescent *cd, pathwise *path)
 			path->beta_opt = mm_real_copy (cd->beta);
 
 		}
-		// output bic info
+		// output BIC info
 		if (fp_bic) fprintf (fp_bic, "%.4e\t%.4e\t%.4e\t%.4e\n", cd->nrm1, info->bic_val, info->rss, info->df);
 		free (info);
 

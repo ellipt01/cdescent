@@ -14,9 +14,9 @@ extern "C" {
 
 #include <linregmodel.h>
 #include <bic.h>
-#include <pathwise.h>
+#include "pathwiseopt.h"
 
-/*** coordinate descent object ***/
+/*** object of coordinate descent regression ***/
 typedef struct s_cdescent	cdescent;
 
 struct s_cdescent {
@@ -52,14 +52,7 @@ double		cdescent_beta_stepsize (const cdescent *cd, const int j);
 /* regression.c */
 bool		cdescent_cyclic_update_once_cycle (cdescent *cd);
 bool		cdescent_cyclic_update (cdescent *cd);
-void		cdescent_cyclic_pathwise (cdescent *cd, pathwise *path);
-
-/* pathwise.c */
-pathwise	*pathwise_new (const double log10_lambda1_lower, const double dlog10_lambda1);
-void		pathwise_free (pathwise *path);
-void		pathwise_output_fullpath (pathwise *path, const char *fn);
-void		pathwise_output_bic_info (pathwise *path, const char *fn);
-void		pathwise_set_gamma_bic (pathwise *path, const double gamma_bic);
+void		cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path);
 
 /* bic.c */
 bic_info	*cdescent_eval_bic (const cdescent *cd, double gamma);
