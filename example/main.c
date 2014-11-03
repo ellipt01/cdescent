@@ -159,13 +159,13 @@ main (int argc, char **argv)
 	/* create linear regression model object */
 	lreg = create_linregmodel (false, false);
 
-	/* create cdescent object */
+	/* create cyclic coordinate descent object */
 	cd = cdescent_new (lreg, tolerance, maxiter, false);
 
-	/* pathwise cyclic coordinate descent optimization */
+	/* create pathwise cyclic coordinate descent optimization object */
 	path = pathwiseopt_new (log10_lambda1, dlog10_lambda1);
-	pathwiseopt_output_fullpath (path, NULL);
-	pathwiseopt_output_bic_info (path, NULL);
+	pathwiseopt_set_output_fullpath (path, NULL);
+	pathwiseopt_set_output_bic_info (path, NULL);
 	pathwiseopt_set_gamma_bic (path, gamma_bic);
 	{
 #ifdef _OPENMP

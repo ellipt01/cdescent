@@ -9,7 +9,7 @@
 #include <math.h>
 #include <cdescent.h>
 
-#include "private.h"
+#include "private/private.h"
 
 /* allocate cdescent object */
 static cdescent *

@@ -7,7 +7,7 @@ AM_CFLAGS =\
 lib_LTLIBRARIES = libcdescent.la
 
 libcdescent_la_SOURCES =\
-	private.c\
+	private/private.c\
 	atomic.c\
 	mmio.c\
 	mmreal.c\

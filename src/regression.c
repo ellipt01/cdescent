@@ -9,8 +9,8 @@
 #include <math.h>
 #include <cdescent.h>
 
-#include "private.h"
-#include "atomic.h"
+#include "private/private.h"
+#include "private/atomic.h"
 
 /* y += alpha * x(:,j) */
 static void
@@ -139,13 +139,25 @@ set_logt (const double logt_lower, const double new_logt, double *logt)
 	return false;
 }
 
+/* update min_bic_val, lambda1_opt, nrm1_opt and beta_opt */
+static void
+update_optimal (pathwiseopt *path, const double bic_val, const cdescent *cd)
+{
+	path->min_bic_val = bic_val;
+	path->lambda1_opt = cd->lambda1;
+	path->nrm1_opt = cd->nrm1;
+	if (path->beta_opt) mm_real_free (path->beta_opt);
+	path->beta_opt = mm_real_copy (cd->beta);
+	return;
+}
+
 /*** pathwise cyclic coordinate descent optimization.
- * The regression is starting at the smallest value λmax for which
- * the entire vector β = 0, and decreasing sequence of values for λ1 on
- * the log scale while log(λ1) >= path->log10_lambda1_lower.
- * log(λmax) is identical with log ( max ( abs(X' * y) ) ), where this
+ * The regression is starting at the smallest value λ1max for which
+ * the entire vector β = 0, and decreasing sequence of values for λ1
+ * while log10(λ1) >= path->log10_lambda1_lower.
+ * log10(λ1max) is identical with log10 ( max ( abs(X' * y) ) ), where this
  * value is stored in cd->lreg->log10camax.
- * The interval of decreasing sequence on the log scale is path->dlog10_lambda1. ***/
+ * The interval of decreasing sequence on the log10 scale is path->dlog10_lambda1. ***/
 void
 cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 {
@@ -186,16 +198,10 @@ cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 		// output solution path
 		if (fp_path) fprintf_solutionpath (fp_path, cd);
 
-		// update optimal beta
 		info = cdescent_eval_bic (cd, path->gamma_bic);
-		if (info->bic_val < path->min_bic_val) {
-			path->min_bic_val = info->bic_val;
-			path->lambda1_opt = cd->lambda1;
-			path->nrm1_opt = cd->nrm1;
-			if (path->beta_opt) mm_real_free (path->beta_opt);
-			path->beta_opt = mm_real_copy (cd->beta);
+		// if bic_val < min_bic_val, update min_bic_val, lambda1_opt, nrm1_opt and beta_opt
+		if (info->bic_val < path->min_bic_val) update_optimal (path, info->bic_val, cd);
 
-		}
 		// output BIC info
 		if (fp_bic) fprintf (fp_bic, "%.4e\t%.4e\t%.4e\t%.4e\n", cd->nrm1, info->bic_val, info->rss, info->df);
 		free (info);

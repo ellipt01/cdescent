@@ -9,7 +9,7 @@
 #include <math.h>
 #include <linregmodel.h>
 
-#include "private.h"
+#include "private/private.h"
 
 /* centering each column of matrix:
  * x(:, j) -> x(:, j) - mean(x(:, j)) */

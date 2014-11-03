@@ -5,17 +5,16 @@
  *      Author: utsugi
  */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <cdescent.h>
 
-#include "private.h"
+#include "private/private.h"
 
-// file to output solution path
+// default file to output solution path
 static const char	default_fn_path[] = "beta_path.data";
 
-// file to output BIC info
+// default file to output BIC info
 static const char	default_fn_bic[] = "bic_info.data";
 
 /* allocate pathwise optimization object */
@@ -41,7 +40,7 @@ pathwiseopt_new (const double log10_lambda1_lower, const double dlog10_lambda1)
 {
 	pathwiseopt	*path = pathwiseopt_alloc ();
 	strcpy (path->fn_path, default_fn_path);	// default filename
-	strcpy (path->fn_bic, default_fn_bic);		// default filename
+	strcpy (path->fn_bic, default_fn_bic);	// default filename
 	path->log10_lambda1_lower = log10_lambda1_lower;
 	path->dlog10_lambda1 = dlog10_lambda1;
 	return path;
@@ -58,18 +57,18 @@ pathwiseopt_free (pathwiseopt *path)
 	return;
 }
 
-/*** specify to outputs full solution path to the file  ***/
+/*** set outputs_fullpath = true and specify filename to output ***/
 void
-pathwiseopt_output_fullpath (pathwiseopt *path, const char *fn)
+pathwiseopt_set_output_fullpath (pathwiseopt *path, const char *fn)
 {
 	path->output_fullpath = true;
 	if (fn) strcpy (path->fn_path, fn);
 	return;
 }
 
-/*** specify to outputs BIC info to the file  ***/
+/*** set outputs_bic_info = true and specify filename to output ***/
 void
-pathwiseopt_output_bic_info (pathwiseopt *path, const char *fn)
+pathwiseopt_set_output_bic_info (pathwiseopt *path, const char *fn)
 {
 	path->output_bic_info = true;
 	if (fn) strcpy (path->fn_bic, fn);
@@ -81,4 +80,5 @@ void
 pathwiseopt_set_gamma_bic (pathwiseopt *path, const double gamma_bic)
 {
 	path->gamma_bic = gamma_bic;
+	return;
 }

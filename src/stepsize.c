@@ -8,7 +8,7 @@
 #include <math.h>
 #include <cdescent.h>
 
-#include "private.h"
+#include "private/private.h"
 
 /* soft thresholding
  * S(z, gamma) = sign(z)(|z| - gamma)+

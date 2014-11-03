@@ -9,13 +9,11 @@
 #include <math.h>
 #include <cdescent.h>
 
-#include "private.h"
+#include "private/private.h"
 
-/*c*******************************************************
- *c   Bayesian Information Criterion for L2 regularized
- *c   linear regression model b = Z * beta
- *c   where b = [y ; 0], Z = [x ; sqrt(lambda2) * D]
- *c*******************************************************/
+/*c****************************************************************************
+ *c   Bayesian Information Criterion for linear regression model y = X * beta
+ *c****************************************************************************/
 
 /* allocate bic_info */
 static bic_info *
@@ -32,7 +30,7 @@ bic_info_alloc (void)
 }
 
 /* residual sum of squares
- * rss = | b - Z * beta |^2 = | y - mu - b |^2 */
+ * rss = | y - mu - b |^2 */
 static double
 calc_rss (const cdescent *cd)
 {
@@ -51,10 +49,11 @@ calc_rss (const cdescent *cd)
 }
 
 /* degree of freedom
- * A = {j ; beta_j != 0}
+ * A = {j | beta_j != 0} : active set
  * df = trace( X(A) * ( X(A)'*X(A) + lambda2*D(A)'*D(A) ) * X(A)' )
- * Under the orthogonal covariance matrix assumption (i.e., X(A)'*X(A) = I(A)),
- * df -> sum_{j in A} 1 / (1 + lambda2 * D(:,j)' * D(:,j)) */
+ * Under the orthogonal covariance matrix assumption (i.e., X'*X = I),
+ * and assuming (I + lambda2*D'*D) is diagonal,
+ * df -> sum_{j in A} 1 / (1 + lambda2 * D(:,j)' * D(:,j)) (Hebiri, 2008) */
 static double
 calc_degree_of_freedom (const cdescent *cd)
 {

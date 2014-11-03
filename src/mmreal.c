@@ -10,8 +10,9 @@
 #include <stdbool.h>
 
 #include <mmreal.h>
-#include "private.h"
-#include "atomic.h"
+
+#include "private/atomic.h"
+#include "private/private.h"
 
 /* mm_real supports real symmetric or general sparse, and real general dense matrix */
 static bool
