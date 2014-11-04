@@ -57,18 +57,18 @@ pathwiseopt_free (pathwiseopt *path)
 	return;
 }
 
-/*** set outputs_fullpath = true and specify filename to output ***/
+/*** set outputs_fullpath = true and specify output filename ***/
 void
-pathwiseopt_set_output_fullpath (pathwiseopt *path, const char *fn)
+pathwiseopt_set_to_outputs_fullpath (pathwiseopt *path, const char *fn)
 {
 	path->output_fullpath = true;
 	if (fn) strcpy (path->fn_path, fn);
 	return;
 }
 
-/*** set outputs_bic_info = true and specify filename to output ***/
+/*** set outputs_bic_info = true and specify output filename ***/
 void
-pathwiseopt_set_output_bic_info (pathwiseopt *path, const char *fn)
+pathwiseopt_set_to_outputs_bic_info (pathwiseopt *path, const char *fn)
 {
 	path->output_bic_info = true;
 	if (fn) strcpy (path->fn_bic, fn);

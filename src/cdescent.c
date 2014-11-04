@@ -40,7 +40,7 @@ cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool
 {
 	cdescent	*cd;
 
-	if (!lreg) error_and_exit ("cdescent_alloc", "linreg *lreg is empty.", __FILE__, __LINE__);
+	if (!lreg) error_and_exit ("cdescent_new", "linregmodel *lreg is empty.", __FILE__, __LINE__);
 
 	cd = cdescent_alloc ();
 

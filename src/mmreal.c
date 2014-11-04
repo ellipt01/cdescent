@@ -84,13 +84,13 @@ mm_real_new (MMRealFormat format, MMRealSymm symm, const int m, const int n, con
 	bool		symmetric;
 
 	if (!is_format_valid (format))
-		error_and_exit ("mm_real_new", "invalid format", __FILE__, __LINE__);
+		error_and_exit ("mm_real_new", "invalid MMRealFormat format.", __FILE__, __LINE__);
 	if (!is_symm_valid (symm))
-		error_and_exit ("mm_real_new", "invalid symm", __FILE__, __LINE__);
+		error_and_exit ("mm_real_new", "invalid MMRealSymm symm.", __FILE__, __LINE__);
 
 	symmetric = symm & MM_SYMMETRIC;
 	if (symmetric && m != n)
-		error_and_exit ("mm_real_new", "symmetric matrix must be square", __FILE__, __LINE__);
+		error_and_exit ("mm_real_new", "symmetric matrix must be square.", __FILE__, __LINE__);
 
 	mm = mm_real_alloc ();
 	mm->m = m;

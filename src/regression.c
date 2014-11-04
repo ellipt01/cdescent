@@ -68,6 +68,8 @@ cdescent_cyclic_update_once_cycle (cdescent *cd)
 	int		j;
 	double	amax_eta;	// max of |eta(j)| = |beta_new(j) - beta_prev(j)|
 
+	if (!cd) error_and_exit ("cdescent_cyclic_update_once_cycle", "cdescent *cd is empty.", __FILE__, __LINE__);
+
 	/* b = (sum(y) - sum(X) * beta) / m */
 	if (!cd->lreg->xcentered) update_intercept (cd);
 
@@ -98,12 +100,14 @@ cdescent_cyclic_update (cdescent *cd)
 	int		iter = 0;
 	bool	converged = false;
 
+	if (!cd) error_and_exit ("cdescent_cyclic_update", "cdescent *cd is empty.", __FILE__, __LINE__);
+
 	while (!converged) {
 
 		converged = cdescent_cyclic_update_once_cycle (cd);
 
 		if (++iter >= cd->maxiter) {
-			printf_warning ("cdescent_cyclic", "reaching max number of iterations.", __FILE__, __LINE__);
+			printf_warning ("cdescent_cyclic_update", "reaching max number of iterations.", __FILE__, __LINE__);
 			break;
 		}
 	}
@@ -139,15 +143,14 @@ set_logt (const double logt_lower, const double new_logt, double *logt)
 	return false;
 }
 
-/* update min_bic_val, lambda1_opt, nrm1_opt and beta_opt */
+/* store lambda1_opt, nrm1_opt and beta_opt */
 static void
-update_optimal (pathwiseopt *path, const double bic_val, const cdescent *cd)
+store_optimal (pathwiseopt *path, const double lambda1, const double nrm1, const mm_dense *beta)
 {
-	path->min_bic_val = bic_val;
-	path->lambda1_opt = cd->lambda1;
-	path->nrm1_opt = cd->nrm1;
+	path->lambda1_opt = lambda1;
+	path->nrm1_opt = nrm1;
 	if (path->beta_opt) mm_real_free (path->beta_opt);
-	path->beta_opt = mm_real_copy (cd->beta);
+	path->beta_opt = mm_real_copy (beta);
 	return;
 }
 
@@ -167,20 +170,23 @@ cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 	FILE	*fp_path = NULL;
 	FILE	*fp_bic = NULL;
 
+	if (!cd) error_and_exit ("cdescent_cyclic_pathwise", "cdescent *cd is empty.", __FILE__, __LINE__);
+	if (!path) error_and_exit ("cdescent_cyclic_pathwise", "pathwiseopt *path is empty.", __FILE__, __LINE__);
+
 	/* warm start */
 	stop_flag = set_logt (path->log10_lambda1_lower, cd->lreg->log10camax, &logt);
 
 	if (path->output_fullpath) {
 		if (!(fp_path = fopen (path->fn_path, "w"))) {
 			char	msg[80];
-			sprintf (msg, "cannot open file %s", path->fn_path);
+			sprintf (msg, "cannot open file %s.", path->fn_path);
 			printf_warning ("cdescent_cyclic_pathwise", msg, __FILE__, __LINE__);
 		}
 	}
 	if (path->output_bic_info) {
 		if (!(fp_bic = fopen (path->fn_bic, "w"))) {
 			char	msg[80];
-			sprintf (msg, "cannot open file %s", path->fn_bic);
+			sprintf (msg, "cannot open file %s.", path->fn_bic);
 			printf_warning ("cdescent_cyclic_pathwise", msg, __FILE__, __LINE__);
 		}
 	}
@@ -188,6 +194,7 @@ cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 	// output BIC info headers
 	if (fp_bic) fprintf (fp_bic, "t\t\teBIC\t\tRSS\t\tdf\n");
 
+	path->min_bic_val = CDESCENT_POSINF;
 	while (1) {
 		bic_info	*info;
 
@@ -200,7 +207,10 @@ cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 
 		info = cdescent_eval_bic (cd, path->gamma_bic);
 		// if bic_val < min_bic_val, update min_bic_val, lambda1_opt, nrm1_opt and beta_opt
-		if (info->bic_val < path->min_bic_val) update_optimal (path, info->bic_val, cd);
+		if (info->bic_val < path->min_bic_val) {
+			path->min_bic_val = info->bic_val;
+			store_optimal (path, cd->lambda1, cd->nrm1, cd->beta);
+		}
 
 		// output BIC info
 		if (fp_bic) fprintf (fp_bic, "%.4e\t%.4e\t%.4e\t%.4e\n", cd->nrm1, info->bic_val, info->rss, info->df);

@@ -164,8 +164,8 @@ main (int argc, char **argv)
 
 	/* create pathwise cyclic coordinate descent optimization object */
 	path = pathwiseopt_new (log10_lambda1, dlog10_lambda1);
-	pathwiseopt_set_output_fullpath (path, NULL);
-	pathwiseopt_set_output_bic_info (path, NULL);
+	pathwiseopt_set_to_outputs_fullpath (path, NULL);
+	pathwiseopt_set_to_outputs_bic_info (path, NULL);
 	pathwiseopt_set_gamma_bic (path, gamma_bic);
 	{
 #ifdef _OPENMP
