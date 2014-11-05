@@ -21,6 +21,8 @@ typedef struct s_cdescent	cdescent;
 
 struct s_cdescent {
 
+	bool				was_modified;	// whether this object was modified after created
+
 	const linregmodel	*lreg;			// linear regression model
 
 	double				tolerance;		// tolerance of convergence
@@ -52,7 +54,7 @@ double		cdescent_beta_stepsize (const cdescent *cd, const int j);
 /* regression.c */
 bool		cdescent_cyclic_update_once_cycle (cdescent *cd);
 bool		cdescent_cyclic_update (cdescent *cd);
-void		cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path);
+bool		cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path);
 
 /* bic.c */
 bic_info	*cdescent_eval_bic (const cdescent *cd, double gamma);

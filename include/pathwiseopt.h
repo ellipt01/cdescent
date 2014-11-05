@@ -19,6 +19,8 @@ typedef struct s_pathwiseopt pathwiseopt;
 
 struct s_pathwiseopt {
 
+	bool		was_modified;			// whether this object was modified after initialization
+
 	char		fn_path[80];			// file to output solution path
 	bool		output_fullpath;		// whether to outputs full solution path
 	char		fn_bic[80];			// file to output BIC info

@@ -44,6 +44,8 @@ cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool
 
 	cd = cdescent_alloc ();
 
+	cd->was_modified = false;
+
 	cd->lreg = lreg;
 
 	cd->tolerance = tol;

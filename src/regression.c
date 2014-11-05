@@ -89,6 +89,8 @@ cdescent_cyclic_update_once_cycle (cdescent *cd)
 
 	cd->nrm1 = mm_real_xj_asum (cd->beta, 0);
 
+	if (!cd->was_modified) cd->was_modified = true;
+
 	return (amax_eta < cd->tolerance);
 }
 
@@ -115,15 +117,12 @@ cdescent_cyclic_update (cdescent *cd)
 	return converged;
 }
 
-// num of iterations. use for fprintf_solutionpath
-static int			_iter_ = 0;
-
 /* print solution path to stream */
 static void
-fprintf_solutionpath (FILE *stream, const cdescent *cd)
+fprintf_solutionpath (FILE *stream, const int iter, const cdescent *cd)
 {
 	int		j;
-	fprintf (stream, "%d %.4e", _iter_++, cd->nrm1);
+	fprintf (stream, "%d %.4e", iter, cd->nrm1);
 	for (j = 0; j < cd->beta->m; j++) fprintf (stream, " %.4e", cd->beta->data[j]);
 	fprintf (stream, "\n");
 	return;
@@ -161,9 +160,10 @@ store_optimal (pathwiseopt *path, const double lambda1, const double nrm1, const
  * log10(λ1max) is identical with log10 ( max ( abs(X' * y) ) ), where this
  * value is stored in cd->lreg->log10camax.
  * The interval of decreasing sequence on the log10 scale is path->dlog10_lambda1. ***/
-void
+bool
 cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 {
+	int		iter = 0;
 	double	logt;
 	bool	stop_flag = false;
 
@@ -172,6 +172,19 @@ cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 
 	if (!cd) error_and_exit ("cdescent_cyclic_pathwise", "cdescent *cd is empty.", __FILE__, __LINE__);
 	if (!path) error_and_exit ("cdescent_cyclic_pathwise", "pathwiseopt *path is empty.", __FILE__, __LINE__);
+
+	// initialize cdescent if need
+	if (cd->was_modified) {
+		mm_real_set_all (cd->beta, 0.);
+		mm_real_set_all (cd->mu, 0.);
+		if (cd->lreg->is_regtype_lasso) mm_real_set_all (cd->nu, 0.);
+		cd->was_modified = false;
+	}
+	// initialize pathwiseopt if need
+	if (path->was_modified) {
+		path->min_bic_val = CDESCENT_POSINF;
+		path->was_modified = false;
+	}
 
 	/* warm start */
 	stop_flag = set_logt (path->log10_lambda1_lower, cd->lreg->log10camax, &logt);
@@ -194,7 +207,6 @@ cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 	// output BIC info headers
 	if (fp_bic) fprintf (fp_bic, "t\t\teBIC\t\tRSS\t\tdf\n");
 
-	path->min_bic_val = CDESCENT_POSINF;
 	while (1) {
 		bic_info	*info;
 
@@ -203,13 +215,14 @@ cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 		if (!cdescent_cyclic_update (cd)) break;
 
 		// output solution path
-		if (fp_path) fprintf_solutionpath (fp_path, cd);
+		if (fp_path) fprintf_solutionpath (fp_path, iter, cd);
 
 		info = cdescent_eval_bic (cd, path->gamma_bic);
 		// if bic_val < min_bic_val, update min_bic_val, lambda1_opt, nrm1_opt and beta_opt
 		if (info->bic_val < path->min_bic_val) {
-			path->min_bic_val = info->bic_val;
 			store_optimal (path, cd->lambda1, cd->nrm1, cd->beta);
+			path->min_bic_val = info->bic_val;
+			if (!path->was_modified) path->was_modified = true;
 		}
 
 		// output BIC info
@@ -221,10 +234,12 @@ cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 		/* if logt - dlog10_lambda1 < log10_lambda1, logt = log10_lambda1 and stop_flag is set to true
 		 * else logt -= dlog10_lambda1 */
 		stop_flag = set_logt (path->log10_lambda1_lower, logt - path->dlog10_lambda1, &logt);
+
+		iter++;
 	}
 
 	if (fp_path) fclose (fp_path);
 	if (fp_bic) fclose (fp_bic);
 
-	return;
+	return path->was_modified;
 }
