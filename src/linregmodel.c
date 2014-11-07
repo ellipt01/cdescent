@@ -13,39 +13,40 @@
 
 /* centering each column of matrix:
  * x(:, j) -> x(:, j) - mean(x(:, j)) */
-static void
+static double *
 do_centering (mm_dense *x)
 {
 	int		j;
+	double	*mean = (double *) malloc (x->n * sizeof (double));
 	for (j = 0; j < x->n; j++) {
 		int		i;
-		double	meanj = 0.;
-		for (i = 0; i < x->m; i++) meanj += x->data[i + j * x->m];
-		if (fabs (meanj) > CDESCENT_DBL_EPSILON) {
-			meanj /= (double) x->m;
-			for (i = 0; i < x->m; i++) x->data[i + j * x->m] -= meanj;
+		mean[j] = 0.;
+		for (i = 0; i < x->m; i++) mean[j] += x->data[i + j * x->m];
+		if (fabs (mean[j]) > CDESCENT_DBL_EPSILON) {
+			mean[j] /= (double) x->m;
+			for (i = 0; i < x->m; i++) x->data[i + j * x->m] -= mean[j];
 		}
 	}
-	return;
+	return mean;
 }
 
 /* normalizing each column of matrix:
  * x(:, j) -> x(:, j) / norm(x(:, j)) */
-static void
+static double *
 do_normalizing (mm_real *x)
 {
 	int		j;
+	double	*nrm2 = (double *) malloc (x->n * sizeof (double));
 	for (j = 0; j < x->n; j++) {
-		double	nrmj;
 		int		size = (mm_real_is_sparse (x)) ? x->p[j + 1] - x->p[j] : x->m;
 		double	*xj = x->data + ((mm_real_is_sparse (x)) ? x->p[j] : j * x->m);
-		nrmj = dnrm2_ (&size, xj, &ione);
-		if (nrmj > CDESCENT_DBL_EPSILON) {
-			double	alpha = 1. / nrmj;
+		nrm2[j] = dnrm2_ (&size, xj, &ione);
+		if (nrm2[j] > CDESCENT_DBL_EPSILON) {
+			double	alpha = 1. / nrm2[j];
 			dscal_ (&size, &alpha, xj, &ione);
 		}
 	}
-	return;
+	return nrm2;
 }
 
 /* allocate linregmodel object */
@@ -67,8 +68,11 @@ linregmodel_alloc (void)
 	lreg->log10camax = 0.;
 
 	lreg->ycentered = false;
+	lreg->ymean = 0.;
 	lreg->xcentered = false;
+	lreg->xmean = NULL;
 	lreg->xnormalized = false;
+	lreg->xnrm2 = NULL;
 
 	lreg->sy = 0.;
 	lreg->sx = NULL;
@@ -139,7 +143,9 @@ linregmodel_new (mm_dense *y, bool has_copy_y, mm_real *x, bool has_copy_x, cons
 
 	/* centering y */
 	if (proc & DO_CENTERING_Y) {	// lreg->has_copy_y = true
-		do_centering (lreg->y);
+		double	*mean = do_centering (lreg->y);
+		lreg->ymean = mean[0];
+		free (mean);
 		lreg->ycentered = true;
 	}
 	/* centering x */
@@ -156,7 +162,7 @@ linregmodel_new (mm_dense *y, bool has_copy_y, mm_real *x, bool has_copy_x, cons
 			lreg->x = mm_real_symmetric_to_general (tmp);
 			mm_real_free (tmp);
 		}
-		do_centering (lreg->x);
+		lreg->xmean = do_centering (lreg->x);
 		lreg->xcentered = true;
 	}
 
@@ -168,7 +174,7 @@ linregmodel_new (mm_dense *y, bool has_copy_y, mm_real *x, bool has_copy_x, cons
 			lreg->x = mm_real_symmetric_to_general (tmp);
 			mm_real_free (tmp);
 		}
-		do_normalizing (lreg->x);
+		lreg->xnrm2 = do_normalizing (lreg->x);
 		lreg->xnormalized = true;
 	}
 
@@ -220,6 +226,8 @@ linregmodel_free (linregmodel *lreg)
 		if (lreg->y && lreg->has_copy_y) mm_real_free (lreg->y);
 		if (lreg->x && lreg->has_copy_x) mm_real_free (lreg->x);
 		if (lreg->d) mm_real_free (lreg->d);
+		if (lreg->xmean) free (lreg->xmean);
+		if (lreg->xnrm2) free (lreg->xnrm2);
 		if (lreg->sx) free (lreg->sx);
 		if (lreg->xtx) free (lreg->xtx);
 		if (lreg->dtd) free (lreg->dtd);

@@ -51,8 +51,11 @@ struct s_linregmodel {
 	double		log10camax;	// log10 ( amax(c) )
 
 	bool		ycentered;		// y is centered?
+	double		ymean;			// mean of original y. If do not centering y, ymean = 0.
 	bool		xcentered;		// x is centered?
+	double		*xmean;		// mean of each column vector of original x. If do not centering x, xmean = NULL.
 	bool		xnormalized;	// x is normalized?
+	double		*xnrm2;		// nrm2 of each column vector of original x. If do not normalizing x, xnrm2 = NULL.
 
 	/* sum of y. If y is centered, sy = 0. */
 	double		sy;		// = sum_i y(i)
