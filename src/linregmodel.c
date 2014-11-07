@@ -20,12 +20,13 @@ do_centering (mm_dense *x)
 	double	*mean = (double *) malloc (x->n * sizeof (double));
 	for (j = 0; j < x->n; j++) {
 		int		i;
-		mean[j] = 0.;
-		for (i = 0; i < x->m; i++) mean[j] += x->data[i + j * x->m];
-		if (fabs (mean[j]) > CDESCENT_DBL_EPSILON) {
-			mean[j] /= (double) x->m;
-			for (i = 0; i < x->m; i++) x->data[i + j * x->m] -= mean[j];
-		}
+		double	meanj = 0.;
+		for (i = 0; i < x->m; i++) meanj += x->data[i + j * x->m];
+		if (fabs (meanj) > CDESCENT_DBL_EPSILON) {
+			meanj /= (double) x->m;
+			for (i = 0; i < x->m; i++) x->data[i + j * x->m] -= meanj;
+			mean[j] = meanj;
+		} else mean[j] = 0.;
 	}
 	return mean;
 }
@@ -40,11 +41,12 @@ do_normalizing (mm_real *x)
 	for (j = 0; j < x->n; j++) {
 		int		size = (mm_real_is_sparse (x)) ? x->p[j + 1] - x->p[j] : x->m;
 		double	*xj = x->data + ((mm_real_is_sparse (x)) ? x->p[j] : j * x->m);
-		nrm2[j] = dnrm2_ (&size, xj, &ione);
-		if (nrm2[j] > CDESCENT_DBL_EPSILON) {
-			double	alpha = 1. / nrm2[j];
+		double	nrm2j = dnrm2_ (&size, xj, &ione);
+		if (nrm2j > CDESCENT_DBL_EPSILON) {
+			double	alpha = 1. / nrm2j;
 			dscal_ (&size, &alpha, xj, &ione);
-		}
+			nrm2[j] = nrm2j;
+		} else nrm2[j] = 0.;
 	}
 	return nrm2;
 }
