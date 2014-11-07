@@ -63,9 +63,9 @@ calc_degree_of_freedom (const cdescent *cd)
 		if (fabs (cd->beta->data[j]) > 0.) {
 			if (cd->lreg->is_regtype_lasso) df += 1.;
 			else {
-				double	gj = cd->lreg->dtd[j];
+				double	gj = cd->lreg->lambda2 * cd->lreg->dtd[j];
 				if (!cd->lreg->xnormalized) gj /= cd->lreg->xtx[j];
-				df += 1. / (1. + cd->lreg->lambda2 * gj);
+				df += 1. / (1. + gj);
 			}
 		}
 	}
