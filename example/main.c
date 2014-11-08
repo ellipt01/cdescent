@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <omp.h>
 
 #include <cdescent.h>
 
@@ -108,9 +107,9 @@ read_params (int argc, char **argv)
 	return status;
 }
 
-/*** read infiles and create linregmodel ***/
+/*** read x and y from files and create linregmodel ***/
 linregmodel *
-create_linregmodel (bool has_copy_y, bool has_copy_x)
+create_linregmodel (void)
 {
 	mm_dense	*x;
 	mm_dense	*y;
@@ -136,12 +135,12 @@ create_linregmodel (bool has_copy_y, bool has_copy_x)
 	// general penalty term
 	//	d = NULL;	// lasso
 	d = mm_real_eye (MM_REAL_SPARSE, x->n);	// elastic net
-	//	d = mm_real_penalty_smooth (MM_REAL_SPARSE, x->n);	// s-lasso
+	//	d = penalty_smooth (MM_REAL_SPARSE, x->n);	// s-lasso
 
 	lreg = linregmodel_new (y, x, lambda2, d, DO_CENTERING_Y | DO_STANDARDIZING_X);
 
-	if (has_copy_y) mm_real_free (y);
-	if (has_copy_x) mm_real_free (x);
+	mm_real_free (y);
+	mm_real_free (x);
 	if (d) mm_real_free (d);
 
 	return lreg;
@@ -157,7 +156,7 @@ main (int argc, char **argv)
 	if (!read_params (argc, argv)) usage (argv[0]);
 
 	/* create linear regression model object */
-	lreg = create_linregmodel (false, false);
+	lreg = create_linregmodel ();
 
 	/* create cyclic coordinate descent object */
 	cd = cdescent_new (lreg, tolerance, maxiter, false);
@@ -167,19 +166,8 @@ main (int argc, char **argv)
 	pathwiseopt_set_to_outputs_fullpath (path, NULL);
 	pathwiseopt_set_to_outputs_bic_info (path, NULL);
 	pathwiseopt_set_gamma_bic (path, gamma_bic);
-	{
-#ifdef _OPENMP
-		double	t1, t2;
-		t1 = omp_get_wtime ();
-#endif
 
-		cdescent_cyclic_pathwise (cd, path);
-
-#ifdef _OPENMP
-		t2 = omp_get_wtime ();
-		fprintf (stderr, "time = %.2e\n", t2 - t1);
-#endif
-	}
+	cdescent_cyclic_pathwise (cd, path);
 
 	fprintf (stderr, "lambda1_opt = %.2f, nrm1(beta_opt) = %.2f, min_bic = %.2f\n", path->lambda1_opt, path->nrm1_opt, path->min_bic_val);
 

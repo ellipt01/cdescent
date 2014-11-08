@@ -11,7 +11,7 @@
 
 #include "private/private.h"
 
-bool
+static bool
 calc_sum (const mm_real *x, double **sum)
 {
 	int		j;
@@ -26,7 +26,7 @@ calc_sum (const mm_real *x, double **sum)
 	return centered;
 }
 
-bool
+static bool
 calc_dot (const mm_real *x, double **dot)
 {
 	int		j;
@@ -144,6 +144,9 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d
 
 	lreg = linregmodel_alloc ();
 
+	/* lambda2 */
+	if (lambda2 > 0.) lreg->lambda2 = lambda2;
+
 	lreg->y = y;	// has_copy_y = false, ycentered = false;
 	lreg->ycentered = calc_sum (lreg->y, &lreg->sy);
 	/* If DO_CENTERING_Y is set, has_copy_y is set to true */
@@ -195,18 +198,16 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d
 	}
 
 	if (d) lreg->d = mm_real_copy (d);
+
+	/* if lambda2 > 0 && d != NULL, regression type is NOT lasso: is_regtype_lasso = false */
+	if (lreg->lambda2 > 0. && lreg->d) lreg->is_regtype_lasso = false;
+
 	/* dtd = diag (D' * D) */
 	if (!lreg->is_regtype_lasso) {
 		int		j;
 		lreg->dtd = (double *) malloc (lreg->d->n * sizeof (double));
 		for (j = 0; j < lreg->d->n; j++) lreg->dtd[j] = pow (mm_real_xj_nrm2 (lreg->d, j), 2.);
 	}
-
-	/* lambda2 */
-	if (lambda2 > 0.) lreg->lambda2 = lambda2;
-
-	/* if lambda2 > 0 && d != NULL, regression type is NOT lasso: is_regtype_lasso = false */
-	if (lreg->lambda2 > 0. && lreg->d) lreg->is_regtype_lasso = false;
 
 	// c = X' * y
 	lreg->c = mm_real_x_dot_y (true, 1., lreg->x, lreg->y, 0.);
