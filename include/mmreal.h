@@ -33,7 +33,7 @@ enum {
 
 /* symmetric */
 typedef enum {
-	MM_REAL_GENERAL = MM_GENERAL,	// unsymmetric
+	MM_REAL_GENERAL = MM_GENERAL,	// asymmetric
 	MM_REAL_SYMMETRIC_UPPER = MM_SYMMETRIC | MM_UPPER,	// symmetric upper triangular
 	MM_REAL_SYMMETRIC_LOWER = MM_SYMMETRIC | MM_LOWER	// symmetric lower triangular
 } MMRealSymm;
@@ -88,7 +88,7 @@ mm_real	*mm_real_eye (MMRealFormat type, const int n);
 
 double		mm_real_xj_asum (const mm_real *x, const int j);
 double		mm_real_xj_sum (const mm_real *x, const int j);
-double		mm_real_xj_dot (const mm_real *x, const int j);
+double		mm_real_xj_ssq (const mm_real *x, const int j);
 double		mm_real_xj_nrm2 (const mm_real *x, const int j);
 
 mm_dense	*mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dense *y, const double beta);

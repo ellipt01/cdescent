@@ -11,38 +11,56 @@
 
 #include "private/private.h"
 
+/* calculate sum x(:,j) */
 static bool
 calc_sum (const mm_real *x, double **sum)
 {
 	int		j;
-	bool	centered = true;
+	bool	centered;
 	double	*_sum = (double *) malloc (x->n * sizeof (double));
+	for (j = 0; j < x->n; j++) _sum[j] = mm_real_xj_sum (x, j);
+	// check whether mean is all 0 (x is already centered)
+	centered = true;
 	for (j = 0; j < x->n; j++) {
-		_sum[j] = mm_real_xj_sum (x, j);
-		if (centered && fabs (_sum[j] / (double) x->m) > SQRT_DBL_EPSILON) centered = false;
+		if (fabs (_sum[j] / (double) x->m) > SQRT_DBL_EPSILON) {
+			centered = false;
+			break;
+		}
 	}
-	if (centered) free (_sum);
-	else *sum = _sum;
+	if (centered) {	// mean is all 0
+		*sum = NULL;
+		free (_sum);
+	} else *sum = _sum;
+
 	return centered;
 }
 
+/* calculate sum x(:,j)^2 */
 static bool
-calc_dot (const mm_real *x, double **dot)
+calc_ssq (const mm_real *x, double **ssq)
 {
 	int		j;
-	bool	normalized = true;
-	double	*_dot = (double *) malloc (x->n * sizeof (double));
+	bool	normalized;
+	double	*_ssq = (double *) malloc (x->n * sizeof (double));
+	for (j = 0; j < x->n; j++) _ssq[j] = mm_real_xj_ssq (x, j);
+	// check whether norm is all 1 (x is already normalized)
+	normalized = true;
 	for (j = 0; j < x->n; j++) {
-		_dot[j] = mm_real_xj_dot (x, j);
-		if (normalized && fabs (_dot[j] - 1.) > SQRT_DBL_EPSILON) normalized = false;
+		if (fabs (_ssq[j] - 1.) > SQRT_DBL_EPSILON) {
+			normalized = false;
+			break;
+		}
 	}
-	if (normalized) free (_dot);
-	else *dot = _dot;
+	if (normalized) {
+		*ssq = NULL;	// norm is all 1
+		free (_ssq);
+	} else *ssq = _ssq;
+
 	return normalized;
 }
 
 /* centering each column of matrix:
- * x(:, j) -> x(:, j) - mean(x(:, j)) */
+ * x(:,j) -> x(:,j) - mean(x(:,j)) */
 static void
 do_centering (mm_dense *x, const double *sum)
 {
@@ -56,13 +74,13 @@ do_centering (mm_dense *x, const double *sum)
 }
 
 /* normalizing each column of matrix:
- * x(:, j) -> x(:, j) / norm(x(:, j)) */
+ * x(:,j) -> x(:,j) / norm(x(:,j)) */
 static void
-do_normalizing (mm_real *x, const double *dot)
+do_normalizing (mm_real *x, const double *ssq)
 {
 	int		j;
 	for (j = 0; j < x->n; j++) {
-		double	nrm2j = sqrt (dot[j]);
+		double	nrm2j = sqrt (ssq[j]);
 		if (nrm2j > SQRT_DBL_EPSILON) {
 			double	alpha = 1. / nrm2j;
 			int		size = (mm_real_is_sparse (x)) ? x->p[j + 1] - x->p[j] : x->m;
@@ -106,9 +124,7 @@ linregmodel_alloc (void)
 /*** create new linregmodel object
  * INPUT:
  * mm_dense          *y: dense vector
- * bool      has_copy_y: whether linregmodel object has own copy of y
  * mm_sparse         *x: sparse general / symmetric matrix
- * bool      has_copy_x: whether linregmodel object has own copy of x
  * const double lambda2: regularization parameter
  * const mm_real     *d: general linear operator of penalty
  * PreProc         proc: specify pre-processing for y and x
@@ -129,7 +145,7 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d
 	/* check whether lambda2 >= 0. */
 	if (lambda2 < 0.) error_and_exit ("linregmodel_new", "lambda2 must be >= 0.", __FILE__, __LINE__);
 
-	/* check whether y is dense unsymmetric vector */
+	/* check whether y is dense asymmetric vector */
 	if (!mm_real_is_dense (y)) error_and_exit ("linregmodel_new", "y must be dense.", __FILE__, __LINE__);
 	if (mm_real_is_symmetric (y)) error_and_exit ("linregmodel_new", "y must be general.", __FILE__, __LINE__);
 	if (y->n != 1) error_and_exit ("linregmodel_new", "y must be vector.", __FILE__, __LINE__);
@@ -147,9 +163,9 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d
 	/* lambda2 */
 	if (lambda2 > 0.) lreg->lambda2 = lambda2;
 
-	lreg->y = y;	// has_copy_y = false, ycentered = false;
+	lreg->y = y;	// in initial, has_copy_y = false
 	lreg->ycentered = calc_sum (lreg->y, &lreg->sy);
-	/* If DO_CENTERING_Y is set, has_copy_y is set to true */
+	/* If DO_CENTERING_Y is set and y is not already centered */
 	if ((proc & DO_CENTERING_Y) && !lreg->ycentered) {
 		lreg->y = mm_real_copy (y);
 		lreg->has_copy_y = true;
@@ -157,9 +173,9 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d
 		lreg->ycentered = true;
 	}
 
-	lreg->x = x;	// has_copy_x = false, xcentered = false;
+	lreg->x = x;	// in initial, has_copy_x = false
 	lreg->xcentered = calc_sum (lreg->x, &lreg->sx);
-	/* If DO_CENTERING_X is set, has_copy_x and xcentered are set to true */
+	/* If DO_CENTERING_X is set and x is not already centered */
 	if ((proc & DO_CENTERING_X) && !lreg->xcentered) {
 		/* if lreg->x is sparse, convert to dense matrix */
 		if (mm_real_is_sparse (lreg->x)) {
@@ -183,11 +199,11 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d
 		lreg->xcentered = true;
 	}
 
-	lreg->xnormalized = calc_dot (lreg->x, &lreg->xtx);
-	/* normalizing x */
+	lreg->xnormalized = calc_ssq (lreg->x, &lreg->xtx);
+	/* If DO_NORMALIZING_X is set and x is not already normalized */
 	if ((proc & DO_NORMALIZING_X) && !lreg->xnormalized) {
 		/* if lreg->x is symmetric, convert to general matrix */
-		if (mm_real_is_symmetric (lreg->x)) {	// lreg->has_copy_x = true
+		if (mm_real_is_symmetric (lreg->x)) {
 			mm_real	*tmp = lreg->x;
 			lreg->x = mm_real_symmetric_to_general (tmp);
 			if (lreg->has_copy_x == true) mm_real_free (tmp);
@@ -198,15 +214,14 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d
 	}
 
 	if (d) lreg->d = mm_real_copy (d);
-
-	/* if lambda2 > 0 && d != NULL, regression type is NOT lasso: is_regtype_lasso = false */
+	/* if lambda2 > 0 && d != NULL,
+	 * regression type is NOT lasso: is_regtype_lasso = false */
 	if (lreg->lambda2 > 0. && lreg->d) lreg->is_regtype_lasso = false;
-
 	/* dtd = diag (D' * D) */
 	if (!lreg->is_regtype_lasso) {
 		int		j;
 		lreg->dtd = (double *) malloc (lreg->d->n * sizeof (double));
-		for (j = 0; j < lreg->d->n; j++) lreg->dtd[j] = pow (mm_real_xj_nrm2 (lreg->d, j), 2.);
+		for (j = 0; j < lreg->d->n; j++) lreg->dtd[j] = mm_real_xj_ssq (lreg->d, j);
 	}
 
 	// c = X' * y
@@ -227,6 +242,7 @@ linregmodel_free (linregmodel *lreg)
 		if (lreg->y && lreg->has_copy_y) mm_real_free (lreg->y);
 		if (lreg->x && lreg->has_copy_x) mm_real_free (lreg->x);
 		if (lreg->d) mm_real_free (lreg->d);
+		if (lreg->sy) free (lreg->sy);
 		if (lreg->sx) free (lreg->sx);
 		if (lreg->xtx) free (lreg->xtx);
 		if (lreg->dtd) free (lreg->dtd);

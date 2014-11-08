@@ -52,8 +52,9 @@ calc_rss (const cdescent *cd)
  * A = {j | beta_j != 0} : active set
  * df = trace( X(A) * ( X(A)'*X(A) + lambda2*D(A)'*D(A) ) * X(A)' )
  * Under the orthogonal covariance matrix assumption (i.e., X'*X = I),
- * and assuming (I + lambda2*D'*D) is diagonal,
- * df -> sum_{j in A} 1 / (1 + lambda2 * D(:,j)' * D(:,j)) (Hebiri, 2008) */
+ * and assuming lambda2*D'*D is diagonal,
+ * df = sum_{j in A} 1 / (1 + lambda2 * D(:,j)'*D(:,j) / X(:,j)'*X(:,j))
+ * (Hebiri, 2008) */
 static double
 calc_degree_of_freedom (const cdescent *cd)
 {

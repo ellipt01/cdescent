@@ -28,7 +28,7 @@ typedef enum {
 
 /*** Object of L1 regularized linear regression problem
  *
- *   argmin(beta) || b - Z * beta ||^2 + lambda_1 sum |beta|
+ *   argmin_beta || b - Z * beta ||^2 + lambda_1 sum |beta|
  *
  *   where
  *   	b = [y; 0]
@@ -45,7 +45,8 @@ struct s_linregmodel {
 
 	double		lambda2;	// weight for penalty term
 
-	bool		is_regtype_lasso;	// = (d == NULL || lambda2 < eps)
+	/* whether regression type is Lasso */
+	bool		is_regtype_lasso;	// = (d == NULL || lambda2 == 0)
 
 	mm_dense	*c;				// = x' * y: correlation (constant) vector
 	double		log10camax;	// log10 ( amax(c) )
@@ -54,17 +55,17 @@ struct s_linregmodel {
 	bool		xcentered;		// x is centered?
 	bool		xnormalized;	// x is normalized?
 
-	/* sum of y. If y is centered, sy = 0. */
-	double		*sy;		// = sum_i y(i)
+	/* sum y. If y is centered, sy = NULL */
+	double		*sy;
 
-	/* sum of X(:, j). If X is centered, sx = NULL. */
-	double		*sx;	// sx(j) = sum_i x(i,j)
+	/* sum X(:, j). If X is centered, sx = NULL. */
+	double		*sx;
 
-	/* norm of X(:, j). If X is normalized, xtx = NULL. */
-	double		*xtx;	// xtx(j) = x(:,j)' * x(:,j)
+	/* xtx = diag(X' * X). If X is normalized, xtx = NULL. */
+	double		*xtx;
 
 	/* dtd = diag(D' * D), D = lreg->pen->d */
-	double		*dtd;	// dtd(j) = d(:,j)' * d(:,j)
+	double		*dtd;
 
 };
 

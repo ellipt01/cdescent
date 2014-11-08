@@ -548,12 +548,12 @@ mm_real_xj_sum (const mm_real *x, const int j)
 	return (mm_real_is_sparse (x)) ? mm_real_sj_sum (x, j) : mm_real_dj_sum (x, j);
 }
 
-/* dot s(:,j) */
+/* sum_i s(i,j)^2 */
 static double
-mm_real_sj_dot (const mm_sparse *s, const int j)
+mm_real_sj_ssq (const mm_sparse *s, const int j)
 {
 	int		size = s->p[j + 1] - s->p[j];
-	double	dot = ddot_ (&size, s->data + s->p[j], &ione, s->data + s->p[j], &ione);
+	double	ssq = ddot_ (&size, s->data + s->p[j], &ione, s->data + s->p[j], &ione);
 	if (mm_real_is_symmetric (s)) {
 		int		l;
 		int		l0 = (mm_real_is_upper (s)) ? j + 1 : 0;
@@ -562,55 +562,55 @@ mm_real_sj_dot (const mm_sparse *s, const int j)
 			int		k;
 			for (k = s->p[l]; k < s->p[l + 1]; k++) {
 				if (s->i[k] == j) {
-					dot += pow (s->data[k], 2.);
+					ssq += pow (s->data[k], 2.);
 					break;
 				}
 			}
 		}
 	}
-	return dot;
+	return ssq;
 }
 
-/* norm2 d(:,j) */
+/* sum_i d(i,j)^2 */
 static double
-mm_real_dj_dot (const mm_dense *d, const int j)
+mm_real_dj_ssq (const mm_dense *d, const int j)
 {
-	double	dot;
-	if (!mm_real_is_symmetric (d)) dot = ddot_ (&d->m, d->data + j * d->m, &ione, d->data + j * d->m, &ione);
+	double	ssq;
+	if (!mm_real_is_symmetric (d)) ssq = ddot_ (&d->m, d->data + j * d->m, &ione, d->data + j * d->m, &ione);
 	else {
 		int		len;
-		dot = 0.;
+		ssq = 0.;
 		if (mm_real_is_upper (d)) {
 			len = j;
-			dot = ddot_ (&len, d->data + j * d->m, &ione, d->data + j * d->m, &ione);
+			ssq = ddot_ (&len, d->data + j * d->m, &ione, d->data + j * d->m, &ione);
 			len = d->m - j;
-			dot += ddot_ (&len, d->data + j * d->m + j, &d->m, d->data + j * d->m + j, &d->m);
+			ssq += ddot_ (&len, d->data + j * d->m + j, &d->m, d->data + j * d->m + j, &d->m);
 		} else if (mm_real_is_lower (d)) {
 			len = d->m - j;
-			dot = ddot_ (&len, d->data + j * d->m + j, &ione, d->data + j * d->m + j, &ione);
+			ssq = ddot_ (&len, d->data + j * d->m + j, &ione, d->data + j * d->m + j, &ione);
 			len = j;
-			dot += ddot_ (&len, d->data + j, &d->m, d->data + j, &d->m);
+			ssq += ddot_ (&len, d->data + j, &d->m, d->data + j, &d->m);
 		}
 	}
-	return dot;
+	return ssq;
 }
 
-/*** dot x(:,j) ***/
+/*** sum_i x(i,j)^2 ***/
 double
-mm_real_xj_dot (const mm_real *x, const int j)
+mm_real_xj_ssq (const mm_real *x, const int j)
 {
-	if (j < 0 || x->n <= j) error_and_exit ("mm_real_xj_dot", "index out of range.", __FILE__, __LINE__);
-	return (mm_real_is_sparse (x)) ? mm_real_sj_dot (x, j) : mm_real_dj_dot (x, j);
+	if (j < 0 || x->n <= j) error_and_exit ("mm_real_xj_ssq", "index out of range.", __FILE__, __LINE__);
+	return (mm_real_is_sparse (x)) ? mm_real_sj_ssq (x, j) : mm_real_dj_ssq (x, j);
 }
 
 /*** norm2 x(:,j) ***/
 double
 mm_real_xj_nrm2 (const mm_real *x, const int j)
 {
-	double	dot;
+	double	ssq;
 	if (j < 0 || x->n <= j) error_and_exit ("mm_real_xj_nrm2", "index out of range.", __FILE__, __LINE__);
-	dot = mm_real_xj_dot (x, j);
-	return sqrt (dot);
+	ssq = mm_real_xj_ssq (x, j);
+	return sqrt (ssq);
 }
 
 /* s * y, where s is sparse matrix and y is dense vector */
