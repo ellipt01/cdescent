@@ -51,14 +51,11 @@ struct s_linregmodel {
 	double		log10camax;	// log10 ( amax(c) )
 
 	bool		ycentered;		// y is centered?
-	double		ymean;			// mean of original y. If do not centering y, ymean = 0.
 	bool		xcentered;		// x is centered?
-	double		*xmean;		// mean of each column vector of original x. If do not centering x, xmean = NULL.
 	bool		xnormalized;	// x is normalized?
-	double		*xnrm2;		// nrm2 of each column vector of original x. If do not normalizing x, xnrm2 = NULL.
 
 	/* sum of y. If y is centered, sy = 0. */
-	double		sy;		// = sum_i y(i)
+	double		*sy;		// = sum_i y(i)
 
 	/* sum of X(:, j). If X is centered, sx = NULL. */
 	double		*sx;	// sx(j) = sum_i x(i,j)
@@ -72,7 +69,7 @@ struct s_linregmodel {
 };
 
 /* linregmodel.c */
-linregmodel	*linregmodel_new (mm_dense *y, bool has_copy_y, mm_real *x, bool has_copy_x, const double lambda2, const mm_real *d, PreProc proc);
+linregmodel	*linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d, PreProc proc);
 void			linregmodel_free (linregmodel *l);
 
 #ifdef __cplusplus

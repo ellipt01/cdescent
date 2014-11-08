@@ -25,7 +25,7 @@ update_intercept (cdescent *cd)
 {
 	cd->b = 0.;
 	// b += bar(y)
-	if (!cd->lreg->ycentered) cd->b += cd->lreg->sy;
+	if (!cd->lreg->ycentered) cd->b += *(cd->lreg->sy);
 	// b -= bar(X) * beta
 	if (!cd->lreg->xcentered) cd->b -= ddot_ (&cd->lreg->x->n, cd->lreg->sx, &ione, cd->beta->data, &ione);
 	if (fabs (cd->b) > 0.) cd->b /= (double) cd->lreg->x->m;

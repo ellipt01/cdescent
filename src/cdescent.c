@@ -53,7 +53,7 @@ cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool
 	cd->lambda1_max = pow (10., lreg->log10camax);
 	cd->lambda1 = cd->lambda1_max;
 
-	if (!lreg->ycentered) cd->b = lreg->sy / (double) lreg->y->m;
+	if (!lreg->ycentered) cd->b = *(lreg->sy) / (double) lreg->y->m;
 
 	cd->beta = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, lreg->x->n, 1, lreg->x->n);
 	cd->beta->data = (double *) malloc (cd->beta->nz * sizeof (double));

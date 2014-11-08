@@ -46,10 +46,13 @@ extern const double	dmone;	// -1.
 #define CDESCENT_POSINF	((+1.)/(+0.))
 
 /* DBL_EPSILOM */
-#ifdef DBL_EPSILON
-#define CDESCENT_DBL_EPSILON	DBL_EPSILON
-#else
-#define CDECENT_DBL_EPSILON		2.2204460492503131e-16
+#ifndef DBL_EPSILON
+#define DBL_EPSILON		2.2204460492503131e-16
+#endif
+
+/* SQRT_DBL_EPSILOM */
+#ifndef SQRT_DBL_EPSILON
+#define SQRT_DBL_EPSILON	1.4901161193847656e-08
 #endif
 
 /* print error message and terminate program */

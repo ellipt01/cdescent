@@ -138,7 +138,7 @@ create_linregmodel (bool has_copy_y, bool has_copy_x)
 	d = mm_real_eye (MM_REAL_SPARSE, x->n);	// elastic net
 	//	d = mm_real_penalty_smooth (MM_REAL_SPARSE, x->n);	// s-lasso
 
-	lreg = linregmodel_new (y, has_copy_y, x, has_copy_x, lambda2, d, DO_CENTERING_Y | DO_STANDARDIZING_X);
+	lreg = linregmodel_new (y, x, lambda2, d, DO_CENTERING_Y | DO_STANDARDIZING_X);
 
 	if (has_copy_y) mm_real_free (y);
 	if (has_copy_x) mm_real_free (x);
