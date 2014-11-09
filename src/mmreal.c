@@ -11,8 +11,8 @@
 
 #include <mmreal.h>
 
-#include "private/atomic.h"
 #include "private/private.h"
+#include "private/atomic.h"
 
 /* mm_real supports real symmetric or general sparse, and real general dense matrix */
 static bool
@@ -47,29 +47,37 @@ is_symm_valid (MMRealSymm symm)
 			|| symm == MM_REAL_SYMMETRIC_LOWER);
 }
 
+static bool
+mm_real_is_empty (const mm_real *x)
+{
+	return (x == NULL || x->nz <= 0);
+}
+
 /* allocate mm_real */
 static mm_real *
 mm_real_alloc (void)
 {
-	mm_real	*mm = (mm_real *) malloc (sizeof (mm_real));
-	mm->m = 0;
-	mm->n = 0;
-	mm->nz = 0;
-	mm->i = NULL;
-	mm->p = NULL;
-	mm->data = NULL;
+	mm_real	*x = (mm_real *) malloc (sizeof (mm_real));
+	if (x == NULL) return NULL;
 
-	mm->symm = MM_REAL_GENERAL;
+	x->m = 0;
+	x->n = 0;
+	x->nz = 0;
+	x->i = NULL;
+	x->p = NULL;
+	x->data = NULL;
+
+	x->symm = MM_REAL_GENERAL;
 
 	/* set typecode = "M_RG" : Matrix Real General */
 	// typecode[3] = 'G' : General
-	mm_initialize_typecode (&mm->typecode);
+	mm_initialize_typecode (&x->typecode);
 	// typecode[0] = 'M' : Matrix
-	mm_set_matrix (&mm->typecode);
+	mm_set_matrix (&x->typecode);
 	// typecode[2] = 'R' : Real
-	mm_set_real (&mm->typecode);
+	mm_set_real (&x->typecode);
 
-	return mm;
+	return x;
 }
 
 /*** create new mm_real object
@@ -80,7 +88,7 @@ mm_real_alloc (void)
 mm_real *
 mm_real_new (MMRealFormat format, MMRealSymm symm, const int m, const int n, const int nz)
 {
-	mm_real	*mm;
+	mm_real	*x;
 	bool		symmetric;
 
 	if (!is_format_valid (format))
@@ -92,55 +100,56 @@ mm_real_new (MMRealFormat format, MMRealSymm symm, const int m, const int n, con
 	if (symmetric && m != n)
 		error_and_exit ("mm_real_new", "symmetric matrix must be square.", __FILE__, __LINE__);
 
-	mm = mm_real_alloc ();
-	mm->m = m;
-	mm->n = n;
-	mm->nz = nz;
+	x = mm_real_alloc ();
+	if (x == NULL) error_and_exit ("mm_real_new", "failed to allocate object.", __FILE__, __LINE__);
+	x->m = m;
+	x->n = n;
+	x->nz = nz;
 
 	// typecode[1] = 'C' or 'A'
-	if (format == MM_REAL_SPARSE) mm_set_coordinate (&mm->typecode);
-	else mm_set_array (&mm->typecode);
+	if (format == MM_REAL_SPARSE) mm_set_coordinate (&x->typecode);
+	else mm_set_array (&x->typecode);
 
-	mm->symm = symm;
+	x->symm = symm;
 	// typecode[3] = 'S'
-	if (symmetric) mm_set_symmetric (&mm->typecode);
+	if (symmetric) mm_set_symmetric (&x->typecode);
 
-	if (!is_type_supported (mm->typecode)) {
+	if (!is_type_supported (x->typecode)) {
 		char	msg[128];
-		sprintf (msg, "matrix type does not supported :[%s].", mm_typecode_to_str (mm->typecode));
+		sprintf (msg, "matrix type does not supported :[%s].", mm_typecode_to_str (x->typecode));
 		error_and_exit ("mm_real_new", msg, __FILE__, __LINE__);
 	}
 
-	return mm;
+	return x;
 }
 
 /*** free mm_real ***/
 void
-mm_real_free (mm_real *mm)
+mm_real_free (mm_real *x)
 {
-	if (mm) {
-		if (mm_real_is_sparse (mm)) {
-			if (mm->i) free (mm->i);
-			if (mm->p) free (mm->p);
+	if (x) {
+		if (mm_real_is_sparse (x)) {
+			if (x->i) free (x->i);
+			if (x->p) free (x->p);
 		}
-		if (mm->data) free (mm->data);
-		free (mm);
+		if (x->data) free (x->data);
+		free (x);
 	}
 	return;
 }
 
 /*** reallocate mm_real ***/
 bool
-mm_real_realloc (mm_real *mm, const int nz)
+mm_real_realloc (mm_real *x, const int nz)
 {
-	if (mm->nz == nz) return true;
-	mm->data = (double *) realloc (mm->data, nz * sizeof (double));
-	if (mm->data == NULL) return false;
-	if (mm_real_is_sparse (mm)) {
-		mm->i = (int *) realloc (mm->i, nz * sizeof (int));
-		if (mm->i == NULL) return false;
+	if (x->nz == nz) return true;
+	x->data = (double *) realloc (x->data, nz * sizeof (double));
+	if (x->data == NULL) return false;
+	if (mm_real_is_sparse (x)) {
+		x->i = (int *) realloc (x->i, nz * sizeof (int));
+		if (x->i == NULL) return false;
 	}
-	mm->nz = nz;
+	x->nz = nz;
 	return true;
 }
 
@@ -178,8 +187,8 @@ mm_real_set_general (mm_real *x)
 void
 mm_real_set_symmetric (mm_real *x)
 {
-	if (mm_real_is_symmetric (x)) return;
 	if (x->m != x->n) error_and_exit ("mm_real_set_symmetric", "symmetric matrix must be square.", __FILE__, __LINE__);
+	if (mm_real_is_symmetric (x)) return;
 	mm_set_symmetric (&(x->typecode));
 	x->symm = MM_SYMMETRIC | MM_UPPER;	// by default, assume symmetric upper
 	return;
@@ -189,8 +198,8 @@ mm_real_set_symmetric (mm_real *x)
 void
 mm_real_set_upper (mm_real *x)
 {
-	if (!mm_real_is_symmetric (x)) error_and_exit ("mm_real_set_upper", "matrix must be symmetric.", __FILE__, __LINE__);
 	if (x->m != x->n) error_and_exit ("mm_real_set_upper", "symmetric matrix must be square.", __FILE__, __LINE__);
+	if (!mm_real_is_symmetric (x)) error_and_exit ("mm_real_set_upper", "matrix must be symmetric.", __FILE__, __LINE__);
 	if (mm_real_is_upper (x)) return;
 	x->symm = MM_SYMMETRIC | MM_UPPER;
 	return;
@@ -200,8 +209,8 @@ mm_real_set_upper (mm_real *x)
 void
 mm_real_set_lower (mm_real *x)
 {
-	if (!mm_real_is_symmetric (x)) error_and_exit ("mm_real_set_lower", "matrix must be symmetric.", __FILE__, __LINE__);
 	if (x->m != x->n) error_and_exit ("mm_real_set_lower", "symmetric matrix must be square.", __FILE__, __LINE__);
+	if (!mm_real_is_symmetric (x)) error_and_exit ("mm_real_set_lower", "matrix must be symmetric.", __FILE__, __LINE__);
 	if (mm_real_is_lower (x)) return;
 	x->symm = MM_SYMMETRIC | MM_LOWER;
 	return;
@@ -213,7 +222,6 @@ mm_real_copy_sparse (const mm_sparse *src)
 {
 	int			k;
 	mm_sparse	*dest = mm_real_new (MM_REAL_SPARSE, src->symm, src->m, src->n, src->nz);
-
 	dest->i = (int *) malloc (src->nz * sizeof (int));
 	dest->p = (int *) malloc ((src->n + 1) * sizeof (int));
 	dest->data = (double *) malloc (src->nz * sizeof (double));
@@ -241,6 +249,7 @@ mm_real_copy_dense (const mm_dense *src)
 mm_real *
 mm_real_copy (const mm_real *x)
 {
+	if (mm_real_is_empty (x)) error_and_exit ("mm_real_copy", "matrix is empty.", __FILE__, __LINE__);
 	return (mm_real_is_sparse (x)) ? mm_real_copy_sparse (x) : mm_real_copy_dense (x);
 }
 
@@ -255,9 +264,10 @@ mm_real_array_set_all (const int n, double *data, const double val)
 
 /*** set all data of mm to val ***/
 void
-mm_real_set_all (mm_real *mm, const double val)
+mm_real_set_all (mm_real *x, const double val)
 {
-	mm_real_array_set_all (mm->nz, mm->data, val);
+	if (mm_real_is_empty (x)) error_and_exit ("mm_real_set_all", "matrix is empty.", __FILE__, __LINE__);
+	mm_real_array_set_all (x->nz, x->data, val);
 	return;
 }
 
@@ -268,7 +278,8 @@ mm_real_sparse_to_dense (const mm_sparse *s)
 	int			j;
 	mm_dense	*d;
 
-	if (!mm_real_is_sparse (s)) return false;
+	if (mm_real_is_empty (s)) error_and_exit ("mm_real_sparse_to_dense", "matrix is empty.", __FILE__, __LINE__);
+	if (mm_real_is_dense (s)) return mm_real_copy (s);
 	d = mm_real_new (MM_REAL_DENSE, s->symm, s->m, s->n, s->m * s->n);
 	d->data = (double *) malloc (d->nz * sizeof (double));
 	mm_real_set_all (d, 0.);
@@ -291,7 +302,8 @@ mm_real_dense_to_sparse (const mm_dense *d, const double threshold)
 	int			j, k;
 	mm_sparse	*s;
 
-	if (!mm_real_is_dense (d)) return false;
+	if (mm_real_is_empty (d)) error_and_exit ("mm_real_dense_to_sparse", "matrix is empty.", __FILE__, __LINE__);
+	if (mm_real_is_sparse (d)) return mm_real_copy (d);
 	s = mm_real_new (MM_REAL_SPARSE, d->symm, d->m, d->n, d->nz);
 	s->i = (int *) malloc (s->nz * sizeof (int));
 	s->p = (int *) malloc ((s->n + 1) * sizeof (int));
@@ -396,6 +408,7 @@ mm_real_symmetric_to_general_dense (const mm_dense *x)
 mm_real *
 mm_real_symmetric_to_general (const mm_real *x)
 {
+	if (mm_real_is_empty (x)) error_and_exit ("mm_real_symmetric_to_general", "matrix is empty.", __FILE__, __LINE__);
 	return (mm_real_is_sparse (x)) ? mm_real_symmetric_to_general_sparse (x) : mm_real_symmetric_to_general_dense (x);
 }
 
@@ -434,7 +447,7 @@ mm_real_deye (const int n)
 mm_real *
 mm_real_eye (MMRealFormat format, const int n)
 {
-	if (n <= 0) error_and_exit ("mm_real_eye", "index out of range.", __FILE__, __LINE__);
+	if (n <= 0) error_and_exit ("mm_real_eye", "invalid size.", __FILE__, __LINE__);
 	return (format == MM_REAL_SPARSE) ? mm_real_seye (n) : mm_real_deye (n);
 }
 
@@ -488,6 +501,7 @@ mm_real_dj_asum (const mm_dense *d, const int j)
 double
 mm_real_xj_asum (const mm_real *x, const int j)
 {
+	if (mm_real_is_empty (x)) error_and_exit ("mm_real_xj_asum", "matrix is empty.", __FILE__, __LINE__);
 	if (j < 0 || x->n <= j) error_and_exit ("mm_real_xj_asum", "index out of range.", __FILE__, __LINE__);
 	return (mm_real_is_sparse (x)) ? mm_real_sj_asum (x, j) : mm_real_dj_asum (x, j);
 }
@@ -544,6 +558,7 @@ mm_real_dj_sum (const mm_dense *d, const int j)
 double
 mm_real_xj_sum (const mm_real *x, const int j)
 {
+	if (mm_real_is_empty (x)) error_and_exit ("mm_real_xj_sum", "matrix is empty.", __FILE__, __LINE__);
 	if (j < 0 || x->n <= j) error_and_exit ("mm_real_xj_sum", "index out of range.", __FILE__, __LINE__);
 	return (mm_real_is_sparse (x)) ? mm_real_sj_sum (x, j) : mm_real_dj_sum (x, j);
 }
@@ -599,6 +614,7 @@ mm_real_dj_ssq (const mm_dense *d, const int j)
 double
 mm_real_xj_ssq (const mm_real *x, const int j)
 {
+	if (mm_real_is_empty (x)) error_and_exit ("mm_real_xj_ssq", "matrix is empty.", __FILE__, __LINE__);
 	if (j < 0 || x->n <= j) error_and_exit ("mm_real_xj_ssq", "index out of range.", __FILE__, __LINE__);
 	return (mm_real_is_sparse (x)) ? mm_real_sj_ssq (x, j) : mm_real_dj_ssq (x, j);
 }
@@ -608,6 +624,7 @@ double
 mm_real_xj_nrm2 (const mm_real *x, const int j)
 {
 	double	ssq;
+	if (mm_real_is_empty (x)) error_and_exit ("mm_real_xj_nrm2", "matrix is empty.", __FILE__, __LINE__);
 	if (j < 0 || x->n <= j) error_and_exit ("mm_real_xj_nrm2", "index out of range.", __FILE__, __LINE__);
 	ssq = mm_real_xj_ssq (x, j);
 	return sqrt (ssq);
@@ -662,6 +679,8 @@ mm_real_d_dot_y (bool trans, const double alpha, const mm_dense *d, const mm_den
 mm_dense *
 mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dense *y, const double beta)
 {
+	if (mm_real_is_empty (x)) error_and_exit ("mm_real_x_dot_y", "matrix is empty.", __FILE__, __LINE__);
+	if (mm_real_is_empty (y)) error_and_exit ("mm_real_x_dot_y", "vector is empty.", __FILE__, __LINE__);
 	if (!mm_real_is_dense (y)) error_and_exit ("mm_real_x_dot_y", "y must be dense.", __FILE__, __LINE__);
 	if (mm_real_is_symmetric (y)) error_and_exit ("mm_real_x_dot_y", "y must be general.", __FILE__, __LINE__);
 	if (y->n != 1) error_and_exit ("mm_real_x_dot_y", "y must be vector.", __FILE__, __LINE__);
@@ -721,6 +740,8 @@ mm_real_dj_trans_dot_y (const mm_dense *d, const int j, const mm_dense *y)
 double
 mm_real_xj_trans_dot_y (const mm_real *x, const int j, const mm_dense *y)
 {
+	if (mm_real_is_empty (x)) error_and_exit ("mm_real_xj_trans_dot_y", "matrix is empty.", __FILE__, __LINE__);
+	if (mm_real_is_empty (y)) error_and_exit ("mm_real_xj_trans_dot_y", "vector is empty.", __FILE__, __LINE__);
 	if (j < 0 || x->n <= j) error_and_exit ("mm_real_xj_trans_dot_y", "index out of range.", __FILE__, __LINE__);
 	if (!mm_real_is_dense (y)) error_and_exit ("mm_real_xj_trans_dot_y", "y must be dense.", __FILE__, __LINE__);
 	if (mm_real_is_symmetric (y)) error_and_exit ("mm_real_xj_trans_dot_y", "y must be general.", __FILE__, __LINE__);
@@ -778,6 +799,8 @@ mm_real_adjpy (const double alpha, const mm_dense *d, const int j, mm_dense *y)
 void
 mm_real_axjpy (const double alpha, const mm_real *x, const int j, mm_dense *y)
 {
+	if (mm_real_is_empty (x)) error_and_exit ("mm_real_xj_axjpy", "matrix is empty.", __FILE__, __LINE__);
+	if (mm_real_is_empty (y)) error_and_exit ("mm_real_xj_axjpy", "vector is empty.", __FILE__, __LINE__);
 	if (j < 0 || x->n <= j) error_and_exit ("mm_real_axjpy", "index out of range.", __FILE__, __LINE__);
 	if (!mm_real_is_dense (y)) error_and_exit ("mm_real_axjpy", "y must be dense.", __FILE__, __LINE__);
 	if (mm_real_is_symmetric (y)) error_and_exit ("mm_real_axjpy", "y must be general.", __FILE__, __LINE__);
@@ -843,6 +866,8 @@ mm_real_adjpy_atomic (const double alpha, const mm_dense *d, const int j, mm_den
 void
 mm_real_axjpy_atomic (const double alpha, const mm_real *x, const int j, mm_dense *y)
 {
+	if (mm_real_is_empty (x)) error_and_exit ("mm_real_xj_axjpy_atomic", "matrix is empty.", __FILE__, __LINE__);
+	if (mm_real_is_empty (y)) error_and_exit ("mm_real_xj_axjpy_atomic", "vector is empty.", __FILE__, __LINE__);
 	if (j < 0 || x->n <= j) error_and_exit ("mm_real_axjpy_atomic", "index out of range.", __FILE__, __LINE__);
 	if (!mm_real_is_dense (y)) error_and_exit ("mm_real_axjpy_atomic", "y must be dense.", __FILE__, __LINE__);
 	if (mm_real_is_symmetric (y)) error_and_exit ("mm_real_axjpy_atomic", "y must be general.", __FILE__, __LINE__);
@@ -861,14 +886,18 @@ mm_real_fread_sparse (FILE *fp, MM_typecode typecode)
 	int			*j;
 	mm_sparse	*s;
 
-	mm_read_mtx_crd_size (fp, &m, &n, &nz);
+	if (mm_read_mtx_crd_size (fp, &m, &n, &nz) != 0) return NULL;
 	s = mm_real_new (MM_REAL_SPARSE, MM_REAL_GENERAL, m, n, nz);
 	s->i = (int *) malloc (s->nz * sizeof (int));
 	s->data = (double *) malloc (s->nz * sizeof (double));
 	s->p = (int *) malloc ((s->n + 1) * sizeof (int));
 
 	j = (int *) malloc (s->nz * sizeof (int));
-	mm_read_mtx_crd_data (fp, s->m, s->n, s->nz, s->i, j, s->data, typecode);
+	if (mm_read_mtx_crd_data (fp, s->m, s->n, s->nz, s->i, j, s->data, typecode) != 0) {
+		free (j);
+		mm_real_free (s);
+		return NULL;
+	}
 
 	l = 0;
 	for (k = 0; k < s->nz; k++) {
@@ -899,7 +928,7 @@ mm_real_fread_dense (FILE *fp, MM_typecode typecode)
 	int			ret;
 	mm_dense	*d;
 
-	mm_read_mtx_array_size (fp, &m, &n);
+	if (mm_read_mtx_array_size (fp, &m, &n) != 0) return NULL;
 	d = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, m, n, m * n);
 	d->data = (double *) malloc (d->nz * sizeof (double));
 
@@ -918,27 +947,26 @@ mm_real_fread (FILE *fp)
 {
 	MM_typecode	typecode;
 	mm_real		*x;
-	mm_read_banner (fp, &typecode);
+	if (mm_read_banner (fp, &typecode) != 0) error_and_exit ("mm_real_fread", "failed to read mm_real.", __FILE__, __LINE__);
 	if (!is_type_supported (typecode)) {
 		char	msg[128];
 		sprintf (msg, "matrix type does not supported :[%s].", mm_typecode_to_str (typecode));
 		error_and_exit ("mm_real_fread", msg, __FILE__, __LINE__);
 	}
 	x = (mm_is_sparse (typecode)) ? mm_real_fread_sparse (fp, typecode) : mm_real_fread_dense (fp, typecode);
-	if (mm_real_is_symmetric (x) && x->m != x->n) {
-		mm_real_free (x);
-		error_and_exit ("mm_real_fread", "symmetric matrix must be square.", __FILE__, __LINE__);
-	}
+	if (mm_real_is_empty (x)) error_and_exit ("mm_real_fread", "failed to read mm_real.", __FILE__, __LINE__);
+	if (mm_real_is_symmetric (x) && x->m != x->n) error_and_exit ("mm_real_fread", "symmetric matrix must be square.", __FILE__, __LINE__);
 	return x;
 }
 
 /* fwrite sparse */
-static void
+static int
 mm_real_fwrite_sparse (FILE *stream, mm_sparse *s, const char *format)
 {
 	int		j, k;
-	mm_write_banner (stream, s->typecode);
-	mm_write_mtx_crd_size (stream, s->m, s->n, s->nz);
+	int		status;
+	if ((status = mm_write_banner (stream, s->typecode)) != 0) return status;
+	if ((status = mm_write_mtx_crd_size (stream, s->m, s->n, s->nz)) != 0) return status;
 	for (j = 0; j < s->n; j++) {
 		for (k = s->p[j]; k < s->p[j + 1]; k++) {
 			fprintf (stream, "%d %d ", s->i[k] + 1, j + 1);	// c -> fortran
@@ -946,25 +974,26 @@ mm_real_fwrite_sparse (FILE *stream, mm_sparse *s, const char *format)
 			fprintf (stream, "\n");
 		}
 	}
-	return;
+	return 0;
 }
 
 /* fwrite dense */
-static void
+static int
 mm_real_fwrite_dense (FILE *stream, mm_dense *d, const char *format)
 {
 	int		k;
-	mm_write_banner (stream, d->typecode);
-	mm_write_mtx_array_size (stream, d->m, d->n);
+	int		status;
+	if ((status = mm_write_banner (stream, d->typecode)) != 0) return status;
+	if ((status = mm_write_mtx_array_size (stream, d->m, d->n)) != 0) return status;
 	for (k = 0; k < d->nz; k++) {
 		fprintf (stream, format, d->data[k]);
 		fprintf (stream, "\n");
 	}
-	return;
+	return 0;
 }
 
 /*** fwrite in MatrixMarket format ***/
-void
+int
 mm_real_fwrite (FILE *stream, mm_real *x, const char *format)
 {
 	return (mm_real_is_sparse (x)) ? mm_real_fwrite_sparse (stream, x, format) : mm_real_fwrite_dense (stream, x, format);

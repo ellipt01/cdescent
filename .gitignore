@@ -38,3 +38,4 @@ Debug
 *.x86_64
 *.hex
 
+bin/make_release.sh

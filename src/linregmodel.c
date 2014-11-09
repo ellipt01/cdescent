@@ -96,6 +96,7 @@ static linregmodel *
 linregmodel_alloc (void)
 {
 	linregmodel	*lreg = (linregmodel *) malloc (sizeof (linregmodel));
+	if (lreg == NULL) return NULL;
 
 	lreg->has_copy_y = false;
 	lreg->has_copy_x = false;
@@ -159,6 +160,7 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d
 	if (d && x->n != d->n) error_and_exit ("linregmodel_new", "dimensions of matrix x and d do not match.", __FILE__, __LINE__);
 
 	lreg = linregmodel_alloc ();
+	if (lreg == NULL) error_and_exit ("linregmodel_new", "failed to allocate object.", __FILE__, __LINE__);
 
 	/* lambda2 */
 	if (lambda2 > 0.) lreg->lambda2 = lambda2;

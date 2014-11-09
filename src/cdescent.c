@@ -16,6 +16,7 @@ static cdescent *
 cdescent_alloc (void)
 {
 	cdescent	*cd = (cdescent *) malloc (sizeof (cdescent));
+	if (cd == NULL) return NULL;
 
 	cd->lreg = NULL;
 	cd->tolerance = 0.;
@@ -43,6 +44,7 @@ cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool
 	if (!lreg) error_and_exit ("cdescent_new", "linregmodel *lreg is empty.", __FILE__, __LINE__);
 
 	cd = cdescent_alloc ();
+	if (cd == NULL) error_and_exit ("cdescent_new", "failed to allocate object.", __FILE__, __LINE__);
 
 	cd->was_modified = false;
 

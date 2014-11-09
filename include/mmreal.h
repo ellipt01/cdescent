@@ -97,7 +97,7 @@ void		mm_real_axjpy (const double alpha, const mm_real *x, const int j, mm_dense
 void		mm_real_axjpy_atomic (const double alpha, const mm_real *x, const int j, mm_dense *y);
 
 mm_real	*mm_real_fread (FILE *fp);
-void		mm_real_fwrite (FILE *stream, mm_real *x, const char *format);
+int			mm_real_fwrite (FILE *stream, mm_real *x, const char *format);
 
 #ifdef __cplusplus
 }
