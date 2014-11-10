@@ -74,7 +74,7 @@ mm_read_unsymmetric_sparse (const char *fname, int *M_, int *N_, int *nz_, doubl
 }
 
 int
-mm_is_valid (MM_typecode matcode)
+mm_is_valid (const MM_typecode matcode)
 {
 	if (!mm_is_matrix (matcode)) return 0;
 	if (mm_is_dense (matcode) && mm_is_pattern (matcode)) return 0;
@@ -170,7 +170,7 @@ mm_read_banner (FILE *f, MM_typecode *matcode)
 }
 
 int
-mm_write_mtx_crd_size (FILE *f, int M, int N, int nz)
+mm_write_mtx_crd_size (FILE *f, const int M, const int N, const int nz)
 {
 	if (fprintf (f, "%d %d %d\n", M, N, nz) != 3) return MM_COULD_NOT_WRITE_FILE;
 	return 0;
@@ -229,7 +229,7 @@ mm_read_mtx_array_size (FILE *f, int *M, int *N)
 }
 
 int
-mm_write_mtx_array_size (FILE *f, int M, int N)
+mm_write_mtx_array_size (FILE *f, const int M, const int N)
 {
 	if (fprintf (f, "%d %d\n", M, N) != 2) return MM_COULD_NOT_WRITE_FILE;
 	return 0;
@@ -336,7 +336,7 @@ mm_read_mtx_crd (char *fname, int *M, int *N, int *nz, int **I, int **J, double 
 }
 
 int
-mm_write_banner (FILE *f, MM_typecode matcode)
+mm_write_banner (FILE *f, const MM_typecode matcode)
 {
 	char	*str = mm_typecode_to_str (matcode);
 	int		ret_code;
@@ -404,7 +404,7 @@ char
 }
 
 char
-*mm_typecode_to_str (MM_typecode matcode)
+*mm_typecode_to_str (const MM_typecode matcode)
 {
 	char	buffer[MM_MAX_LINE_LENGTH];
 	char	*types[4];

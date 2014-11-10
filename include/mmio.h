@@ -21,15 +21,15 @@ extern "C" {
 
 typedef char MM_typecode[4];
 
-char	*mm_typecode_to_str(MM_typecode matcode);
+char	*mm_typecode_to_str(const MM_typecode matcode);
 
 int		mm_read_banner(FILE *f, MM_typecode *matcode);
 int		mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz);
 int		mm_read_mtx_array_size(FILE *f, int *M, int *N);
 
-int		mm_write_banner(FILE *f, MM_typecode matcode);
-int		mm_write_mtx_crd_size(FILE *f, int M, int N, int nz);
-int		mm_write_mtx_array_size(FILE *f, int M, int N);
+int		mm_write_banner(FILE *f, const MM_typecode matcode);
+int		mm_write_mtx_crd_size(FILE *f, const int M, const int N, const int nz);
+int		mm_write_mtx_array_size(FILE *f, const int M, const int N);
 
 
 /********************* MM_typecode query fucntions ***************************/
@@ -51,7 +51,7 @@ int		mm_write_mtx_array_size(FILE *f, int M, int N);
 #define mm_is_skew(typecode)	((typecode)[3]=='K')
 #define mm_is_hermitian(typecode)((typecode)[3]=='H')
 
-int		mm_is_valid(MM_typecode matcode);		/* too complex for a macro */
+int		mm_is_valid(const MM_typecode matcode);		/* too complex for a macro */
 
 
 /********************* MM_typecode modify fucntions ***************************/

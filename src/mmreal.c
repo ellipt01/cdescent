@@ -18,48 +18,35 @@
 enum {
 	MM_REAL_IS_VALID =		100,
 	MM_REAL_IS_NULL  =		101,	// x == NULL
-	MM_REAL_IS_EMPTY =		102,	// x->n == 0 || x == 0 || x->nz == 0
-	MM_REAL_DATA_IS_NULL =	103,	// x->data == NULL
-	MM_REAL_I_IS_NULL =		104,	// x->i == NULL
-	MM_REAL_P_IS_NULL =		105		// x->p == NULL
+	MM_REAL_INVALID_SYMM =	102,
+	MM_REAL_UNSUPPORTED =	103,
+	MM_REAL_IS_EMPTY =		104,	// x->n == 0 || x == 0 || x->nz == 0
+	MM_REAL_DATA_IS_NULL =	105,	// x->data == NULL
+	MM_REAL_I_IS_NULL =		106,	// x->i == NULL
+	MM_REAL_P_IS_NULL =		107		// x->p == NULL
 };
 
 /* error message */
-static const char	*error_msg[6] = {
-		NULL,
+static const char	*error_msg[8] = {
+		"mm_real is valid.",
 		"mm_real is not allocated.",
 		"mm_real is empty.",
+		"x->symm is invalid.",
+		"type unsupported.",
 		"x->data is not allocated.",
 		"x->i is not allocated.",
 		"x->p is not allocated."
 };
 
-/* print error message and exit */
-static void
-mm_real_error_and_exit (const char *funcname, const int error_code)
-{
-	int		id = error_code - 100;
-	if (id < 0 || id > 5) exit (1);
-	if (id == 0) return;	// mm_real is valid
-	error_and_exit (funcname, error_msg[id], __FILE__, __LINE__);
-}
-
-static int
-mm_real_is_valid (const mm_real *x)
-{
-	if (x == NULL) return MM_REAL_IS_NULL;
-	if (x->m <= 0 || x->n <= 0 || x->nz <= 0) return MM_REAL_IS_EMPTY;
-	if (x->data == NULL) return MM_REAL_DATA_IS_NULL;
-	if (mm_real_is_sparse (x)) {
-		if (x->i == NULL) return MM_REAL_I_IS_NULL;
-		if (x->p == NULL) return MM_REAL_P_IS_NULL;
-	}
-	return MM_REAL_IS_VALID;
+/* check format */
+static bool
+is_format_valid (const MMRealFormat format) {
+	return (format == MM_REAL_SPARSE || format == MM_REAL_DENSE);
 }
 
 /* mm_real supports real symmetric or general sparse, and real general dense matrix */
 static bool
-is_type_supported (MM_typecode typecode)
+is_type_supported (const MM_typecode typecode)
 {
 	// invalid type
 	if (!mm_is_valid (typecode)) return false;
@@ -76,18 +63,37 @@ is_type_supported (MM_typecode typecode)
 	return true;
 }
 
-/* check format */
-static bool
-is_format_valid (MMRealFormat format) {
-	return (format == MM_REAL_SPARSE || format == MM_REAL_DENSE);
-}
-
 /* check symmetric */
 static bool
-is_symm_valid (MMRealSymm symm)
+is_symm_valid (const MMRealSymm symm)
 {
 	return (symm == MM_REAL_GENERAL || symm == MM_REAL_SYMMETRIC_UPPER
 			|| symm == MM_REAL_SYMMETRIC_LOWER);
+}
+
+static int
+mm_real_is_valid (const mm_real *x)
+{
+	if (x == NULL) return MM_REAL_IS_NULL;
+	if (x->m <= 0 || x->n <= 0 || x->nz <= 0) return MM_REAL_IS_EMPTY;
+	if (!is_symm_valid (x->symm)) return MM_REAL_INVALID_SYMM;
+	if (!is_type_supported (x->typecode)) return MM_REAL_UNSUPPORTED;
+	if (x->data == NULL) return MM_REAL_DATA_IS_NULL;
+	if (mm_real_is_sparse (x)) {
+		if (x->i == NULL) return MM_REAL_I_IS_NULL;
+		if (x->p == NULL) return MM_REAL_P_IS_NULL;
+	}
+	return MM_REAL_IS_VALID;
+}
+
+/* print error message and exit */
+static void
+mm_real_error_and_exit (const char *funcname, const int error_code)
+{
+	int		id = error_code - 100;
+	if (id < 0 || id > 5) exit (1);
+	if (id == 0) return;	// mm_real is valid
+	error_and_exit (funcname, error_msg[id], __FILE__, __LINE__);
 }
 
 /* allocate mm_real */
@@ -998,7 +1004,7 @@ mm_real_fread (FILE *fp)
 
 /* fwrite sparse */
 static void
-mm_real_fwrite_sparse (FILE *stream, mm_sparse *s, const char *format)
+mm_real_fwrite_sparse (FILE *stream, const mm_sparse *s, const char *format)
 {
 	int		j, k;
 	mm_write_banner (stream, s->typecode);
@@ -1015,7 +1021,7 @@ mm_real_fwrite_sparse (FILE *stream, mm_sparse *s, const char *format)
 
 /* fwrite dense */
 static void
-mm_real_fwrite_dense (FILE *stream, mm_dense *d, const char *format)
+mm_real_fwrite_dense (FILE *stream, const mm_dense *d, const char *format)
 {
 	int		k;
 	mm_write_banner (stream, d->typecode);
@@ -1029,7 +1035,7 @@ mm_real_fwrite_dense (FILE *stream, mm_dense *d, const char *format)
 
 /*** fwrite in MatrixMarket format ***/
 void
-mm_real_fwrite (FILE *stream, mm_real *x, const char *format)
+mm_real_fwrite (FILE *stream, const mm_real *x, const char *format)
 {
 	mm_real_error_and_exit ("mm_real_fwrite", mm_real_is_valid (x));
 	return (mm_real_is_sparse (x)) ? mm_real_fwrite_sparse (stream, x, format) : mm_real_fwrite_dense (stream, x, format);
