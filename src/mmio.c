@@ -348,7 +348,8 @@ mm_write_banner (FILE *f, const MM_typecode matcode)
 }
 
 int
-mm_write_mtx_crd (char fname[], int M, int N, int nz, int I[], int J[], double val[], MM_typecode matcode)
+mm_write_mtx_crd (const char fname[], const int M, const int N, const int nz,
+		const int I[], const int J[], const double val[], const MM_typecode matcode)
 {
 	FILE	*f;
 	int		i;

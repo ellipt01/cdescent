@@ -21,14 +21,18 @@ extern "C" {
 
 typedef char MM_typecode[4];
 
+/* MM_typecode matcode -> const MM_typecode matcode, 2014.11.10, by M.Utsugi */
 char	*mm_typecode_to_str(const MM_typecode matcode);
 
 int		mm_read_banner(FILE *f, MM_typecode *matcode);
 int		mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz);
 int		mm_read_mtx_array_size(FILE *f, int *M, int *N);
 
+/* MM_typecode matcode -> const MM_typecode matcode, 2014.11.10, by M.Utsugi */
 int		mm_write_banner(FILE *f, const MM_typecode matcode);
+/* int M, N, nz -> const int M, N, nz, 2014.11.10, by M.Utsugi */
 int		mm_write_mtx_crd_size(FILE *f, const int M, const int N, const int nz);
+/* int M, N -> const int M, N, 2014.11.10, by M.Utsugi */
 int		mm_write_mtx_array_size(FILE *f, const int M, const int N);
 
 
@@ -51,6 +55,7 @@ int		mm_write_mtx_array_size(FILE *f, const int M, const int N);
 #define mm_is_skew(typecode)	((typecode)[3]=='K')
 #define mm_is_hermitian(typecode)((typecode)[3]=='H')
 
+/* MM_typecode matcode -> const MM_typecode matcode, 2014.11.10, by M.Utsugi */
 int		mm_is_valid(const MM_typecode matcode);		/* too complex for a macro */
 
 
@@ -124,8 +129,13 @@ int		mm_is_valid(const MM_typecode matcode);		/* too complex for a macro */
 
 /*  high level routines */
 
-int		mm_write_mtx_crd(char fname[], int M, int N, int nz, int I[], int J[],
-			double val[], MM_typecode matcode);
+/* char fname[] -> const char fname[],
+ * int M, N, nz, I[], J[] -> const int M, N, nz, I[], J[],
+ * double val[] -> const double val[],
+ * MM_typecode matcode -> const MM_typecode matcode, 2014.11.10, by M.Utsugi */
+int		mm_write_mtx_crd(const char fname[], const int M, const int N, const int nz,
+			const int I[], const int J[],
+			const double val[], const MM_typecode matcode);
 int		mm_read_mtx_crd_data(FILE *f, int M, int N, int nz, int I[], int J[],
 			double val[], MM_typecode matcode);
 int		mm_read_mtx_crd_entry(FILE *f, int *I, int *J, double *real, double *img,

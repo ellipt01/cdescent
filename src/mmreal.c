@@ -14,25 +14,28 @@
 #include "private/private.h"
 #include "private/atomic.h"
 
+/* num of error codes */
+static const int num_error_code = 8;
+
 /* error code */
 enum {
-	MM_REAL_IS_VALID =		100,
-	MM_REAL_IS_NULL  =		101,	// x == NULL
-	MM_REAL_INVALID_SYMM =	102,
-	MM_REAL_UNSUPPORTED =	103,
-	MM_REAL_IS_EMPTY =		104,	// x->n == 0 || x == 0 || x->nz == 0
-	MM_REAL_DATA_IS_NULL =	105,	// x->data == NULL
-	MM_REAL_I_IS_NULL =		106,	// x->i == NULL
-	MM_REAL_P_IS_NULL =		107		// x->p == NULL
+	MM_REAL_IS_VALID			= 100,	// x is valid
+	MM_REAL_IS_NULL			= 101,	// x == NULL
+	MM_REAL_INVALID_SYMM		= 102,	// x->symm is invalid
+	MM_REAL_TYPE_UNSUPPORTED	= 103,	// type not supported
+	MM_REAL_IS_EMPTY			= 104,	// x->n == 0 || x == 0 || x->nz == 0
+	MM_REAL_DATA_IS_NULL		= 105,	// x->data == NULL
+	MM_REAL_I_IS_NULL			= 106,	// x->i == NULL
+	MM_REAL_P_IS_NULL			= 107		// x->p == NULL
 };
 
 /* error message */
 static const char	*error_msg[8] = {
 		"mm_real is valid.",
 		"mm_real is not allocated.",
-		"mm_real is empty.",
 		"x->symm is invalid.",
-		"type unsupported.",
+		"type not supported.",
+		"mm_real is empty.",
 		"x->data is not allocated.",
 		"x->i is not allocated.",
 		"x->p is not allocated."
@@ -75,9 +78,9 @@ static int
 mm_real_is_valid (const mm_real *x)
 {
 	if (x == NULL) return MM_REAL_IS_NULL;
-	if (x->m <= 0 || x->n <= 0 || x->nz <= 0) return MM_REAL_IS_EMPTY;
 	if (!is_symm_valid (x->symm)) return MM_REAL_INVALID_SYMM;
-	if (!is_type_supported (x->typecode)) return MM_REAL_UNSUPPORTED;
+	if (!is_type_supported (x->typecode)) return MM_REAL_TYPE_UNSUPPORTED;
+	if (x->m <= 0 || x->n <= 0 || x->nz <= 0) return MM_REAL_IS_EMPTY;
 	if (x->data == NULL) return MM_REAL_DATA_IS_NULL;
 	if (mm_real_is_sparse (x)) {
 		if (x->i == NULL) return MM_REAL_I_IS_NULL;
@@ -91,7 +94,7 @@ static void
 mm_real_error_and_exit (const char *funcname, const int error_code)
 {
 	int		id = error_code - 100;
-	if (id < 0 || id > 5) exit (1);
+	if (id < 0 || num_error_code <= id) exit (1);
 	if (id == 0) return;	// mm_real is valid
 	error_and_exit (funcname, error_msg[id], __FILE__, __LINE__);
 }
