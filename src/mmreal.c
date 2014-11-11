@@ -15,39 +15,29 @@
 #include "private/atomic.h"
 
 /* num of error codes */
-static const int num_error_code = 8;
+static const int num_error_code = 6;
 
 /* error code */
 enum {
-	MM_REAL_IS_VALID			= 100,	// x is valid
-	MM_REAL_IS_NULL			= 101,	// x == NULL
-	MM_REAL_INVALID_SYMM		= 102,	// x->symm is invalid
-	MM_REAL_TYPE_UNSUPPORTED	= 103,	// type not supported
-	MM_REAL_IS_EMPTY			= 104,	// x->n == 0 || x == 0 || x->nz == 0
-	MM_REAL_DATA_IS_NULL		= 105,	// x->data == NULL
-	MM_REAL_I_IS_NULL			= 106,	// x->i == NULL
-	MM_REAL_P_IS_NULL			= 107		// x->p == NULL
+	MM_REAL_IS_VALID		= 100,	// x is valid
+	MM_REAL_IS_NULL		= 101,	// x == NULL
+	MM_REAL_IS_EMPTY		= 102,	// x->n == 0 || x == 0 || x->nz == 0
+	MM_REAL_DATA_IS_NULL	= 103,	// x->data == NULL
+	MM_REAL_I_IS_NULL		= 104,	// x->i == NULL
+	MM_REAL_P_IS_NULL		= 105		// x->p == NULL
 };
 
 /* error message */
-static const char	*error_msg[8] = {
-		"mm_real is valid.",
-		"mm_real is not allocated.",
-		"x->symm is invalid.",
-		"type not supported.",
-		"mm_real is empty.",
-		"x->data is not allocated.",
-		"x->i is not allocated.",
-		"x->p is not allocated."
+static const char	*error_msg[6] = {
+	"mm_real is valid.",
+	"mm_real is not allocated.",
+	"mm_real is empty.",
+	"x->data is not allocated.",
+	"x->i is not allocated.",
+	"x->p is not allocated."
 };
 
-/* check format */
-static bool
-is_format_valid (const MMRealFormat format) {
-	return (format == MM_REAL_SPARSE || format == MM_REAL_DENSE);
-}
-
-/* mm_real supports real symmetric or general sparse, and real general dense matrix */
+/* mm_real supports real symmetric/general sparse/dense matrix */
 static bool
 is_type_supported (const MM_typecode typecode)
 {
@@ -66,20 +56,10 @@ is_type_supported (const MM_typecode typecode)
 	return true;
 }
 
-/* check symmetric */
-static bool
-is_symm_valid (const MMRealSymm symm)
-{
-	return (symm == MM_REAL_GENERAL || symm == MM_REAL_SYMMETRIC_UPPER
-			|| symm == MM_REAL_SYMMETRIC_LOWER);
-}
-
 static int
 mm_real_is_valid (const mm_real *x)
 {
 	if (x == NULL) return MM_REAL_IS_NULL;
-	if (!is_symm_valid (x->symm)) return MM_REAL_INVALID_SYMM;
-	if (!is_type_supported (x->typecode)) return MM_REAL_TYPE_UNSUPPORTED;
 	if (x->m <= 0 || x->n <= 0 || x->nz <= 0) return MM_REAL_IS_EMPTY;
 	if (x->data == NULL) return MM_REAL_DATA_IS_NULL;
 	if (mm_real_is_sparse (x)) {
@@ -97,6 +77,20 @@ mm_real_error_and_exit (const char *funcname, const int error_code)
 	if (id < 0 || num_error_code <= id) exit (1);
 	if (id == 0) return;	// mm_real is valid
 	error_and_exit (funcname, error_msg[id], __FILE__, __LINE__);
+}
+
+/* check format */
+static bool
+is_format_valid (const MMRealFormat format) {
+	return (format == MM_REAL_SPARSE || format == MM_REAL_DENSE);
+}
+
+/* check symmetric */
+static bool
+is_symm_valid (const MMRealSymm symm)
+{
+	return (symm == MM_REAL_GENERAL || symm == MM_REAL_SYMMETRIC_UPPER
+			|| symm == MM_REAL_SYMMETRIC_LOWER);
 }
 
 /* allocate mm_real */
