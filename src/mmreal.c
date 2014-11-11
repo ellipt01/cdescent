@@ -670,9 +670,9 @@ mm_real_xj_nrm2 (const mm_real *x, const int j)
 	return sqrt (ssq);
 }
 
-/* alpha * s * y + beta, where s is sparse matrix and y is dense vector */
+/* alpha * s * y, where s is sparse matrix and y is dense vector */
 static mm_dense *
-mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_dense *y, const double beta)
+mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_dense *y)
 {
 	int			j;
 	int			m;
@@ -681,7 +681,7 @@ mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_de
 	
 	c = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, m, 1, m);
 	c->data = (double *) malloc (c->nz * sizeof (double));
-	mm_real_set_all (c, beta);
+	mm_real_set_all (c, 0.);
 
 	for (j = 0; j < s->n; j++) {
 		int		k;
@@ -695,9 +695,9 @@ mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_de
 	return c;
 }
 
-/* alpha * d * y + beta, where d is dense matrix and y is dense vector */
+/* alpha * d * y, where d is dense matrix and y is dense vector */
 static mm_dense *
-mm_real_d_dot_y (bool trans, const double alpha, const mm_dense *d, const mm_dense *y, const double beta)
+mm_real_d_dot_y (bool trans, const double alpha, const mm_dense *d, const mm_dense *y)
 {
 	int			m;
 	mm_dense	*c;
@@ -705,21 +705,20 @@ mm_real_d_dot_y (bool trans, const double alpha, const mm_dense *d, const mm_den
 
 	c = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, m, 1, m);
 	c->data = (double *) malloc (c->nz * sizeof (double));
-	if (fabs (beta) > 0.) mm_real_set_all (c, 1.);
-	else mm_real_set_all (c, 0.);
+	mm_real_set_all (c, 0.);
 
 	if (!mm_real_is_symmetric (d))
-		dgemv_ ((trans) ? "T" : "N", &d->m, &d->n, &alpha, d->data, &d->m, y->data, &ione, &beta, c->data, &ione);
+		dgemv_ ((trans) ? "T" : "N", &d->m, &d->n, &alpha, d->data, &d->m, y->data, &ione, &dzero, c->data, &ione);
 	else {
 		char	uplo = (mm_real_is_upper (d)) ? 'U' : 'L';
-		dsymv_ (&uplo, &d->m, &alpha, d->data, &d->m, y->data, &ione, &beta, c->data, &ione);
+		dsymv_ (&uplo, &d->m, &alpha, d->data, &d->m, y->data, &ione, &dzero, c->data, &ione);
 	}
 	return c;
 }
 
-/*** alpha * x * y + beta, where x is sparse/dense matrix and y is dense vector ***/
+/*** alpha * x * y, where x is sparse/dense matrix and y is dense vector ***/
 mm_dense *
-mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dense *y, const double beta)
+mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dense *y)
 {
 	mm_real_error_and_exit ("mm_real_x_dot_y", mm_real_is_valid (x));
 	mm_real_error_and_exit ("mm_real_x_dot_y", mm_real_is_valid (y));
@@ -729,7 +728,7 @@ mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dens
 	if ((trans && x->m != y->m) || (!trans && x->n != y->m))
 		error_and_exit ("mm_real_x_dot_y", "vector and matrix dimensions do not match.", __FILE__, __LINE__);
 
-	return (mm_real_is_sparse (x)) ? mm_real_s_dot_y (trans, alpha, x, y, beta) : mm_real_d_dot_y (trans, alpha, x, y, beta);
+	return (mm_real_is_sparse (x)) ? mm_real_s_dot_y (trans, alpha, x, y) : mm_real_d_dot_y (trans, alpha, x, y);
 }
 
 /* s(:,j)' * y */

@@ -227,7 +227,7 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d
 	}
 
 	// c = X' * y
-	lreg->c = mm_real_x_dot_y (true, 1., lreg->x, lreg->y, 0.);
+	lreg->c = mm_real_x_dot_y (true, 1., lreg->x, lreg->y);
 
 	// camax = max ( abs (c) )
 	camax = fabs (lreg->c->data[idamax_ (&lreg->c->nz, lreg->c->data, &ione) - 1]);
