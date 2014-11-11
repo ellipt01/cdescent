@@ -676,32 +676,32 @@ mm_real_xj_nrm2 (const mm_real *x, const int j)
 	return sqrt (ssq);
 }
 
-/* s * y, where s is sparse matrix and y is dense vector */
+/* alpha * s * y + beta, where s is sparse matrix and y is dense vector */
 static mm_dense *
 mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_dense *y, const double beta)
 {
 	int			j;
 	int			m;
-	mm_dense	*d;
+	mm_dense	*c;
 	m = (trans) ? s->n : s->m;
 	
-	d = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, m, 1, m);
-	d->data = (double *) malloc (d->nz * sizeof (double));
-	mm_real_set_all (d, beta);
+	c = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, m, 1, m);
+	c->data = (double *) malloc (c->nz * sizeof (double));
+	mm_real_set_all (c, beta);
 
 	for (j = 0; j < s->n; j++) {
 		int		k;
 		for (k = s->p[j]; k < s->p[j + 1]; k++) {
 			int		si = (trans) ? j : s->i[k];
 			int		sj = (trans) ? s->i[k] : j;
-			d->data[si] += s->data[k] * y->data[sj];
-			if (mm_real_is_symmetric (s) && j != s->i[k]) d->data[sj] += s->data[k] * y->data[si];
+			c->data[si] += alpha * s->data[k] * y->data[sj];
+			if (mm_real_is_symmetric (s) && j != s->i[k]) c->data[sj] += alpha * s->data[k] * y->data[si];
 		}		
 	}
-	return d;
+	return c;
 }
 
-/* d * y, where d is dense matrix and y is dense vector */
+/* alpha * d * y + beta, where d is dense matrix and y is dense vector */
 static mm_dense *
 mm_real_d_dot_y (bool trans, const double alpha, const mm_dense *d, const mm_dense *y, const double beta)
 {
@@ -711,6 +711,8 @@ mm_real_d_dot_y (bool trans, const double alpha, const mm_dense *d, const mm_den
 
 	c = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, m, 1, m);
 	c->data = (double *) malloc (c->nz * sizeof (double));
+	if (fabs (beta) > 0.) mm_real_set_all (c, 1.);
+	else mm_real_set_all (c, 0.);
 
 	if (!mm_real_is_symmetric (d))
 		dgemv_ ((trans) ? "T" : "N", &d->m, &d->n, &alpha, d->data, &d->m, y->data, &ione, &beta, c->data, &ione);
@@ -721,7 +723,7 @@ mm_real_d_dot_y (bool trans, const double alpha, const mm_dense *d, const mm_den
 	return c;
 }
 
-/*** x * y, where x is matrix and y is dense vector ***/
+/*** alpha * x * y + beta, where x is sparse/dense matrix and y is dense vector ***/
 mm_dense *
 mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dense *y, const double beta)
 {
