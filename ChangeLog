@@ -1,3 +1,8 @@
+2014-11-11 Mitsuru Utsugi <utsugi@mountain.ocn.ne.jp>
+ * add error handling routine for mm_real object
+ * fix bug of mm_real_x_dot_y
+ * add mm_real_xj_ssq routine
+
 2014-11-08 Mitsuru Utsugi <utsugi@mountain.ocn.ne.jp>
  * release 0.4.2
  * add pathwiseopt object for pathwise CCD optimization

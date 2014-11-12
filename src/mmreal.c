@@ -707,10 +707,12 @@ mm_real_d_dot_y (bool trans, const double alpha, const mm_dense *d, const mm_den
 	c->data = (double *) malloc (c->nz * sizeof (double));
 	mm_real_set_all (c, 0.);
 
-	if (!mm_real_is_symmetric (d))
+	if (!mm_real_is_symmetric (d)) {
+		// c = alpha*d*y + 0*c
 		dgemv_ ((trans) ? "T" : "N", &d->m, &d->n, &alpha, d->data, &d->m, y->data, &ione, &dzero, c->data, &ione);
-	else {
+	} else {
 		char	uplo = (mm_real_is_upper (d)) ? 'U' : 'L';
+		// c = alpha*d*y + 0*c
 		dsymv_ (&uplo, &d->m, &alpha, d->data, &d->m, y->data, &ione, &dzero, c->data, &ione);
 	}
 	return c;
