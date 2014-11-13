@@ -266,6 +266,7 @@ mm_real_copy_sparse (const mm_sparse *src)
 	dest->p = (int *) malloc ((src->n + 1) * sizeof (int));
 	dest->data = (double *) malloc (src->nz * sizeof (double));
 
+#pragma omp parallel for
 	for (k = 0; k < src->nz; k++) {
 		dest->i[k] = src->i[k];
 		dest->data[k] = src->data[k];
@@ -298,6 +299,7 @@ static void
 mm_real_array_set_all (const int n, double *data, const double val)
 {
 	int		k;
+#pragma omp parallel for
 	for (k = 0; k < n; k++) data[k] = val;
 	return;
 }
@@ -324,6 +326,7 @@ mm_real_sparse_to_dense (const mm_sparse *s)
 	d->data = (double *) malloc (d->nz * sizeof (double));
 	mm_real_set_all (d, 0.);
 
+#pragma omp parallel for
 	for (j = 0; j < s->n; j++) {
 		int		k;
 		for (k = s->p[j]; k < s->p[j + 1]; k++) {
@@ -429,15 +432,17 @@ mm_real_symmetric_to_general_sparse (const mm_sparse *x)
 static mm_dense *
 mm_real_symmetric_to_general_dense (const mm_dense *x)
 {
-	int			i, j;
+	int			j;
 	mm_dense	*d = mm_real_copy (x);
 	if (!mm_real_is_symmetric (x)) return d;
 
 	for (j = 0; j < x->n; j++) {
 		if (mm_real_is_upper (x)) {
-			for (i = j + 1; i < x->m; i++) d->data[i + j * d->m] = x->data[j + i * x->m];
-		} else if (mm_real_is_lower (x)) {
-			for (i = 0; i < j; i++) d->data[i + j * d->m] = x->data[j + i * x->m];
+			int		i0 = j + 1;
+			int		l = x->m - i0;
+			dcopy_ (&l, x->data + j + i0 * x->m, &x->m, d->data + i0 + j * d->m, &ione);
+		} else if (j > 0 && mm_real_is_lower (x)) {
+			dcopy_ (&j, x->data + j, &x->m, d->data + j * d->m, &ione);
 		}
 	}
 	mm_real_set_general (d);
@@ -489,6 +494,36 @@ mm_real_eye (MMRealFormat format, const int n)
 {
 	if (n <= 0) error_and_exit ("mm_real_eye", "invalid size.", __FILE__, __LINE__);
 	return (format == MM_REAL_SPARSE) ? mm_real_seye (n) : mm_real_deye (n);
+}
+
+/* d += alpha */
+static void
+mm_real_add_const_dense (mm_dense *d, const double alpha)
+{
+	int		k;
+#pragma omp parallel for
+	for (k = 0; k < d->nz; k++) d->data[k] += alpha;
+	return;
+}
+
+/* s + alpha */
+void
+mm_real_add_const_sparse (mm_real **s, const double alpha)
+{
+	mm_dense	*d = mm_real_sparse_to_dense (*s);
+	mm_real_free (*s);
+	mm_real_add_const_dense (d, alpha);
+	*s = d;
+	return;
+}
+
+/*** x += alpha ***/
+void
+mm_real_add_const (mm_real *x, const double alpha)
+{
+	if (mm_real_is_sparse (x)) mm_real_add_const_sparse (&x, alpha);
+	else mm_real_add_const_dense (x, alpha);
+	return;
 }
 
 /* sum |s(:,j)| */

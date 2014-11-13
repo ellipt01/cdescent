@@ -35,16 +35,12 @@ static double
 calc_rss (const cdescent *cd)
 {
 	double	rss;
-	double	*r = (double *) malloc (cd->lreg->y->nz * sizeof (double));
-	dcopy_ (&cd->lreg->y->nz, cd->lreg->y->data, &ione, r, &ione);	// r = y
-	daxpy_ (&cd->mu->nz, &dmone, cd->mu->data, &ione, r, &ione);	// r = y - mu
+	mm_dense	*r = mm_real_copy (cd->lreg->y);	// r = y
+	mm_real_axjpy (-1., cd->mu, 0, r);	// r = y - mu
 	// intercept
-	if (fabs (cd->b) > 0.) {
-		int		j;
-		for (j = 0; j < cd->mu->nz; j++) r[j] -= cd->b;	// r = y - mu - b
-	}
-	rss = ddot_ (&cd->lreg->y->nz, r, &ione, r, &ione);	// rss = | y - mu |^2
-	free (r);
+	if (fabs (cd->b) > 0.) mm_real_add_const (r, - cd->b);	// r = y - mu - b
+	rss = mm_real_xj_ssq (r, 0);	// rss = | y - mu |^2
+	mm_real_free (r);
 	return rss;
 }
 

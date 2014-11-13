@@ -86,6 +86,8 @@ mm_real	*mm_real_symmetric_to_general (const mm_real *x);
 
 mm_real	*mm_real_eye (MMRealFormat type, const int n);
 
+void		mm_real_add_const (mm_real *x, const double alpha);
+
 double		mm_real_xj_asum (const mm_real *x, const int j);
 double		mm_real_xj_sum (const mm_real *x, const int j);
 double		mm_real_xj_ssq (const mm_real *x, const int j);
