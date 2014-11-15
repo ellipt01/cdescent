@@ -266,7 +266,6 @@ mm_real_copy_sparse (const mm_sparse *src)
 	dest->p = (int *) malloc ((src->n + 1) * sizeof (int));
 	dest->data = (double *) malloc (src->nz * sizeof (double));
 
-#pragma omp parallel for
 	for (k = 0; k < src->nz; k++) {
 		dest->i[k] = src->i[k];
 		dest->data[k] = src->data[k];
@@ -299,7 +298,6 @@ static void
 mm_real_array_set_all (const int n, double *data, const double val)
 {
 	int		k;
-#pragma omp parallel for
 	for (k = 0; k < n; k++) data[k] = val;
 	return;
 }
@@ -326,7 +324,6 @@ mm_real_sparse_to_dense (const mm_sparse *s)
 	d->data = (double *) malloc (d->nz * sizeof (double));
 	mm_real_set_all (d, 0.);
 
-#pragma omp parallel for
 	for (j = 0; j < s->n; j++) {
 		int		k;
 		for (k = s->p[j]; k < s->p[j + 1]; k++) {
@@ -501,7 +498,6 @@ static void
 mm_real_add_const_dense (mm_dense *d, const double alpha)
 {
 	int		k;
-#pragma omp parallel for
 	for (k = 0; k < d->nz; k++) d->data[k] += alpha;
 	return;
 }
