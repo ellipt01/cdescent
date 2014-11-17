@@ -266,11 +266,9 @@ mm_real_copy_sparse (const mm_sparse *src)
 	dest->p = (int *) malloc ((src->n + 1) * sizeof (int));
 	dest->data = (double *) malloc (src->nz * sizeof (double));
 
-	for (k = 0; k < src->nz; k++) {
-		dest->i[k] = src->i[k];
-		dest->data[k] = src->data[k];
-	}
+	for (k = 0; k < src->nz; k++) dest->i[k] = src->i[k];
 	for (k = 0; k <= src->n; k++) dest->p[k] = src->p[k];
+	dcopy_ (&src->nz, src->data, &ione, dest->data, &ione);
 
 	return dest;
 }
@@ -436,8 +434,8 @@ mm_real_symmetric_to_general_dense (const mm_dense *x)
 	for (j = 0; j < x->n; j++) {
 		if (mm_real_is_upper (x)) {
 			int		i0 = j + 1;
-			int		l = x->m - i0;
-			dcopy_ (&l, x->data + j + i0 * x->m, &x->m, d->data + i0 + j * d->m, &ione);
+			int		len = x->m - i0;
+			dcopy_ (&len, x->data + j + i0 * x->m, &x->m, d->data + i0 + j * d->m, &ione);
 		} else if (j > 0 && mm_real_is_lower (x)) {
 			dcopy_ (&j, x->data + j, &x->m, d->data + j * d->m, &ione);
 		}
@@ -493,32 +491,155 @@ mm_real_eye (MMRealFormat format, const int n)
 	return (format == MM_REAL_SPARSE) ? mm_real_seye (n) : mm_real_deye (n);
 }
 
-/* d += alpha */
-static void
-mm_real_add_const_dense (mm_dense *d, const double alpha)
+/* s = [s1; s2] */
+static mm_sparse *
+mm_real_vertcat_sparse (const mm_sparse *s1, const mm_sparse *s2)
+{
+	int			i, j, k;
+	int			m = s1->m + s2->m;
+	int			n = s1->n;
+	int			nz = s1->nz + s2->nz;
+	mm_sparse	*s = mm_real_new (MM_REAL_SPARSE, MM_REAL_GENERAL, m, n, nz);
+	s->i = (int *) malloc (s->nz * sizeof (int));
+	s->data = (double *) malloc (s->nz * sizeof (double));
+	s->p = (int *) malloc ((s->n + 1) * sizeof (int));
+
+	k = 0;
+	s->p[0] = 0;
+	for (j = 0; j < n; j++) {
+		int		len1 = s1->p[j + 1] - s1->p[j];
+		int		len2 = s2->p[j + 1] - s2->p[j];
+		dcopy_ (&len1, s1->data + s1->p[j], &ione, s->data + k, &ione);
+		for (i = s1->p[j]; i < s1->p[j + 1]; i++) s->i[k++] = s1->i[i];
+		dcopy_ (&len2, s2->data + s2->p[j], &ione, s->data + k, &ione);
+		for (i = s2->p[j]; i < s2->p[j + 1]; i++) s->i[k++] = s2->i[i] + s1->m;
+		s->p[j + 1] = k;
+	}
+	if (s->nz != k) mm_real_realloc (s, k);
+	return s;
+}
+
+/* d = [d1; d2] */
+static mm_dense *
+mm_real_vertcat_dense (const mm_dense *d1, const mm_dense *d2)
+{
+	int			j;
+	int			m = d1->m + d2->m;
+	int			n = d1->n;
+	int			nz = d1->nz + d2->nz;
+	mm_dense	*d = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, m, n, nz);
+	d->data = (double *) malloc (d->nz * sizeof (double));
+
+	for (j = 0; j < n; j++) {
+		dcopy_ (&d1->m, d1->data + j * d1->m, &ione, d->data + j * d->m, &ione);
+		dcopy_ (&d2->m, d2->data + j * d2->m, &ione, d->data + j * d->m + d1->m, &ione);
+	}
+	return d;
+}
+
+/*** x = [x1; x2] ***/
+mm_real *
+mm_real_vertcat (const mm_real *x1, const mm_real *x2)
+{
+	mm_real_error_and_exit ("mm_real_vertcat", mm_real_is_valid (x1));
+	mm_real_error_and_exit ("mm_real_vertcat", mm_real_is_valid (x2));
+	if ((mm_real_is_sparse (x1) && mm_real_is_dense (x1)) || (mm_real_is_dense (x1) && mm_real_is_sparse (x1)))
+		error_and_exit ("mm_real_vertcat", "format of matrix x1 and x2 are incompatible.", __FILE__, __LINE__);
+	if (mm_real_is_symmetric (x1) || mm_real_is_symmetric (x2))
+		error_and_exit ("mm_real_vertcat", "matrix must be general.", __FILE__, __LINE__);
+	if (x1->n != x2->n) error_and_exit ("mm_real_vertcat", "matrix size is incompatible.", __FILE__, __LINE__);
+
+	return (mm_real_is_sparse (x1)) ? mm_real_vertcat_sparse (x1, x2) : mm_real_vertcat_dense (x1, x2);
+}
+
+/* s = [s1, s2] */
+static mm_sparse *
+mm_real_holzcat_sparse (const mm_sparse *s1, const mm_sparse *s2)
+{
+	int			j, k;
+	int			m = s1->m;
+	int			n = s1->n + s2->n;
+	int			nz = s1->nz + s2->nz;
+	mm_sparse	*s = mm_real_new (MM_REAL_SPARSE, MM_REAL_GENERAL, m, n, nz);
+	s->i = (int *) malloc (s->nz * sizeof (int));
+	s->data = (double *) malloc (s->nz * sizeof (double));
+	s->p = (int *) malloc ((s->n + 1) * sizeof (int));
+
+	for (k = 0; k < s1->nz; k++) s->i[k] = s1->i[k];
+	for (k = 0; k < s2->nz; k++) s->i[k + s1->nz] = s2->i[k];
+	for (j = 0; j <= s1->n; j++) s->p[j] = s1->p[j];
+	for (j = 0; j <= s2->n; j++) s->p[j + s1->n] = s2->p[j] + s1->nz;
+	dcopy_ (&s1->nz, s1->data, &ione, s->data, &ione);
+	dcopy_ (&s2->nz, s2->data, &ione, s->data + s1->nz, &ione);
+
+	return s;
+}
+
+/* d = [d1, d2] */
+static mm_dense *
+mm_real_holzcat_dense (const mm_dense *d1, const mm_dense *d2)
+{
+	int			m = d1->m;
+	int			n = d1->n + d2->n;
+	int			nz = d1->nz + d2->nz;
+	mm_dense	*d = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, m, n, nz);
+	d->data = (double *) malloc (d->nz * sizeof (double));
+
+	dcopy_ (&d1->nz, d1->data, &ione, d->data, &ione);
+	dcopy_ (&d2->nz, d2->data, &ione, d->data + d1->nz, &ione);
+
+	return d;
+}
+
+/*** x = [x1, x2] ***/
+mm_real *
+mm_real_holzcat (const mm_real *x1, const mm_real *x2)
+{
+	mm_real_error_and_exit ("mm_real_holzcat", mm_real_is_valid (x1));
+	mm_real_error_and_exit ("mm_real_holzcat", mm_real_is_valid (x2));
+	if ((mm_real_is_sparse (x1) && mm_real_is_dense (x1)) || (mm_real_is_dense (x1) && mm_real_is_sparse (x1)))
+		error_and_exit ("mm_real_holzcat", "format of matrix x1 and x2 are incompatible.", __FILE__, __LINE__);
+	if (mm_real_is_symmetric (x1) || mm_real_is_symmetric (x2))
+		error_and_exit ("mm_real_holzcat", "matrix must be general.", __FILE__, __LINE__);
+	if (x1->m != x2->m) error_and_exit ("mm_real_holzcat", "matrix size is incompatible.", __FILE__, __LINE__);
+
+	return (mm_real_is_sparse (x1)) ? mm_real_holzcat_sparse (x1, x2) : mm_real_holzcat_dense (x1, x2);
+}
+
+/*** x(:,j) += alpha ***/
+void
+mm_real_xj_add_const (mm_real *x, const int j, const double alpha)
 {
 	int		k;
-	for (k = 0; k < d->nz; k++) d->data[k] += alpha;
+	int		len;
+	double	*data;
+	mm_real_error_and_exit ("mm_real_xj_add_const", mm_real_is_valid (x));
+	if (mm_real_is_symmetric (x)) error_and_exit ("mm_real_xj_add_const", "matrix must be general.", __FILE__, __LINE__);
+	if (j < 0 || x->n <= j) error_and_exit ("mm_real_xj_add_const", "index out of range.", __FILE__, __LINE__);
+
+	len = (mm_real_is_sparse (x)) ? x->p[j + 1] - x->p[j] : x->m;
+	data = x->data + ((mm_real_is_sparse (x)) ? x->p[j] : j * x->m);
+
+	for (k = 0; k < len; k++) data[k] += alpha;
+
 	return;
 }
 
-/* s + alpha */
+/*** x(:,j) *= alpha ***/
 void
-mm_real_add_const_sparse (mm_real **s, const double alpha)
+mm_real_xj_scale (mm_real *x, const int j, const double alpha)
 {
-	mm_dense	*d = mm_real_sparse_to_dense (*s);
-	mm_real_free (*s);
-	mm_real_add_const_dense (d, alpha);
-	*s = d;
-	return;
-}
+	int		len;
+	double	*data;
+	mm_real_error_and_exit ("mm_real_xj_scale", mm_real_is_valid (x));
+	if (mm_real_is_symmetric (x)) error_and_exit ("mm_real_xj_scale", "matrix must be general.", __FILE__, __LINE__);
+	if (j < 0 || x->n <= j) error_and_exit ("mm_real_xj_scale", "index out of range.", __FILE__, __LINE__);
 
-/*** x += alpha ***/
-void
-mm_real_add_const (mm_real *x, const double alpha)
-{
-	if (mm_real_is_sparse (x)) mm_real_add_const_sparse (&x, alpha);
-	else mm_real_add_const_dense (x, alpha);
+	len = (mm_real_is_sparse (x)) ? x->p[j + 1] - x->p[j] : x->m;
+	data = x->data + ((mm_real_is_sparse (x)) ? x->p[j] : j * x->m);
+
+	dscal_ (&len, &alpha, data, &ione);
+
 	return;
 }
 

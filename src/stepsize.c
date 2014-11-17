@@ -52,7 +52,7 @@ static double
 cdescent_scale2 (const cdescent *cd, const int j)
 {
 	double	scale2 = (cd->lreg->xnormalized) ? 1. : cd->lreg->xtx[j];
-	if (!cd->lreg->is_regtype_lasso) scale2 += cd->lreg->dtd[j] * cd->lreg->lambda2;
+	if (!cd->lreg->is_regtype_lasso) scale2 += cd->lreg->lambda2 * cd->lreg->dtd[j];
 	return scale2;
 }
 

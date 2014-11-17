@@ -86,7 +86,11 @@ mm_real	*mm_real_symmetric_to_general (const mm_real *x);
 
 mm_real	*mm_real_eye (MMRealFormat type, const int n);
 
-void		mm_real_add_const (mm_real *x, const double alpha);
+mm_real	*mm_real_vertcat (const mm_real *x1, const mm_real *x2);
+mm_real	*mm_real_holzcat (const mm_real *x1, const mm_real *x2);
+
+void		mm_real_xj_add_const (mm_real *x, const int j, const double alpha);
+void		mm_real_xj_scale (mm_real *x, const int j, const double alpha);
 
 double		mm_real_xj_asum (const mm_real *x, const int j);
 double		mm_real_xj_sum (const mm_real *x, const int j);
