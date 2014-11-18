@@ -74,7 +74,7 @@ static void
 mm_real_error_and_exit (const char *funcname, const int error_code)
 {
 	int		id = error_code - 100;
-	if (id < 0 || num_error_code <= id) exit (1);
+	if (id < 0 || num_error_code <= id) return;
 	if (id == 0) return;	// mm_real is valid
 	error_and_exit (funcname, error_msg[id], __FILE__, __LINE__);
 }
@@ -193,7 +193,7 @@ mm_real_realloc (mm_real *x, const int nz)
 	return true;
 }
 
-/*** set sparse ***/
+/*** set to sparse ***/
 void
 mm_real_set_sparse (mm_real *x)
 {
@@ -202,7 +202,7 @@ mm_real_set_sparse (mm_real *x)
 	return;
 }
 
-/*** set dense ***/
+/*** set to dense ***/
 void
 mm_real_set_dense (mm_real *x)
 {
@@ -211,7 +211,7 @@ mm_real_set_dense (mm_real *x)
 	return;
 }
 
-/*** set general ***/
+/*** set to general ***/
 void
 mm_real_set_general (mm_real *x)
 {
@@ -221,7 +221,7 @@ mm_real_set_general (mm_real *x)
 	return;
 }
 
-/*** set symmetric
+/*** set to symmetric
  * by default, assume symmetric upper
  * i.e., x->symm is set to MM_SYMMETRIC | MM_UPPER ***/
 void
@@ -234,7 +234,7 @@ mm_real_set_symmetric (mm_real *x)
 	return;
 }
 
-/*** set upper ***/
+/*** set to symmetric upper ***/
 void
 mm_real_set_upper (mm_real *x)
 {
@@ -245,7 +245,7 @@ mm_real_set_upper (mm_real *x)
 	return;
 }
 
-/*** set lower ***/
+/*** set to symmetric lower ***/
 void
 mm_real_set_lower (mm_real *x)
 {
@@ -300,7 +300,7 @@ mm_real_array_set_all (const int n, double *data, const double val)
 	return;
 }
 
-/*** set all data of mm to val ***/
+/*** set x->data to val ***/
 void
 mm_real_set_all (mm_real *x, const double val)
 {
@@ -332,8 +332,8 @@ mm_real_sparse_to_dense (const mm_sparse *s)
 	return d;
 }
 
-/*** convert dense -> sparse ***/
-/* fabs (x->data[j]) < threshold are set to 0 */
+/*** convert dense -> sparse
+ * if fabs (x->data[j]) < threshold, set to 0 ***/
 mm_sparse *
 mm_real_dense_to_sparse (const mm_dense *d, const double threshold)
 {

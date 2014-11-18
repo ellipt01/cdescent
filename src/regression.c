@@ -177,7 +177,7 @@ cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 	if (cd->was_modified) {
 		mm_real_set_all (cd->beta, 0.);
 		mm_real_set_all (cd->mu, 0.);
-		if (cd->lreg->is_regtype_lasso) mm_real_set_all (cd->nu, 0.);
+		if (!cd->lreg->is_regtype_lasso) mm_real_set_all (cd->nu, 0.);
 		cd->was_modified = false;
 	}
 	// initialize pathwiseopt if need
