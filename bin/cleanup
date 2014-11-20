@@ -28,7 +28,7 @@ echo "rm -f ltmain.sh stamp-h1 config.log config.h config.sub config.status conf
 rm -f ltmain.sh stamp-h1 config.log config.h config.sub config.status config.guess
 
 echo "rm -f configure libtool bin/.dirstamp"
-rm -f configure libtool bin/.dirstamp
+rm -f configure libtool bin/.dirstamp gmon.out
 
 for i in . src include example; do
 
@@ -46,6 +46,7 @@ for i in . src include example; do
 
 	echo "rm -rf $i/.deps"
 	rm -rf $i/.deps
+
 done
 
 echo -n "rm "

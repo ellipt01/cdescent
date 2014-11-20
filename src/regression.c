@@ -134,12 +134,13 @@ fprintf_solutionpath (FILE *stream, const int iter, const cdescent *cd)
 static bool
 set_logt (const double logt_lower, const double new_logt, double *logt)
 {
+	bool	reachs_lower = false;
 	if (new_logt <= logt_lower) {
 		*logt = logt_lower;
-		return true;
-	}
-	*logt = new_logt;
-	return false;
+		reachs_lower = true;
+	} else *logt = new_logt;
+
+	return reachs_lower;
 }
 
 /* store lambda1_opt, nrm1_opt and beta_opt */
@@ -202,10 +203,9 @@ cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 			sprintf (msg, "cannot open file %s.", path->fn_bic);
 			printf_warning ("cdescent_cyclic_pathwise", msg, __FILE__, __LINE__);
 		}
+		// output BIC info headers
+		if (fp_bic) fprintf (fp_bic, "t\t\teBIC\t\tRSS\t\tdf\n");
 	}
-
-	// output BIC info headers
-	if (fp_bic) fprintf (fp_bic, "t\t\teBIC\t\tRSS\t\tdf\n");
 
 	while (1) {
 		bic_info	*info;

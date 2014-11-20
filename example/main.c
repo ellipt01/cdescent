@@ -14,17 +14,17 @@
 
 #include "example.h"
 
-char		infn_x[80];
-char		infn_y[80];
+char			infn_x[80];
+char			infn_y[80];
 
 /*** default settings ***/
-double	lambda2 = 0.;
-double	log10_lambda1 = -2.;
-double	dlog10_lambda1 = 0.1;
-double	gamma_bic = 0.;	// classical BIC
+double			lambda2 = 0.;
+double			log10_lambda1 = -2.;
+double			dlog10_lambda1 = 0.1;
+double			gamma_bic = 0.;	// classical BIC
 
-double	tolerance = 1.e-3;
-int		maxiter = 100000;
+double			tolerance = 1.e-3;
+int				maxiter = 100000;
 
 extern char	*optarg;
 extern int		optind;
