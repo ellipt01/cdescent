@@ -1017,26 +1017,20 @@ static void
 mm_real_adjpy_atomic (const double alpha, const mm_dense *d, const int j, mm_dense *y)
 {
 	int		k;
-	double	*dj;
 	if (!mm_real_is_symmetric (d)) {
-		dj = d->data + j * d->m;
-		for (k = 0; k < d->m; k++) atomic_add (y->data + k, alpha * dj[k]);
+		for (k = 0; k < d->m; k++) atomic_add (y->data + k, alpha * d->data[j * d->m + k]);
 	} else {
 		int		len;
 		if (mm_real_is_upper (d)) {
 			len = j;
-			dj = d->data + j * d->m;
-			for (k = 0; k < len; k++) atomic_add (y->data + k, alpha * dj[k]);
+			for (k = 0; k < len; k++) atomic_add (y->data + k, alpha * d->data[j * d->m + k]);
 			len = d->m - j;
-			dj = d->data + j * d->m + j;
-			for (k = 0; k < len; k++) atomic_add (y->data + j + k, alpha * dj[k * d->m]);
+			for (k = 0; k < len; k++) atomic_add (y->data + j + k, alpha * d->data[j * d->m + j + k * d->m]);
 		} else if (mm_real_is_lower (d)) {
 			len = d->m - j;
-			dj = d->data + j * d->m + j;
-			for (k = 0; k < len; k++) atomic_add (y->data + j + k, alpha * dj[k]);
+			for (k = 0; k < len; k++) atomic_add (y->data + j + k, alpha * d->data[j * d->m + j + k]);
 			len = j;
-			dj = d->data + j;
-			for (k = 0; k < len; k++) atomic_add (y->data + k, alpha * dj[k * d->m]);
+			for (k = 0; k < len; k++) atomic_add (y->data + k, alpha * d->data[j + k * d->m]);
 		}
 	}
 	return;

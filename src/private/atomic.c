@@ -20,15 +20,13 @@ union dlvar {
 void
 atomic_add (double *data, double delta)
 {
-	volatile long	oldl;
-	volatile long	newl;
-	union dlvar	var;
+	union dlvar	old;
+	union dlvar	new;
 	while (1) {
-		var.dv = *data;
-		oldl = var.lv;
-		var.dv += delta;
-		newl = var.lv;
-		if (atomic_bool_compare_and_swap ((long *) data, *(volatile long *) &oldl, *(volatile long *) &newl)) break;
+		old.dv = *data;
+		new.dv = old.dv + delta;
+		if (atomic_bool_compare_and_swap ((long *) data, *(volatile long *) &old.lv, *(volatile long *) &new.lv))
+			break;
 	}
 	return;
 }
@@ -37,16 +35,14 @@ atomic_add (double *data, double delta)
 void
 atomic_max (double *data, double val)
 {
-	volatile long	oldl;
-	volatile long	newl;
-	union dlvar	var;
+	union dlvar	old;
+	union dlvar	new;
 	if (*data >= val) return;
 	while (1) {
-		var.dv = *data;
-		oldl = var.lv;
-		var.dv = val;
-		newl = var.lv;
-		if (atomic_bool_compare_and_swap ((long *) data, *(volatile long *) &oldl, *(volatile long *) &newl)) break;
+		old.dv = *data;
+		new.dv = val;
+		if (atomic_bool_compare_and_swap ((long *) data, *(volatile long *) &old.lv, *(volatile long *) &new.lv))
+			break;
 	}
 	return;
 }
