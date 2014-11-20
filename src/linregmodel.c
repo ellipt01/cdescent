@@ -18,6 +18,7 @@ calc_sum (const mm_real *x, double **sum)
 	int		j;
 	bool	centered;
 	double	*_sum = (double *) malloc (x->n * sizeof (double));
+#pragma omp parallel for
 	for (j = 0; j < x->n; j++) _sum[j] = mm_real_xj_sum (x, j);
 	// check whether mean is all 0 (x is already centered)
 	centered = true;
@@ -42,6 +43,7 @@ calc_ssq (const mm_real *x, double **ssq)
 	int		j;
 	bool	normalized;
 	double	*_ssq = (double *) malloc (x->n * sizeof (double));
+#pragma omp parallel for
 	for (j = 0; j < x->n; j++) _ssq[j] = mm_real_xj_ssq (x, j);
 	// check whether norm is all 1 (x is already normalized)
 	normalized = true;
@@ -81,12 +83,7 @@ do_normalizing (mm_real *x, const double *ssq)
 	int		j;
 	for (j = 0; j < x->n; j++) {
 		double	nrm2j = sqrt (ssq[j]);
-		if (nrm2j > SQRT_DBL_EPSILON) {
-			double	alpha = 1. / nrm2j;
-			int		size = (mm_real_is_sparse (x)) ? x->p[j + 1] - x->p[j] : x->m;
-			double	*xj = x->data + ((mm_real_is_sparse (x)) ? x->p[j] : j * x->m);
-			dscal_ (&size, &alpha, xj, &ione);
-		}
+		if (nrm2j > SQRT_DBL_EPSILON) mm_real_xj_scale (x, j, 1. / nrm2j);
 	}
 	return;
 }
@@ -136,6 +133,7 @@ linregmodel_alloc (void)
 linregmodel *
 linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d, PreProc proc)
 {
+	int				j;
 	double			camax;
 	linregmodel	*lreg;
 
@@ -221,13 +219,21 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d
 	if (lreg->lambda2 > 0. && lreg->d) lreg->is_regtype_lasso = false;
 	/* dtd = diag (D' * D) */
 	if (!lreg->is_regtype_lasso) {
-		int		j;
 		lreg->dtd = (double *) malloc (lreg->d->n * sizeof (double));
-		for (j = 0; j < lreg->d->n; j++) lreg->dtd[j] = mm_real_xj_ssq (lreg->d, j);
+#pragma omp parallel for
+		for (j = 0; j < lreg->d->n; j++) {
+			lreg->dtd[j] = mm_real_xj_ssq (lreg->d, j);
+		}
 	}
 
 	// c = X' * y
-	lreg->c = mm_real_x_dot_y (true, 1., lreg->x, lreg->y);
+	lreg->c = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, lreg->x->n, 1, lreg->x->n);
+	lreg->c->data = (double *) malloc (lreg->c->nz * sizeof (double));
+#pragma omp parallel for
+	for (j = 0; j < lreg->x->n; j++) {
+		lreg->c->data[j] = mm_real_xj_trans_dot_y (lreg->x, j, lreg->y);
+	}
+//	lreg->c = mm_real_x_dot_y (true, 1., lreg->x, lreg->y);
 
 	// camax = max ( abs (c) )
 	camax = fabs (lreg->c->data[idamax_ (&lreg->c->nz, lreg->c->data, &ione) - 1]);

@@ -645,10 +645,11 @@ mm_real_sj_asum (const mm_sparse *s, const int j)
 		for (l = l0; l < l1; l++) {
 			int		k;
 			for (k = s->p[l]; k < s->p[l + 1]; k++) {
-				if (s->i[k] == j) {
+				if (s->i[k] < j) continue;
+				else if (s->i[k] == j) {
 					asum += fabs (s->data[k]);
 					break;
-				}
+				} else break;
 			}
 		}
 	}
@@ -699,10 +700,11 @@ mm_real_sj_sum (const mm_sparse *s, const int j)
 		int		l1 = (mm_real_is_upper (s)) ? s->n : j;
 		for (l = l0; l < l1; l++) {
 			for (k = s->p[l]; k < s->p[l + 1]; k++) {
-				if (s->i[k] == j) {
+				if (s->i[k] < j) continue;
+				else if (s->i[k] == j) {
 					sum += s->data[k];
 					break;
-				}
+				} else break;
 			}
 		}
 	}
@@ -755,10 +757,11 @@ mm_real_sj_ssq (const mm_sparse *s, const int j)
 		for (l = l0; l < l1; l++) {
 			int		k;
 			for (k = s->p[l]; k < s->p[l + 1]; k++) {
-				if (s->i[k] == j) {
+				if (s->i[k] < j) continue;
+				else if (s->i[k] == j) {
 					ssq += pow (s->data[k], 2.);
 					break;
-				}
+				} else break;
 			}
 		}
 	}
@@ -881,10 +884,11 @@ mm_real_sj_trans_dot_y (const mm_sparse *s, const int j, const mm_dense *y)
 		int		l1 = (mm_real_is_upper (s)) ? s->n : j;
 		for (l = l0; l < l1; l++) {
 			for (k = s->p[l]; k < s->p[l + 1]; k++) {
-				if (s->i[k] == j) {
+				if (s->i[k] < j) continue;
+				else if (s->i[k] == j) {
 					val += s->data[k] * y->data[l];
 					break;
-				}
+				} else break;
 			}
 		}
 	}
@@ -939,10 +943,11 @@ mm_real_asjpy (const double alpha, const mm_sparse *s, const int j, mm_dense *y)
 		int		l1 = (mm_real_is_upper (s)) ? s->n : j;
 		for (l = l0; l < l1; l++) {
 			for (k = s->p[l]; k < s->p[l + 1]; k++) {
-				if (s->i[k] == j) {
+				if (s->i[k] < j) continue;
+				else if (s->i[k] == j) {
 					y->data[l] += alpha * s->data[k];
 					break;
-				}
+				} else break;
 			}
 		}
 	}
@@ -996,10 +1001,11 @@ mm_real_asjpy_atomic (const double alpha, const mm_sparse *s, const int j, mm_de
 		int		l1 = (mm_real_is_upper (s)) ? s->n : j;
 		for (l = l0; l < l1; l++) {
 			for (k = s->p[l]; k < s->p[l + 1]; k++) {
-				if (s->i[k] == j) {
+				if (s->i[k] < j) continue;
+				else if (s->i[k] == j) {
 					atomic_add (y->data + l, alpha * s->data[k]);
 					break;
-				}
+				} else break;
 			}
 		}
 	}
