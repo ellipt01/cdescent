@@ -367,6 +367,19 @@ mm_real_dense_to_sparse (const mm_dense *d, const double threshold)
 	return s;
 }
 
+/* find element that s->i[l] = j in the k-th column of s and return its index l */
+static int
+find_jth_row_element_from_sk (const int j, const mm_sparse *s, const int k)
+{
+	int		l;
+	for (l = s->p[k]; l < s->p[k + 1]; l++) {
+		if (s->i[l] < j) continue;
+		else if (s->i[l] == j) return l;	// found
+		else break;
+	}
+	return -1;	// not found
+}
+
 /* convert sparse symmetric -> sparse general */
 static mm_sparse *
 mm_real_symmetric_to_general_sparse (const mm_sparse *x)
@@ -383,29 +396,27 @@ mm_real_symmetric_to_general_sparse (const mm_sparse *x)
 	m = 0;
 	s->p[0] = 0;
 	for (j = 0; j < x->n; j++) {
-		int		k, l;
+		int		k;
 		if (mm_real_is_upper (x)) {
 			for (k = x->p[j]; k < x->p[j + 1]; k++) {
 				s->i[m] = x->i[k];
 				s->data[m++] = x->data[k];
 			}
-			for (l = j + 1; l < x->n; l++) {
-				for (k = x->p[l]; k < x->p[l + 1]; k++) {
-					if (x->i[k] == j) {
-						s->i[m] = l;
-						s->data[m++] = x->data[k];
-						break;
-					}
+			for (k = j + 1; k < x->n; k++) {
+				int		l = find_jth_row_element_from_sk (j, x, k);
+				// if found
+				if (l >= 0) {
+					s->i[m] = k;
+					s->data[m++] = x->data[l];
 				}
 			}
 		} else if (mm_real_is_lower (x)) {
-			for (l = 0; l < j; l++) {
-				for (k = x->p[l]; k < x->p[l + 1]; k++) {
-					if (x->i[k] == j) {
-						s->i[m] = l;
-						s->data[m++] = x->data[k];
-						break;
-					}
+			for (k = 0; k < j; k++) {
+				int		l = find_jth_row_element_from_sk (j, x, k);
+				// if found
+				if (l >= 0) {
+					s->i[m] = k;
+					s->data[m++] = x->data[l];
 				}
 			}
 			for (k = x->p[j]; k < x->p[j + 1]; k++) {
@@ -639,18 +650,13 @@ mm_real_sj_asum (const mm_sparse *s, const int j)
 	int		size = s->p[j + 1] - s->p[j];
 	double	asum = dasum_ (&size, s->data + s->p[j], &ione);
 	if (mm_real_is_symmetric (s)) {
-		int		l;
-		int		l0 = (mm_real_is_upper (s)) ? j + 1 : 0;
-		int		l1 = (mm_real_is_upper (s)) ? s->n : j;
-		for (l = l0; l < l1; l++) {
-			int		k;
-			for (k = s->p[l]; k < s->p[l + 1]; k++) {
-				if (s->i[k] < j) continue;
-				else if (s->i[k] == j) {
-					asum += fabs (s->data[k]);
-					break;
-				} else break;
-			}
+		int		k;
+		int		k0 = (mm_real_is_upper (s)) ? j + 1 : 0;
+		int		k1 = (mm_real_is_upper (s)) ? s->n : j;
+		for (k = k0; k < k1; k++) {
+			int		l = find_jth_row_element_from_sk (j, s, k);
+			// if found
+			if (l >= 0) asum += fabs (s->data[l]);
 		}
 	}
 	return asum;
@@ -695,17 +701,12 @@ mm_real_sj_sum (const mm_sparse *s, const int j)
 	double	sum = 0.;
 	for (k = s->p[j]; k < s->p[j + 1]; k++) sum += s->data[k];
 	if (mm_real_is_symmetric (s)) {
-		int		l;
-		int		l0 = (mm_real_is_upper (s)) ? j + 1 : 0;
-		int		l1 = (mm_real_is_upper (s)) ? s->n : j;
-		for (l = l0; l < l1; l++) {
-			for (k = s->p[l]; k < s->p[l + 1]; k++) {
-				if (s->i[k] < j) continue;
-				else if (s->i[k] == j) {
-					sum += s->data[k];
-					break;
-				} else break;
-			}
+		int		k0 = (mm_real_is_upper (s)) ? j + 1 : 0;
+		int		k1 = (mm_real_is_upper (s)) ? s->n : j;
+		for (k = k0; k < k1; k++) {
+			int		l = find_jth_row_element_from_sk (j, s, k);
+			// if found
+			if (l >= 0) sum += s->data[l];
 		}
 	}
 	return sum;
@@ -751,18 +752,13 @@ mm_real_sj_ssq (const mm_sparse *s, const int j)
 	int		size = s->p[j + 1] - s->p[j];
 	double	ssq = ddot_ (&size, s->data + s->p[j], &ione, s->data + s->p[j], &ione);
 	if (mm_real_is_symmetric (s)) {
-		int		l;
-		int		l0 = (mm_real_is_upper (s)) ? j + 1 : 0;
-		int		l1 = (mm_real_is_upper (s)) ? s->n : j;
-		for (l = l0; l < l1; l++) {
-			int		k;
-			for (k = s->p[l]; k < s->p[l + 1]; k++) {
-				if (s->i[k] < j) continue;
-				else if (s->i[k] == j) {
-					ssq += pow (s->data[k], 2.);
-					break;
-				} else break;
-			}
+		int		k;
+		int		k0 = (mm_real_is_upper (s)) ? j + 1 : 0;
+		int		k1 = (mm_real_is_upper (s)) ? s->n : j;
+		for (k = k0; k < k1; k++) {
+			int		l = find_jth_row_element_from_sk (j, s, k);
+			// if found
+			if (l >= 0) ssq += pow (s->data[l], 2.);
 		}
 	}
 	return ssq;
@@ -875,21 +871,16 @@ mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dens
 static double
 mm_real_sj_trans_dot_y (const mm_sparse *s, const int j, const mm_dense *y)
 {
-	int	k;
+	int		k;
 	double	val = 0;
 	for (k = s->p[j]; k < s->p[j + 1]; k++) val += s->data[k] * y->data[s->i[k]];
 	if (mm_real_is_symmetric (s)) {
-		int		l;
-		int		l0 = (mm_real_is_upper (s)) ? j + 1 : 0;
-		int		l1 = (mm_real_is_upper (s)) ? s->n : j;
-		for (l = l0; l < l1; l++) {
-			for (k = s->p[l]; k < s->p[l + 1]; k++) {
-				if (s->i[k] < j) continue;
-				else if (s->i[k] == j) {
-					val += s->data[k] * y->data[l];
-					break;
-				} else break;
-			}
+		int		k0 = (mm_real_is_upper (s)) ? j + 1 : 0;
+		int		k1 = (mm_real_is_upper (s)) ? s->n : j;
+		for (k = k0; k < k1; k++) {
+			int		l = find_jth_row_element_from_sk (j, s, k);
+			// if found
+			if (l >= 0) val += s->data[l] * y->data[k];
 		}
 	}
 	return val;
@@ -938,17 +929,12 @@ mm_real_asjpy (const double alpha, const mm_sparse *s, const int j, mm_dense *y)
 	int		k;
 	for (k = s->p[j]; k < s->p[j + 1]; k++) y->data[s->i[k]] += alpha * s->data[k];
 	if (mm_real_is_symmetric (s)) {
-		int		l;
-		int		l0 = (mm_real_is_upper (s)) ? j + 1 : 0;
-		int		l1 = (mm_real_is_upper (s)) ? s->n : j;
-		for (l = l0; l < l1; l++) {
-			for (k = s->p[l]; k < s->p[l + 1]; k++) {
-				if (s->i[k] < j) continue;
-				else if (s->i[k] == j) {
-					y->data[l] += alpha * s->data[k];
-					break;
-				} else break;
-			}
+		int		k0 = (mm_real_is_upper (s)) ? j + 1 : 0;
+		int		k1 = (mm_real_is_upper (s)) ? s->n : j;
+		for (k = k0; k < k1; k++) {
+			int		l = find_jth_row_element_from_sk (j, s, k);
+			// if found
+			if (l >= 0) y->data[k] += alpha * s->data[l];
 		}
 	}
 	return;
@@ -996,17 +982,12 @@ mm_real_asjpy_atomic (const double alpha, const mm_sparse *s, const int j, mm_de
 	int		k;
 	for (k = s->p[j]; k < s->p[j + 1]; k++) atomic_add (y->data + s->i[k], alpha * s->data[k]);
 	if (mm_real_is_symmetric (s)) {
-		int		l;
-		int		l0 = (mm_real_is_upper (s)) ? j + 1 : 0;
-		int		l1 = (mm_real_is_upper (s)) ? s->n : j;
-		for (l = l0; l < l1; l++) {
-			for (k = s->p[l]; k < s->p[l + 1]; k++) {
-				if (s->i[k] < j) continue;
-				else if (s->i[k] == j) {
-					atomic_add (y->data + l, alpha * s->data[k]);
-					break;
-				} else break;
-			}
+		int		k0 = (mm_real_is_upper (s)) ? j + 1 : 0;
+		int		k1 = (mm_real_is_upper (s)) ? s->n : j;
+		for (k = k0; k < k1; k++) {
+			int		l = find_jth_row_element_from_sk (j, s, k);
+			// if found
+			if (l >= 0) atomic_add (y->data + k, alpha * s->data[l]);
 		}
 	}
 	return;
