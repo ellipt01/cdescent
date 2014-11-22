@@ -18,6 +18,8 @@ cdescent_alloc (void)
 	cdescent	*cd = (cdescent *) malloc (sizeof (cdescent));
 	if (cd == NULL) return NULL;
 
+	cd->was_modified = false;
+
 	cd->lreg = NULL;
 	cd->tolerance = 0.;
 	cd->lambda1_max = 0.;

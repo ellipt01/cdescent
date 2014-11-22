@@ -14,29 +14,6 @@
 #include "private/private.h"
 #include "private/atomic.h"
 
-/* num of error codes */
-static const int num_error_code = 6;
-
-/* error code */
-enum {
-	MM_REAL_IS_VALID		= 100,	// x is valid
-	MM_REAL_IS_NULL		= 101,	// x == NULL
-	MM_REAL_IS_EMPTY		= 102,	// x->n == 0 || x == 0 || x->nz == 0
-	MM_REAL_DATA_IS_NULL	= 103,	// x->data == NULL
-	MM_REAL_I_IS_NULL		= 104,	// x->i == NULL
-	MM_REAL_P_IS_NULL		= 105		// x->p == NULL
-};
-
-/* error message */
-static const char	*error_msg[6] = {
-	"mm_real is valid.",
-	"mm_real is not allocated.",
-	"mm_real is empty.",
-	"x->data is not allocated.",
-	"x->i is not allocated.",
-	"x->p is not allocated."
-};
-
 /* mm_real supports real symmetric/general sparse/dense matrix */
 static bool
 is_type_supported (const MM_typecode typecode)
@@ -54,29 +31,6 @@ is_type_supported (const MM_typecode typecode)
 	if (mm_is_skew (typecode) || mm_is_hermitian (typecode)) return false;
 
 	return true;
-}
-
-static int
-mm_real_is_valid (const mm_real *x)
-{
-	if (x == NULL) return MM_REAL_IS_NULL;
-	if (x->m <= 0 || x->n <= 0 || x->nz <= 0) return MM_REAL_IS_EMPTY;
-	if (x->data == NULL) return MM_REAL_DATA_IS_NULL;
-	if (mm_real_is_sparse (x)) {
-		if (x->i == NULL) return MM_REAL_I_IS_NULL;
-		if (x->p == NULL) return MM_REAL_P_IS_NULL;
-	}
-	return MM_REAL_IS_VALID;
-}
-
-/* print error message and exit */
-static void
-mm_real_error_and_exit (const char *funcname, const int error_code)
-{
-	int		id = error_code - 100;
-	if (id < 0 || num_error_code <= id) return;
-	if (id == 0) return;	// mm_real is valid
-	error_and_exit (funcname, error_msg[id], __FILE__, __LINE__);
 }
 
 /* check format */
@@ -369,7 +323,7 @@ mm_real_dense_to_sparse (const mm_dense *d, const double threshold)
 
 /* find element that s->i[l] = j in the k-th column of s and return its index l */
 static int
-find_jth_row_element_from_sk (const int j, const mm_sparse *s, const int k)
+find_jth_row_element_of_sk (const int j, const mm_sparse *s, const int k)
 {
 	int		l;
 	for (l = s->p[k]; l < s->p[k + 1]; l++) {
@@ -403,7 +357,7 @@ mm_real_symmetric_to_general_sparse (const mm_sparse *x)
 				s->data[m++] = x->data[k];
 			}
 			for (k = j + 1; k < x->n; k++) {
-				int		l = find_jth_row_element_from_sk (j, x, k);
+				int		l = find_jth_row_element_of_sk (j, x, k);
 				// if found
 				if (l >= 0) {
 					s->i[m] = k;
@@ -412,7 +366,7 @@ mm_real_symmetric_to_general_sparse (const mm_sparse *x)
 			}
 		} else if (mm_real_is_lower (x)) {
 			for (k = 0; k < j; k++) {
-				int		l = find_jth_row_element_from_sk (j, x, k);
+				int		l = find_jth_row_element_of_sk (j, x, k);
 				// if found
 				if (l >= 0) {
 					s->i[m] = k;
@@ -654,7 +608,7 @@ mm_real_sj_asum (const mm_sparse *s, const int j)
 		int		k0 = (mm_real_is_upper (s)) ? j + 1 : 0;
 		int		k1 = (mm_real_is_upper (s)) ? s->n : j;
 		for (k = k0; k < k1; k++) {
-			int		l = find_jth_row_element_from_sk (j, s, k);
+			int		l = find_jth_row_element_of_sk (j, s, k);
 			// if found
 			if (l >= 0) asum += fabs (s->data[l]);
 		}
@@ -704,7 +658,7 @@ mm_real_sj_sum (const mm_sparse *s, const int j)
 		int		k0 = (mm_real_is_upper (s)) ? j + 1 : 0;
 		int		k1 = (mm_real_is_upper (s)) ? s->n : j;
 		for (k = k0; k < k1; k++) {
-			int		l = find_jth_row_element_from_sk (j, s, k);
+			int		l = find_jth_row_element_of_sk (j, s, k);
 			// if found
 			if (l >= 0) sum += s->data[l];
 		}
@@ -756,7 +710,7 @@ mm_real_sj_ssq (const mm_sparse *s, const int j)
 		int		k0 = (mm_real_is_upper (s)) ? j + 1 : 0;
 		int		k1 = (mm_real_is_upper (s)) ? s->n : j;
 		for (k = k0; k < k1; k++) {
-			int		l = find_jth_row_element_from_sk (j, s, k);
+			int		l = find_jth_row_element_of_sk (j, s, k);
 			// if found
 			if (l >= 0) ssq += pow (s->data[l], 2.);
 		}
@@ -878,7 +832,7 @@ mm_real_sj_trans_dot_y (const mm_sparse *s, const int j, const mm_dense *y)
 		int		k0 = (mm_real_is_upper (s)) ? j + 1 : 0;
 		int		k1 = (mm_real_is_upper (s)) ? s->n : j;
 		for (k = k0; k < k1; k++) {
-			int		l = find_jth_row_element_from_sk (j, s, k);
+			int		l = find_jth_row_element_of_sk (j, s, k);
 			// if found
 			if (l >= 0) val += s->data[l] * y->data[k];
 		}
@@ -932,7 +886,7 @@ mm_real_asjpy (const double alpha, const mm_sparse *s, const int j, mm_dense *y)
 		int		k0 = (mm_real_is_upper (s)) ? j + 1 : 0;
 		int		k1 = (mm_real_is_upper (s)) ? s->n : j;
 		for (k = k0; k < k1; k++) {
-			int		l = find_jth_row_element_from_sk (j, s, k);
+			int		l = find_jth_row_element_of_sk (j, s, k);
 			// if found
 			if (l >= 0) y->data[k] += alpha * s->data[l];
 		}
@@ -985,7 +939,7 @@ mm_real_asjpy_atomic (const double alpha, const mm_sparse *s, const int j, mm_de
 		int		k0 = (mm_real_is_upper (s)) ? j + 1 : 0;
 		int		k1 = (mm_real_is_upper (s)) ? s->n : j;
 		for (k = k0; k < k1; k++) {
-			int		l = find_jth_row_element_from_sk (j, s, k);
+			int		l = find_jth_row_element_of_sk (j, s, k);
 			// if found
 			if (l >= 0) atomic_add (y->data + k, alpha * s->data[l]);
 		}
@@ -1107,7 +1061,6 @@ mm_real_fread (FILE *fp)
 		error_and_exit ("mm_real_fread", msg, __FILE__, __LINE__);
 	}
 	x = (mm_is_sparse (typecode)) ? mm_real_fread_sparse (fp, typecode) : mm_real_fread_dense (fp, typecode);
-	mm_real_error_and_exit ("mm_real_xj_axjpy_atomic", mm_real_is_valid (x));
 	if (mm_real_is_symmetric (x) && x->m != x->n) error_and_exit ("mm_real_fread", "symmetric matrix must be square.", __FILE__, __LINE__);
 	return x;
 }

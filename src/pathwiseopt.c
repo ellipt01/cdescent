@@ -22,6 +22,7 @@ static pathwiseopt *
 pathwiseopt_alloc (void)
 {
 	pathwiseopt	*path = (pathwiseopt *) malloc (sizeof (pathwiseopt));
+	path->was_modified = false;
 	path->output_fullpath = false;
 	path->output_bic_info = false;
 	path->gamma_bic = 0.;
@@ -39,7 +40,6 @@ pathwiseopt *
 pathwiseopt_new (const double log10_lambda1_lower, const double dlog10_lambda1)
 {
 	pathwiseopt	*path = pathwiseopt_alloc ();
-	path->was_modified = false;
 	strcpy (path->fn_path, default_fn_path);	// default filename
 	strcpy (path->fn_bic, default_fn_bic);	// default filename
 	path->log10_lambda1_lower = log10_lambda1_lower;

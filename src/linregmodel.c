@@ -68,9 +68,11 @@ do_centering (mm_dense *x, const double *sum)
 {
 	int		j;
 	for (j = 0; j < x->n; j++) {
-		int		i;
 		double	meanj = sum[j] / (double) x->m;
-		for (i = 0; i < x->m; i++) x->data[i + j * x->m] -= meanj;
+		if (meanj > SQRT_DBL_EPSILON) {
+			int		i;
+			for (i = 0; i < x->m; i++) x->data[i + j * x->m] -= meanj;
+		}
 	}
 	return;
 }

@@ -33,7 +33,7 @@ struct s_pathwiseopt {
 	double		min_bic_val;			// minimum BIC
 	mm_dense	*beta_opt;				// optimal beta corresponding to min_bic_val
 	double		lambda1_opt;			// optimal lambda1
-	double		nrm1_opt;				// | bic_opt |
+	double		nrm1_opt;				// | beta_opt |
 
 };
 
