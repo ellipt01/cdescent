@@ -5,7 +5,6 @@
  *      Author: utsugi
  */
 
-#include <stdio.h>
 #include <stdbool.h>
 
 #define atomic_bool_compare_and_swap(p, f, t) __sync_bool_compare_and_swap((p), (f), (t))
