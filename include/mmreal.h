@@ -50,7 +50,7 @@ typedef struct s_mm_real	mm_dense;
 typedef struct s_mm_real	mm_sparse;
 
 /*** implementation of dense / sparse matrix
- * In the case of dense matrix, nz = m * n and
+ * In the case of dense matrix, nnz = m * n and
  * i = NULL, p = NULL. ***/
 struct s_mm_real {
 	MM_typecode	typecode;	// type of matrix. see mmio.h
@@ -59,16 +59,16 @@ struct s_mm_real {
 
 	int				m;		// num of rows of matrix
 	int				n;		// num of columns
-	int				nz;		// num of nonzero matrix elements
+	int				nnz;	// num of nonzero matrix elements
 
-	int				*i;		// row index of each nonzero elements: size = nz
+	int				*i;		// row index of each nonzero elements: size = nnz
 	int				*p;		// p[0] = 0, p[j+1] = num of nonzeros in X(:,1:j): size = n + 1
-	double			*data;	// nonzero matrix elements: size = nz
+	double			*data;	// nonzero matrix elements: size = nnz
 };
 
-mm_real	*mm_real_new (MMRealFormat format, MMRealSymm symmetric, const int m, const int n, const int nz);
+mm_real	*mm_real_new (MMRealFormat format, MMRealSymm symmetric, const int m, const int n, const int nnz);
 void		mm_real_free (mm_real *mm);
-bool		mm_real_realloc (mm_real *mm, const int nz);
+bool		mm_real_realloc (mm_real *mm, const int nnz);
 
 void		mm_real_set_sparse (mm_real *x);
 void		mm_real_set_dense (mm_real *x);

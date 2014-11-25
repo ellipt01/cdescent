@@ -230,7 +230,6 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d
 
 	// c = X' * y
 	lreg->c = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, lreg->x->n, 1, lreg->x->n);
-	lreg->c->data = (double *) malloc (lreg->c->nz * sizeof (double));
 #pragma omp parallel for
 	for (j = 0; j < lreg->x->n; j++) {
 		lreg->c->data[j] = mm_real_xj_trans_dot_y (lreg->x, j, lreg->y);
@@ -238,7 +237,7 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d
 //	lreg->c = mm_real_x_dot_y (true, 1., lreg->x, lreg->y);
 
 	// camax = max ( abs (c) )
-	camax = fabs (lreg->c->data[idamax_ (&lreg->c->nz, lreg->c->data, &ione) - 1]);
+	camax = fabs (lreg->c->data[idamax_ (&lreg->c->nnz, lreg->c->data, &ione) - 1]);
 	lreg->log10camax = floor (log10 (camax)) + 1.;
 
 	return lreg;

@@ -56,7 +56,7 @@ calc_degree_of_freedom (const cdescent *cd)
 {
 	int		j;
 	double	df = 0.;
-	for (j = 0; j < cd->beta->nz; j++) {
+	for (j = 0; j < cd->beta->nnz; j++) {
 		if (fabs (cd->beta->data[j]) > 0.) {
 			if (cd->lreg->is_regtype_lasso) df += 1.;
 			else {
