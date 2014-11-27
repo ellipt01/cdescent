@@ -5,7 +5,7 @@ major=${version%.*}
 minor=${version#*.}
 
 if [ $major -lt 4 ]; then
-	echo "gnuplot version too old"
+	echo "your gnuplot version is too old."
 	exit
 fi
 
@@ -13,6 +13,8 @@ if [ -z "$1" ]; then
 	echo "USAGE: $0 <num of variables> { <lambda1> [x1:x2] [y1:y2] }"
 	exit
 fi
+
+export n=`echo $1-1 | bc`
 
 echo "set terminal postscript eps enhanced color" >| tmp.gnuplot
 echo "set output \"out.eps\"" >> tmp.gnuplot
@@ -31,7 +33,7 @@ echo -n "plot $3 $4 0 linetype 0 linewidth 2, " >> tmp.gnuplot
 
 fn="beta_path.data"
 j=3
-for i in `seq -f %03g 0 $1`; do
+for i in `seq -f %03g 0 $n`; do
 
 	echo -n "\"$fn\" using 2:$j with line linewidth 1" >> tmp.gnuplot
 
@@ -41,7 +43,7 @@ for i in `seq -f %03g 0 $1`; do
 		echo -n " linetype $j" >> tmp.gnuplot
 	fi
 
-	if [ $i -lt $1 ]; then
+	if [ $i -lt $n ]; then
 		echo -n ", " >> tmp.gnuplot
 	fi
 

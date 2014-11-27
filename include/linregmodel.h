@@ -42,6 +42,7 @@ struct s_linregmodel {
 	mm_dense	*y;		// dense general: observed data vector y (must be dense)
 	mm_real	*x;		// sparse/dense symmetric/general: matrix of predictors X
 	mm_real	*d;		// sparse/dense symmetric/general: linear operator of penalty D
+	mm_dense	*w;		// dense general: weight for L1 penalty (penalty factor)
 
 	double		lambda2;	// weight for penalty term
 
@@ -70,7 +71,7 @@ struct s_linregmodel {
 };
 
 /* linregmodel.c */
-linregmodel	*linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d, PreProc proc);
+linregmodel	*linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d, const mm_real *w, PreProc proc);
 void			linregmodel_free (linregmodel *l);
 
 #ifdef __cplusplus

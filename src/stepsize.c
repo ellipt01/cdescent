@@ -63,6 +63,7 @@ cdescent_beta_stepsize (const cdescent *cd, const int j)
 	double	scale2 = cdescent_scale2 (cd, j);
 	double	z = cdescent_gradient (cd, j) / scale2;
 	double	gamma = cd->lambda1 / scale2;
+	if (cd->lreg->w) gamma *= cd->lreg->w->data[j];
 	/* eta = S(z / scale2 + beta, lambda1 / scale2) - beta */
 	return soft_threshold (z + cd->beta->data[j], gamma) - cd->beta->data[j];
 }

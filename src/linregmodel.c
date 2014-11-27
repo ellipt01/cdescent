@@ -103,6 +103,8 @@ linregmodel_alloc (void)
 	lreg->y = NULL;
 	lreg->x = NULL;
 	lreg->d = NULL;
+	lreg->w = NULL;
+
 	lreg->lambda2 = 0.;
 	lreg->is_regtype_lasso = true;
 
@@ -133,7 +135,7 @@ linregmodel_alloc (void)
  *                       DO_NORMALIZING_X: do normalizing of each column of x
  *                       DO_STANDARDIZING_X: do centering and normalizing of each column of x ***/
 linregmodel *
-linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d, PreProc proc)
+linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d, const mm_real *w, PreProc proc)
 {
 	int				j;
 	double			camax;
@@ -146,18 +148,34 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d
 	/* check whether lambda2 >= 0. */
 	if (lambda2 < 0.) error_and_exit ("linregmodel_new", "lambda2 must be >= 0.", __FILE__, __LINE__);
 
-	/* check whether y is dense asymmetric vector */
+	/* check whether y is dense general */
 	if (!mm_real_is_dense (y)) error_and_exit ("linregmodel_new", "y must be dense.", __FILE__, __LINE__);
 	if (mm_real_is_symmetric (y)) error_and_exit ("linregmodel_new", "y must be general.", __FILE__, __LINE__);
+	/* check whether y is vector */
 	if (y->n != 1) error_and_exit ("linregmodel_new", "y must be vector.", __FILE__, __LINE__);
 
-	/* if x or d is symmetric, check whether it is square */
-	if (mm_real_is_symmetric (x) && x->m != x->n) error_and_exit ("linregmodel_new", "symmetric matrix must be square.", __FILE__, __LINE__);
-	if (d && mm_real_is_symmetric (d) && d->m != d->n) error_and_exit ("linregmodel_new", "symmetric matrix must be square.", __FILE__, __LINE__);
+	/* if x is symmetric, check whether it is square */
+	if (mm_real_is_symmetric (x) && x->m != x->n) error_and_exit ("linregmodel_new", "x: symmetric matrix must be square.", __FILE__, __LINE__);
 
-	/* check dimensions of vector and matrix */
-	if (y->m != x->m) error_and_exit ("linregmodel_new", "dimensions of matrix x and vector y do not match.", __FILE__, __LINE__);
-	if (d && x->n != d->n) error_and_exit ("linregmodel_new", "dimensions of matrix x and d do not match.", __FILE__, __LINE__);
+	/* check dimensions of x and y */
+	if (y->m != x->m) error_and_exit ("linregmodel_new", "dimensions of x and y do not match.", __FILE__, __LINE__);
+
+	if (d) {
+		/* if d is symmetric, check whether it is square */
+		if (mm_real_is_symmetric (d) && d->m != d->n) error_and_exit ("linregmodel_new", "d: symmetric matrix must be square.", __FILE__, __LINE__);
+		/* check dimensions of vector and matrix */
+		if (x->n != d->n) error_and_exit ("linregmodel_new", "dimensions of x and d do not match.", __FILE__, __LINE__);
+	}
+
+	if (w) {
+		/* check whether w is dense general */
+		if (!mm_real_is_dense (w)) error_and_exit ("linregmodel_new", "w must be dense.", __FILE__, __LINE__);
+		if (mm_real_is_symmetric (w)) error_and_exit ("linregmodel_new", "w must be general.", __FILE__, __LINE__);
+		/* check whether w is vector */
+		if (w->n != 1) error_and_exit ("linregmodel_new", "w must be vector.", __FILE__, __LINE__);
+		/* check dimensions of x and w */
+		if (w->m != x->n) error_and_exit ("linregmodel_new", "dimensions of x and w do not match.", __FILE__, __LINE__);
+	}
 
 	lreg = linregmodel_alloc ();
 	if (lreg == NULL) error_and_exit ("linregmodel_new", "failed to allocate object.", __FILE__, __LINE__);
@@ -215,11 +233,11 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d
 		lreg->xnormalized = true;
 	}
 
+	/* copy d */
 	if (d) lreg->d = mm_real_copy (d);
-	/* if lambda2 > 0 && d != NULL,
-	 * regression type is NOT lasso: is_regtype_lasso = false */
+	/* if lambda2 > 0 && d != NULL, regression type is NOT lasso */
 	if (lreg->lambda2 > 0. && lreg->d) lreg->is_regtype_lasso = false;
-	/* dtd = diag (D' * D) */
+	/* dtd = diag(D'*D) */
 	if (!lreg->is_regtype_lasso) {
 		lreg->dtd = (double *) malloc (lreg->d->n * sizeof (double));
 #pragma omp parallel for
@@ -228,13 +246,15 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d
 		}
 	}
 
+	/* copy w */
+	if (w) lreg->w = mm_real_copy (w);
+
 	// c = X' * y
 	lreg->c = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, lreg->x->n, 1, lreg->x->n);
 #pragma omp parallel for
 	for (j = 0; j < lreg->x->n; j++) {
 		lreg->c->data[j] = mm_real_xj_trans_dot_y (lreg->x, j, lreg->y);
 	}
-//	lreg->c = mm_real_x_dot_y (true, 1., lreg->x, lreg->y);
 
 	// camax = max ( abs (c) )
 	camax = fabs (lreg->c->data[idamax_ (&lreg->c->nnz, lreg->c->data, &ione) - 1]);
@@ -251,6 +271,7 @@ linregmodel_free (linregmodel *lreg)
 		if (lreg->y && lreg->has_copy_y) mm_real_free (lreg->y);
 		if (lreg->x && lreg->has_copy_x) mm_real_free (lreg->x);
 		if (lreg->d) mm_real_free (lreg->d);
+		if (lreg->w) mm_real_free (lreg->w);
 		if (lreg->sy) free (lreg->sy);
 		if (lreg->sx) free (lreg->sx);
 		if (lreg->xtx) free (lreg->xtx);

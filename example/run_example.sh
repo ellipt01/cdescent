@@ -34,9 +34,9 @@
 # example for diabetes.data
 # lambda2 = 0 (lasso), lambda1 = [0.01 : 10^0.1 : lambda1_max],
 # where lambda1_max = 10^(cd->lreg->logcamax) 
-./l1reg_example -x ../share/diabetes_x.data -y ../share/diabetes_y.data -l 0 -t -2:0.1 -m 100000
+./l1reg_example -x ../share/diabetes_x.data -y ../share/diabetes_y.data -l 0 -t -4:0.1 -m 100000
 
 # display resultant solution path
 # USAGE: plot_path <dim of beta> <lambda2>
-./plot_path 9 0
+./plot_path 10 0
 

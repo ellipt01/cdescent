@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <unistd.h>
 
 #include <cdescent.h>
@@ -113,10 +114,14 @@ create_linregmodel (void)
 {
 	mm_dense	*x;
 	mm_dense	*y;
-	mm_real	*d;
+	mm_real	*d = NULL;	// lasso
+	mm_dense	*w = NULL;	// no weight
 	FILE		*fp;
 
 	linregmodel	*lreg;
+
+	//	d = mm_real_eye (MM_REAL_SPARSE, x->n);	// elastic net
+	//	d = penalty_smooth (MM_REAL_SPARSE, x->n);	// s-lasso
 
 	if ((fp = fopen (infn_y, "r")) == NULL) {
 		fprintf (stderr, "ERROR: cannot open file %s.\n", infn_y);
@@ -132,16 +137,13 @@ create_linregmodel (void)
 	x = mm_real_fread (fp);
 	fclose (fp);
 
-	// general penalty term
-	//	d = NULL;	// lasso
-	d = mm_real_eye (MM_REAL_SPARSE, x->n);	// elastic net
-	//	d = penalty_smooth (MM_REAL_SPARSE, x->n);	// s-lasso
 
-	lreg = linregmodel_new (y, x, lambda2, d, DO_CENTERING_Y | DO_STANDARDIZING_X);
+	lreg = linregmodel_new (y, x, lambda2, d, w, DO_CENTERING_Y | DO_STANDARDIZING_X);
 
 	mm_real_free (y);
 	mm_real_free (x);
 	if (d) mm_real_free (d);
+	mm_real_free (w);
 
 	return lreg;
 }
