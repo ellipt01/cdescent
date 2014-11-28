@@ -134,7 +134,7 @@ create_linregmodel (void)
 	x = mm_real_fread (fp);
 	fclose (fp);
 
-	//	d = mm_real_eye (MM_REAL_SPARSE, x->n);		// elastic net
+	d = mm_real_eye (MM_REAL_SPARSE, x->n);		// elastic net
 	//	d = penalty_smooth (MM_REAL_SPARSE, x->n);	// s-lasso
 
 	lreg = linregmodel_new (y, x, lambda2, d, w, DO_CENTERING_Y | DO_STANDARDIZING_X);
