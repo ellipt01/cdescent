@@ -69,10 +69,7 @@ do_centering (mm_dense *x, const double *sum)
 	int		j;
 	for (j = 0; j < x->n; j++) {
 		double	meanj = sum[j] / (double) x->m;
-		if (meanj > SQRT_DBL_EPSILON) {
-			int		i;
-			for (i = 0; i < x->m; i++) x->data[i + j * x->m] -= meanj;
-		}
+		if (meanj > SQRT_DBL_EPSILON) mm_real_xj_add_const (x, j, - meanj);
 	}
 	return;
 }
@@ -129,6 +126,7 @@ linregmodel_alloc (void)
  * mm_sparse         *x: sparse general / symmetric matrix
  * const double lambda2: regularization parameter
  * const mm_real     *d: general linear operator of penalty
+ * const mm_real     *w: L1 penalty factor
  * PreProc         proc: specify pre-processing for y and x
  *                       DO_CENTERING_Y: do centering of y
  *                       DO_CENTERING_X: do centering of each column of x
@@ -178,7 +176,7 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d
 	}
 
 	lreg = linregmodel_alloc ();
-	if (lreg == NULL) error_and_exit ("linregmodel_new", "failed to allocate object.", __FILE__, __LINE__);
+	if (lreg == NULL) error_and_exit ("linregmodel_new", "failed to allocate memory for linregmodel object.", __FILE__, __LINE__);
 
 	/* lambda2 */
 	if (lambda2 > 0.) lreg->lambda2 = lambda2;
