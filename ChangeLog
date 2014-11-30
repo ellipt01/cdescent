@@ -1,7 +1,10 @@
-2014-11-11 Mitsuru Utsugi <utsugi@mountain.ocn.ne.jp>
+2014-11-30 Mitsuru Utsugi <utsugi@mountain.ocn.ne.jp>
+ * release 0.4.3
  * add error handling routine for mm_real object
+ * modify mm_real_new
  * fix bug of mm_real_x_dot_y
  * add mm_real_xj_ssq routine
+ * add L1 penalty factor support (for adaptive lasso / elastic net)
 
 2014-11-08 Mitsuru Utsugi <utsugi@mountain.ocn.ne.jp>
  * release 0.4.2

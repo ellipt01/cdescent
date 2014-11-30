@@ -26,9 +26,9 @@ typedef enum {
 	DO_STANDARDIZING_X = DO_CENTERING_X | DO_NORMALIZING_X
 } PreProc;
 
-/*** Object of L1 regularized linear regression problem
+/*** Object of convex/nonconvex regularized linear regression problem
  *
- *   argmin_beta || b - Z * beta ||^2 + lambda_1 sum |beta|
+ *   argmin_beta || b - Z * beta ||^2
  *
  *   where
  *   	b = [y; 0]
@@ -42,12 +42,8 @@ struct s_linregmodel {
 	mm_dense	*y;		// dense general: observed data vector y (must be dense)
 	mm_real	*x;		// sparse/dense symmetric/general: matrix of predictors X
 	mm_real	*d;		// sparse/dense symmetric/general: linear operator of penalty D
-	mm_dense	*w;		// dense general: weight for L1 penalty (penalty factor)
 
 	double		lambda2;	// weight for penalty term
-
-	/* whether regression type is Lasso */
-	bool		is_regtype_lasso;	// = (d == NULL || lambda2 == 0)
 
 	mm_dense	*c;				// = x' * y: correlation (constant) vector
 	double		log10camax;	// log10 ( amax(c) )
@@ -71,7 +67,7 @@ struct s_linregmodel {
 };
 
 /* linregmodel.c */
-linregmodel	*linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d, const mm_real *w, PreProc proc);
+linregmodel	*linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d, PreProc proc);
 void			linregmodel_free (linregmodel *l);
 
 #ifdef __cplusplus

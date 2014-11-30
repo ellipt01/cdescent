@@ -41,7 +41,7 @@ cdescent_gradient (const cdescent *cd, const int j)
 	if (!cd->lreg->xcentered && fabs (cd->b) > 0.) z -= cd->lreg->sx[j] * cd->b;
 
 	// not lasso, z -= lambda2 * D(:,j)' * nu (nu = D * beta)
-	if (!cd->lreg->is_regtype_lasso)
+	if (!cd->is_regtype_lasso)
 		z -= cd->lreg->lambda2 * mm_real_xj_trans_dot_y (cd->lreg->d, j, cd->nu);
 
 	return z;
@@ -52,7 +52,7 @@ static double
 cdescent_scale2 (const cdescent *cd, const int j)
 {
 	double	scale2 = (cd->lreg->xnormalized) ? 1. : cd->lreg->xtx[j];
-	if (!cd->lreg->is_regtype_lasso) scale2 += cd->lreg->lambda2 * cd->lreg->dtd[j];
+	if (!cd->is_regtype_lasso) scale2 += cd->lreg->lambda2 * cd->lreg->dtd[j];
 	return scale2;
 }
 
@@ -63,7 +63,7 @@ cdescent_beta_stepsize (const cdescent *cd, const int j)
 	double	scale2 = cdescent_scale2 (cd, j);
 	double	z = cdescent_gradient (cd, j) / scale2;
 	double	gamma = cd->lambda1 / scale2;
-	if (cd->lreg->w) gamma *= cd->lreg->w->data[j];
+	if (cd->w) gamma *= cd->w->data[j];
 	/* eta = S(z / scale2 + beta, lambda1 / scale2) - beta */
 	return soft_threshold (z + cd->beta->data[j], gamma) - cd->beta->data[j];
 }

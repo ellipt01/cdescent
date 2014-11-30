@@ -54,7 +54,7 @@ cdescent_update (cdescent *cd, int j, bool atomic, double *amax_eta)
 		// update mu (= X * beta): mu += etaj * X(:,j)
 		axjpy (atomic, etaj, cd->lreg->x, j, cd->mu);
 		// update nu (= D * beta) if lambda2 != 0 && cd->nu != NULL: nu += etaj * D(:,j)
-		if (!cd->lreg->is_regtype_lasso) axjpy (atomic, etaj, cd->lreg->d, j, cd->nu);
+		if (!cd->is_regtype_lasso) axjpy (atomic, etaj, cd->lreg->d, j, cd->nu);
 		// update max( |eta| )
 		update_amax (atomic, amax_eta, abs_etaj);
 	}
@@ -178,7 +178,7 @@ cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 	if (cd->was_modified) {
 		mm_real_set_all (cd->beta, 0.);
 		mm_real_set_all (cd->mu, 0.);
-		if (!cd->lreg->is_regtype_lasso) mm_real_set_all (cd->nu, 0.);
+		if (!cd->is_regtype_lasso) mm_real_set_all (cd->nu, 0.);
 		cd->was_modified = false;
 	}
 	// initialize pathwiseopt if need

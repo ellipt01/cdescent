@@ -16,12 +16,19 @@ extern "C" {
 #include <bic.h>
 #include "pathwiseopt.h"
 
-/*** object of coordinate descent regression ***/
+/*** object of coordinate descent regression
+ *   for L1 regularized linear regression problem
+ *   argmin_beta || b - Z * beta ||^2 + lambda1 * | beta |
+ *   or
+ *   argmin_beta || b - Z * beta ||^2 + lambda1 * w * | beta | ***/
 typedef struct s_cdescent	cdescent;
 
 struct s_cdescent {
 
 	bool				was_modified;	// whether this object was modified after created
+
+	/* whether regression type is Lasso */
+	bool				is_regtype_lasso;	// = (d == NULL || lambda2 == 0)
 
 	const linregmodel	*lreg;			// linear regression model
 
@@ -29,6 +36,7 @@ struct s_cdescent {
 
 	double				lambda1;		// regularization parameter of L1 penalty
 	double				lambda1_max;	// maximum value of lambda1
+	mm_dense			*w;				// dense general: weight for L1 penalty (penalty factor)
 
 	double				nrm1;			// L1 norm of beta (= sum_j |beta_j|)
 	double				b;				// intercept
@@ -43,7 +51,7 @@ struct s_cdescent {
 };
 
 /* cdescent.c */
-cdescent	*cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool parallel);
+cdescent	*cdescent_new (const linregmodel *lreg, const mm_real *w, const double tol, const int maxiter, bool parallel);
 void		cdescent_free (cdescent *cd);
 bool		cdescent_set_lambda1 (cdescent *cd, const double lambda1);
 bool		cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1);

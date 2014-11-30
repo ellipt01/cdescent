@@ -20,10 +20,13 @@ cdescent_alloc (void)
 
 	cd->was_modified = false;
 
+	cd->is_regtype_lasso = true;
+
 	cd->lreg = NULL;
 	cd->tolerance = 0.;
 	cd->lambda1_max = 0.;
 	cd->lambda1 = 0.;
+	cd->w = NULL;
 
 	cd->nrm1 = 0.;
 	cd->b = 0.;
@@ -39,9 +42,19 @@ cdescent_alloc (void)
 
 /*** create new cdescent object ***/
 cdescent *
-cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool parallel)
+cdescent_new (const linregmodel *lreg, const mm_dense *w, const double tol, const int maxiter, bool parallel)
 {
 	cdescent	*cd;
+
+	if (w) {
+		/* check whether w is dense general */
+		if (!mm_real_is_dense (w)) error_and_exit ("cdescent_new", "w must be dense.", __FILE__, __LINE__);
+		if (mm_real_is_symmetric (w)) error_and_exit ("cdescent_new", "w must be general.", __FILE__, __LINE__);
+		/* check whether w is vector */
+		if (w->n != 1) error_and_exit ("cdescent_new", "w must be vector.", __FILE__, __LINE__);
+		/* check dimensions of x and w */
+		if (w->m != lreg->x->n) error_and_exit ("cdescent_new", "dimensions of x and w do not match.", __FILE__, __LINE__);
+	}
 
 	if (!lreg) error_and_exit ("cdescent_new", "linregmodel *lreg is empty.", __FILE__, __LINE__);
 
@@ -52,10 +65,15 @@ cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool
 
 	cd->lreg = lreg;
 
+	/* if lreg->lambda2 == 0 || lreg->d == NULL, regression type is Lasso */
+	cd->is_regtype_lasso =  (cd->lreg->lambda2 < DBL_EPSILON || cd->lreg->d == NULL);
+
 	cd->tolerance = tol;
 
 	cd->lambda1_max = pow (10., lreg->log10camax);
 	cd->lambda1 = cd->lambda1_max;
+	/* copy w */
+	if (w) cd->w = mm_real_copy (w);
 
 	if (!lreg->ycentered) cd->b = *(lreg->sy) / (double) lreg->y->m;
 
@@ -67,7 +85,7 @@ cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool
 	mm_real_set_all (cd->mu, 0.);	// in initial, set to 0
 
 	// nu = D * beta
-	if (!cd->lreg->is_regtype_lasso) {
+	if (!cd->is_regtype_lasso) {
 		cd->nu = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, lreg->d->m, 1, lreg->d->m);
 		mm_real_set_all (cd->nu, 0.);	// in initial, set to 0
 	}
@@ -83,6 +101,7 @@ void
 cdescent_free (cdescent *cd)
 {
 	if (cd) {
+		if (cd->w) mm_real_free (cd->w);
 		if (cd->beta) mm_real_free (cd->beta);
 		if (cd->mu) mm_real_free (cd->mu);
 		if (cd->nu) mm_real_free (cd->nu);

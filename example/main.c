@@ -115,7 +115,6 @@ create_linregmodel (void)
 	mm_dense	*x;
 	mm_dense	*y;
 	mm_real	*d = NULL;	// lasso
-	mm_dense	*w = NULL;	// no weight
 	FILE		*fp;
 
 	linregmodel	*lreg;
@@ -137,12 +136,11 @@ create_linregmodel (void)
 	d = mm_real_eye (MM_REAL_SPARSE, x->n);		// elastic net
 	//	d = penalty_smooth (MM_REAL_SPARSE, x->n);	// s-lasso
 
-	lreg = linregmodel_new (y, x, lambda2, d, w, DO_CENTERING_Y | DO_STANDARDIZING_X);
+	lreg = linregmodel_new (y, x, lambda2, d, DO_CENTERING_Y | DO_STANDARDIZING_X);
 
 	mm_real_free (y);
 	mm_real_free (x);
 	if (d) mm_real_free (d);
-	if (w) mm_real_free (w);
 
 	return lreg;
 }
@@ -151,6 +149,7 @@ int
 main (int argc, char **argv)
 {
 	linregmodel	*lreg;
+	mm_dense		*w = NULL;	// no weight
 	cdescent		*cd;
 	pathwiseopt	*path;
 
@@ -160,7 +159,7 @@ main (int argc, char **argv)
 	lreg = create_linregmodel ();
 
 	/* create cyclic coordinate descent object */
-	cd = cdescent_new (lreg, tolerance, maxiter, false);
+	cd = cdescent_new (lreg, w, tolerance, maxiter, false);
 
 	/* create pathwise cyclic coordinate descent optimization object */
 	path = pathwiseopt_new (log10_lambda1, dlog10_lambda1);
@@ -172,6 +171,7 @@ main (int argc, char **argv)
 
 	fprintf (stderr, "lambda1_opt = %.2f, nrm1(beta_opt) = %.2f, min_bic = %.2f\n", path->lambda1_opt, path->nrm1_opt, path->min_bic_val);
 
+	if (w) mm_real_free (w);
 	pathwiseopt_free (path);
 	cdescent_free (cd);
 	linregmodel_free (lreg);
