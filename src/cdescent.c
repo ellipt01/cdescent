@@ -100,6 +100,7 @@ cdescent_free (cdescent *cd)
 	return;
 }
 
+/*** set penalty factor of adaptive L1 regression ***/
 bool
 cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w)
 {
@@ -111,7 +112,7 @@ cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w)
 	/* check whether w is vector */
 	if (w->n != 1) error_and_exit ("cdescent_set_penalty_factor", "w must be vector.", __FILE__, __LINE__);
 	/* check dimensions of x and w */
-	if (w->m != cd->lreg->x->n) error_and_exit ("cdescent_set_penalty_factor", "dimensions of w and lreg->x do not match.", __FILE__, __LINE__);
+	if (w->m != cd->lreg->x->n) error_and_exit ("cdescent_set_penalty_factor", "dimensions of w and cd->lreg->x do not match.", __FILE__, __LINE__);
 
 	/* copy w */
 	cd->w = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, w->m, 1, w->nnz);
