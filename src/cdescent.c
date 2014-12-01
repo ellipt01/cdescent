@@ -23,10 +23,12 @@ cdescent_alloc (void)
 	cd->is_regtype_lasso = true;
 
 	cd->lreg = NULL;
-	cd->tolerance = 0.;
+
 	cd->lambda1_max = 0.;
 	cd->lambda1 = 0.;
 	cd->w = NULL;
+
+	cd->tolerance = 0.;
 
 	cd->nrm1 = 0.;
 	cd->b = 0.;
@@ -46,6 +48,8 @@ cdescent_new (const linregmodel *lreg, const mm_dense *w, const double tol, cons
 {
 	cdescent	*cd;
 
+	if (!lreg) error_and_exit ("cdescent_new", "linregmodel *lreg is empty.", __FILE__, __LINE__);
+
 	if (w) {
 		/* check whether w is dense general */
 		if (!mm_real_is_dense (w)) error_and_exit ("cdescent_new", "w must be dense.", __FILE__, __LINE__);
@@ -53,10 +57,8 @@ cdescent_new (const linregmodel *lreg, const mm_dense *w, const double tol, cons
 		/* check whether w is vector */
 		if (w->n != 1) error_and_exit ("cdescent_new", "w must be vector.", __FILE__, __LINE__);
 		/* check dimensions of x and w */
-		if (w->m != lreg->x->n) error_and_exit ("cdescent_new", "dimensions of x and w do not match.", __FILE__, __LINE__);
+		if (w->m != lreg->x->n) error_and_exit ("cdescent_new", "dimensions of w and lreg->x do not match.", __FILE__, __LINE__);
 	}
-
-	if (!lreg) error_and_exit ("cdescent_new", "linregmodel *lreg is empty.", __FILE__, __LINE__);
 
 	cd = cdescent_alloc ();
 	if (cd == NULL) error_and_exit ("cdescent_new", "failed to allocate object.", __FILE__, __LINE__);
