@@ -106,6 +106,8 @@ cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w)
 {
 	int		j;
 	if (w == NULL) return false;
+
+	if (cd == NULL) error_and_exit ("cdescent_set_penalty_factor", "cdescent *cd is empty.", __FILE__, __LINE__);
 	/* check whether w is dense general */
 	if (!mm_real_is_dense (w)) error_and_exit ("cdescent_set_penalty_factor", "w must be dense.", __FILE__, __LINE__);
 	if (mm_real_is_symmetric (w)) error_and_exit ("cdescent_set_penalty_factor", "w must be general.", __FILE__, __LINE__);

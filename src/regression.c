@@ -51,9 +51,9 @@ cdescent_update (cdescent *cd, int j, bool atomic, double *amax_eta)
 	if (abs_etaj > 0.) {
 		// update beta: beta(j) += eta(j)
 		cd->beta->data[j] += etaj;
-		// update mu (= X * beta): mu += etaj * X(:,j)
+		// update mu (= X * beta): mu += eta(j) * X(:,j)
 		axjpy (atomic, etaj, cd->lreg->x, j, cd->mu);
-		// update nu (= D * beta) if lambda2 != 0 && cd->nu != NULL: nu += etaj * D(:,j)
+		// update nu (= D * beta) if lambda2 != 0 && cd->nu != NULL: nu += eta(j) * D(:,j)
 		if (!cd->is_regtype_lasso) axjpy (atomic, etaj, cd->lreg->d, j, cd->nu);
 		// update max( |eta| )
 		update_amax (atomic, amax_eta, abs_etaj);
@@ -76,16 +76,12 @@ cdescent_cyclic_update_once_cycle (cdescent *cd)
 	amax_eta = 0.;
 
 	/*** single "one-at-a-time" update of cyclic coordinate descent ***/
-#ifdef _OPENMP
 	if (cd->parallel) {
 #pragma omp parallel for
 		for (j = 0; j < cd->lreg->x->n; j++) cdescent_update (cd, j, true, &amax_eta);
 	} else {
 		for (j = 0; j < cd->lreg->x->n; j++) cdescent_update (cd, j, false, &amax_eta);
 	}
-#else
-	for (j = 0; j < cd->lreg->x->n; j++) cdescent_update (cd, j, false, &amax_eta);
-#endif
 
 	cd->nrm1 = mm_real_xj_asum (cd->beta, 0);
 
