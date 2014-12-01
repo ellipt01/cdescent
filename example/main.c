@@ -159,7 +159,7 @@ main (int argc, char **argv)
 	lreg = create_linregmodel ();
 
 	/* create cyclic coordinate descent object */
-	cd = cdescent_new (lreg, w, tolerance, maxiter, false);
+	cd = cdescent_new (lreg, tolerance, maxiter, false);
 
 	/* create pathwise cyclic coordinate descent optimization object */
 	path = pathwiseopt_new (log10_lambda1, dlog10_lambda1);

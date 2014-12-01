@@ -44,21 +44,11 @@ cdescent_alloc (void)
 
 /*** create new cdescent object ***/
 cdescent *
-cdescent_new (const linregmodel *lreg, const mm_dense *w, const double tol, const int maxiter, bool parallel)
+cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool parallel)
 {
 	cdescent	*cd;
 
 	if (!lreg) error_and_exit ("cdescent_new", "linregmodel *lreg is empty.", __FILE__, __LINE__);
-
-	if (w) {
-		/* check whether w is dense general */
-		if (!mm_real_is_dense (w)) error_and_exit ("cdescent_new", "w must be dense.", __FILE__, __LINE__);
-		if (mm_real_is_symmetric (w)) error_and_exit ("cdescent_new", "w must be general.", __FILE__, __LINE__);
-		/* check whether w is vector */
-		if (w->n != 1) error_and_exit ("cdescent_new", "w must be vector.", __FILE__, __LINE__);
-		/* check dimensions of x and w */
-		if (w->m != lreg->x->n) error_and_exit ("cdescent_new", "dimensions of w and lreg->x do not match.", __FILE__, __LINE__);
-	}
 
 	cd = cdescent_alloc ();
 	if (cd == NULL) error_and_exit ("cdescent_new", "failed to allocate object.", __FILE__, __LINE__);
@@ -74,8 +64,6 @@ cdescent_new (const linregmodel *lreg, const mm_dense *w, const double tol, cons
 
 	cd->lambda1_max = pow (10., lreg->log10camax);
 	cd->lambda1 = cd->lambda1_max;
-	/* copy w */
-	if (w) cd->w = mm_real_copy (w);
 
 	if (!lreg->ycentered) cd->b = *(lreg->sy) / (double) lreg->y->m;
 
@@ -110,6 +98,25 @@ cdescent_free (cdescent *cd)
 		free (cd);
 	}
 	return;
+}
+
+bool
+cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w)
+{
+	int		j;
+	if (w == NULL) return false;
+	/* check whether w is dense general */
+	if (!mm_real_is_dense (w)) error_and_exit ("cdescent_set_penalty_factor", "w must be dense.", __FILE__, __LINE__);
+	if (mm_real_is_symmetric (w)) error_and_exit ("cdescent_set_penalty_factor", "w must be general.", __FILE__, __LINE__);
+	/* check whether w is vector */
+	if (w->n != 1) error_and_exit ("cdescent_set_penalty_factor", "w must be vector.", __FILE__, __LINE__);
+	/* check dimensions of x and w */
+	if (w->m != cd->lreg->x->n) error_and_exit ("cdescent_set_penalty_factor", "dimensions of w and lreg->x do not match.", __FILE__, __LINE__);
+
+	/* copy w */
+	cd->w = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, w->m, 1, w->nnz);
+	for (j = 0; j < w->nnz; j++) cd->w->data[j] = fabs (w->data[j]);
+	return (cd->w != NULL);
 }
 
 /*** set cd->lambda1
