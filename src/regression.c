@@ -12,13 +12,6 @@
 #include "private/private.h"
 #include "private/atomic.h"
 
-/* y += alpha * x(:,j) */
-static void
-axjpy (bool atomic, const double alpha, const mm_real *x, const int j, mm_dense *y)
-{
-	return (atomic) ? mm_real_axjpy_atomic (alpha, x, j, y) : mm_real_axjpy (alpha, x, j, y);
-}
-
 /* update intercept: (sum (y) - sum(X) * beta) / n */
 static void
 update_intercept (cdescent *cd)
@@ -32,32 +25,43 @@ update_intercept (cdescent *cd)
 	return;
 }
 
-/* update abs max: *amax = max (*amax, absval) */
+/* update beta, mu, nu and amax_eta */
 static void
-update_amax (bool atomic, double *amax, double absval)
-{
-	if (atomic) atomic_max (amax, absval);
-	else if (*amax < absval) *amax = absval;
-	return;
-}
-
-static void
-cdescent_update (cdescent *cd, int j, bool atomic, double *amax_eta)
+cdescent_update (cdescent *cd, int j, double *amax_eta)
 {
 	// eta(j) = beta_new(j) - beta_prev(j)
 	double	etaj = cdescent_beta_stepsize (cd, j);
 	double	abs_etaj = fabs (etaj);
 
-	if (abs_etaj > 0.) {
+	if (abs_etaj < DBL_EPSILON) return;
 		// update beta: beta(j) += eta(j)
 		cd->beta->data[j] += etaj;
 		// update mu (= X * beta): mu += eta(j) * X(:,j)
-		axjpy (atomic, etaj, cd->lreg->x, j, cd->mu);
+		mm_real_axjpy (etaj, cd->lreg->x, j, cd->mu);
 		// update nu (= D * beta) if lambda2 != 0 && cd->nu != NULL: nu += eta(j) * D(:,j)
-		if (!cd->is_regtype_lasso) axjpy (atomic, etaj, cd->lreg->d, j, cd->nu);
+		if (!cd->is_regtype_lasso) mm_real_axjpy (etaj, cd->lreg->d, j, cd->nu);
 		// update max( |eta| )
-		update_amax (atomic, amax_eta, abs_etaj);
-	}
+		if (*amax_eta < abs_etaj) *amax_eta = abs_etaj;
+	return;
+}
+
+/* update beta, mu, nu and amax_eta in atomic */
+static void
+cdescent_update_atomic (cdescent *cd, int j, double *amax_eta)
+{
+	// eta(j) = beta_new(j) - beta_prev(j)
+	double	etaj = cdescent_beta_stepsize (cd, j);
+	double	abs_etaj = fabs (etaj);
+
+	if (abs_etaj < DBL_EPSILON) return;
+		// update beta: beta(j) += etaj
+		cd->beta->data[j] += etaj;
+		// update mu (= X * beta): mu += etaj * X(:,j)
+		mm_real_axjpy_atomic (etaj, cd->lreg->x, j, cd->mu);
+		// update nu (= D * beta) if lambda2 != 0 && cd->nu != NULL: nu += etaj * D(:,j)
+		if (!cd->is_regtype_lasso) mm_real_axjpy_atomic (etaj, cd->lreg->d, j, cd->nu);
+		// update max( |etaj| )
+		atomic_max (amax_eta, abs_etaj);
 	return;
 }
 
@@ -78,9 +82,9 @@ cdescent_cyclic_update_once_cycle (cdescent *cd)
 	/*** single "one-at-a-time" update of cyclic coordinate descent ***/
 	if (cd->parallel) {
 #pragma omp parallel for
-		for (j = 0; j < cd->lreg->x->n; j++) cdescent_update (cd, j, true, &amax_eta);
+		for (j = 0; j < cd->lreg->x->n; j++) cdescent_update_atomic (cd, j, &amax_eta);
 	} else {
-		for (j = 0; j < cd->lreg->x->n; j++) cdescent_update (cd, j, false, &amax_eta);
+		for (j = 0; j < cd->lreg->x->n; j++) cdescent_update (cd, j, &amax_eta);
 	}
 
 	cd->nrm1 = mm_real_xj_asum (cd->beta, 0);
