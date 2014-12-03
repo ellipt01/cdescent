@@ -1,13 +1,13 @@
 #!/bin/sh
 
-# sample script of l1reg_example
+# sample script of elasticnet
 #
-# a demonstration of pathwise and cyclic coordinate descent regression of l1 regularized problem.
+# a demonstration of pathwise cyclic coordinate descent regression of l1 regularized problem.
 #
 # USAGE:
-# l1reg_example -x <input file of matrix X> -y <input file of vector y> -l <lambda2> 
+# elasticnet -x <input file of matrix X> -y <input file of vector y> -l <lambda2> 
 # [optional] { -t <log10_lambda1_min>:<d_log10_lambda1>
-#              -g <gamma of EBIC in [0, 1]> -m <maxiter> }
+#              -g <gamma of EBIC in [0, 1]> -m <maxiters> }
 #
 # -x <input file>    : specify MatrixMarket format file of matrix X
 #
@@ -28,13 +28,13 @@
 # -g <gamma>         : tunning parameter of extended BIC, in [0, 1] (see Chen and Chen, 2008).
 #                      (default is 0)
 #
-# -m <maxiter>       : max num of iterations
+# -m <maxiters>      : max num of iterations
 #                      (default is 100000)
 
 # example for diabetes.data
 # lambda2 = 0 (lasso), lambda1 = [0.01 : 10^0.1 : lambda1_max],
 # where lambda1_max = 10^(cd->lreg->logcamax) 
-./l1reg_example -x ../share/diabetes_x.data -y ../share/diabetes_y.data -l 0 -t -4:0.1 -m 100000
+./elasticnet -x ../share/diabetes_x.data -y ../share/diabetes_y.data -l 0 -t -4:0.1 -m 100000
 
 # display resultant solution path
 # USAGE: plot_path <dim of beta> <lambda2>

@@ -52,7 +52,7 @@ struct s_cdescent {
 /* cdescent.c */
 cdescent	*cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool parallel);
 void		cdescent_free (cdescent *cd);
-bool		cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w);
+bool		cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w, const double tau);
 bool		cdescent_set_lambda1 (cdescent *cd, const double lambda1);
 bool		cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1);
 

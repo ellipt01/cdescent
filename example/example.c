@@ -10,7 +10,7 @@
 
 #include <cdescent.h>
 
-/* penalty term for s-lasso */
+/*** 1D derivation operator for the L2 penalty of s-lasso ***/
 
 static mm_sparse *
 penalty_ssmooth (const int n)
@@ -46,7 +46,7 @@ penalty_dsmooth (const int n)
 	return d;
 }
 
-/* s-lasso */
+/*** sparse/dense 1D derivation operator ***/
 mm_real *
 penalty_smooth (MMRealFormat format, const int n)
 {

@@ -176,13 +176,20 @@ cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 
 	// initialize cdescent if need
 	if (cd->was_modified) {
+		cd->nrm1 = 0.;
+		cd->b = 0.;
 		mm_real_set_all (cd->beta, 0.);
 		mm_real_set_all (cd->mu, 0.);
 		if (!cd->is_regtype_lasso) mm_real_set_all (cd->nu, 0.);
+		cd->total_iter = 0;
 		cd->was_modified = false;
 	}
 	// initialize pathwiseopt if need
 	if (path->was_modified) {
+		if (path->beta_opt) mm_real_free (path->beta_opt);
+		path->beta_opt = NULL;
+		path->lambda1_opt = 0.;
+		path->nrm1_opt = 0.;
 		path->min_bic_val = CDESCENT_POSINF;
 		path->was_modified = false;
 	}
@@ -196,6 +203,7 @@ cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 			sprintf (msg, "cannot open file %s.", path->fn_path);
 			printf_warning ("cdescent_cyclic_pathwise", msg, __FILE__, __LINE__);
 		}
+		if (fp_path) fprintf_solutionpath (fp_path, iter, cd);
 	}
 	if (path->output_bic_info) {
 		if (!(fp_bic = fopen (path->fn_bic, "w"))) {

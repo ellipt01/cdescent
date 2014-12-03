@@ -102,7 +102,7 @@ cdescent_free (cdescent *cd)
 
 /*** set penalty factor of adaptive L1 regression ***/
 bool
-cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w)
+cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w, const double tau)
 {
 	int		j;
 	if (w == NULL) return false;
@@ -118,7 +118,7 @@ cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w)
 
 	/* copy w */
 	cd->w = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, w->m, 1, w->nnz);
-	for (j = 0; j < w->nnz; j++) cd->w->data[j] = fabs (w->data[j]);
+	for (j = 0; j < w->nnz; j++) cd->w->data[j] = pow (fabs (w->data[j]), tau);
 	return (cd->w != NULL);
 }
 

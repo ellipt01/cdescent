@@ -23,7 +23,7 @@ openMP Support
 cdescent library supports parallel calculation using openMP.
 If you want to turn off the OMP support and to turn off parallel calculation
 for some reason, you can use the following configure options to turn off or
-turn on the support explicitly.
+turn on the OMP support explicitly.
 
   --enable-openmp=no     ;; turn off the OMP support
 

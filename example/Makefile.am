@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 # sample program
-noinst_PROGRAMS = l1reg_example
+noinst_PROGRAMS = elasticnet adaelasticnet
 
 noinst_LTLIBRARIES = libexample.la 
 
@@ -18,10 +18,19 @@ libexample_la_LDFLAGS = -L$(top_srcdir)/src
 libexample_la_LIBADD = -lcdescent
 
 # sample program
-l1reg_example_SOURCES = main.c
-l1reg_example_CPPFLAGS =\
+elasticnet_SOURCES = elasticnet.c
+elasticnet_CPPFLAGS =\
 	-I$(top_srcdir)/include\
 	-I$(top_srcdir)/example
 
-l1reg_example_LDADD =\
+elasticnet_LDADD =\
+	$(top_srcdir)/example/libexample.la
+
+# sample program
+adaelasticnet_SOURCES = adaelasticnet.c
+adaelasticnet_CPPFLAGS =\
+	-I$(top_srcdir)/include\
+	-I$(top_srcdir)/example
+
+adaelasticnet_LDADD =\
 	$(top_srcdir)/example/libexample.la
