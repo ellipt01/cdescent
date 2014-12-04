@@ -56,9 +56,6 @@ bool		cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w, const double
 bool		cdescent_set_lambda1 (cdescent *cd, const double lambda1);
 bool		cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1);
 
-/* stepsize.c */
-double		cdescent_beta_stepsize (const cdescent *cd, const int j);
-
 /* regression.c */
 bool		cdescent_cyclic_update_once_cycle (cdescent *cd);
 bool		cdescent_cyclic_update (cdescent *cd);
