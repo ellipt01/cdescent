@@ -55,7 +55,6 @@ read_params (int argc, char **argv)
 	char	c;
 
 	while ((c = getopt (argc, argv, "x:y:l:t:g:m:")) != -1) {
-		char *p;
 
 		switch (c) {
 

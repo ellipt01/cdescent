@@ -15,7 +15,7 @@
 static mm_sparse *
 penalty_ssmooth (const int n)
 {
-	int		i, j, k;
+	int			j, k;
 	mm_sparse	*s = mm_real_new (MM_REAL_SPARSE, MM_REAL_GENERAL, n - 1, n, 2 * (n - 1));
 
 	k = 0;
