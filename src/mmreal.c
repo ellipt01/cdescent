@@ -449,14 +449,14 @@ mm_real_symmetric_to_general_dense (const mm_dense *x)
 	mm_dense	*d = mm_real_copy (x);
 	if (!mm_real_is_symmetric (x)) return d;
 
-	for (j = 0; j < x->n; j++) {
-		if (mm_real_is_upper (x)) {
+	if (mm_real_is_upper (x)) {
+		for (j = 0; j < x->n; j++) {
 			int		i0 = j + 1;
 			int		len = x->m - i0;
 			dcopy_ (&len, x->data + j + i0 * x->m, &x->m, d->data + i0 + j * d->m, &ione);
-		} else if (j > 0 && mm_real_is_lower (x)) {
-			dcopy_ (&j, x->data + j, &x->m, d->data + j * d->m, &ione);
 		}
+	} else {
+		for (j = 0; j < x->n; j++) dcopy_ (&j, x->data + j, &x->m, d->data + j * d->m, &ione);
 	}
 	mm_real_set_general (d);
 	return d;
