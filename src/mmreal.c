@@ -873,26 +873,50 @@ mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_de
 	else mm_real_set_all (z, 0.);
 
 	if (trans) {
-		for (j = 0; j < s->n; j++) {
-			int		k = sp[j];
-			int		pend = sp[j + 1];
-			for (; k < pend; k++) {
-				int		i1 = j;
-				int		j1 = si[k];
-				zd[i1] += alpha * sd[k] * yd[j1];
-				if (mm_real_is_symmetric (s) && j != si[k]) zd[j1] += alpha * sd[k] * yd[i1];
-			}		
+		if (!mm_real_is_symmetric (s)) {
+			for (j = 0; j < s->n; j++) {
+				int		k = sp[j];
+				int		pend = sp[j + 1];
+				for (; k < pend; k++) {
+					int		i1 = j;
+					int		j1 = si[k];
+					zd[i1] += alpha * sd[k] * yd[j1];
+				}
+			}
+		} else {
+			for (j = 0; j < s->n; j++) {
+				int		k = sp[j];
+				int		pend = sp[j + 1];
+				for (; k < pend; k++) {
+					int		i1 = j;
+					int		j1 = si[k];
+					zd[i1] += alpha * sd[k] * yd[j1];
+					if (j != si[k]) zd[j1] += alpha * sd[k] * yd[i1];
+				}
+			}
 		}
 	} else {
-		for (j = 0; j < s->n; j++) {
-			int		k = sp[j];
-			int		pend = sp[j + 1];
-			for (; k < pend; k++) {
-				int		i1 = si[k];
-				int		j1 = j;
-				zd[i1] += alpha * sd[k] * yd[j1];
-				if (mm_real_is_symmetric (s) && j != si[k]) zd[j1] += alpha * sd[k] * yd[i1];
-			}		
+		if (!mm_real_is_symmetric (s)) {
+			for (j = 0; j < s->n; j++) {
+				int		k = sp[j];
+				int		pend = sp[j + 1];
+				for (; k < pend; k++) {
+					int		i1 = si[k];
+					int		j1 = j;
+					zd[i1] += alpha * sd[k] * yd[j1];
+				}
+			}
+		} else {
+			for (j = 0; j < s->n; j++) {
+				int		k = sp[j];
+				int		pend = sp[j + 1];
+				for (; k < pend; k++) {
+					int		i1 = si[k];
+					int		j1 = j;
+					zd[i1] += alpha * sd[k] * yd[j1];
+					if (j != si[k]) zd[j1] += alpha * sd[k] * yd[i1];
+				}
+			}
 		}
 	}	
 	return;

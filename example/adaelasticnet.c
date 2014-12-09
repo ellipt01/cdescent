@@ -169,7 +169,7 @@ main (int argc, char **argv)
 	cdescent_cyclic_pathwise (cd, path);
 
 	/*** adaptive lasso ***/
-	cdescent_set_penalty_factor (cd, cd->beta, 1.);		// set weight = | beta_ols |
+	cdescent_set_penalty_factor (cd, cd->beta, 0.25);		// set weight = | beta_ols |
 	pathwiseopt_set_to_outputs_fullpath (path, NULL);	// output full solution path
 	pathwiseopt_set_to_outputs_bic_info (path, NULL);	// output BIC info
 	/* do pathwise CCD again */
