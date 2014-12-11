@@ -389,13 +389,14 @@ mm_real_dense_to_sparse (const mm_dense *d, const double threshold)
 static int
 find_jth_row_element_of_sk (const int j, const mm_sparse *s, const int k)
 {
-	int		*si = s->i;
-	int		l = s->p[k];
-	int		pend = s->p[k + 1];
-	for (; l < pend; l++) {
+	int		l;
+	int		p = s->p[k];
+	int		n = s->p[k + 1] - p;
+	int		*si = s->i + p;
+	for (l = 0; l < n; l++) {
 		int		sil = si[l];
 		if (sil < j) continue;
-		else if (sil == j) return l;	// found
+		if (sil == j) return l + p;	// found
 		else break;
 	}
 	return -1;	// not found
@@ -975,13 +976,27 @@ mm_real_sj_trans_dot_y (const mm_sparse *s, const int j, const mm_dense *y)
 {
 	double	val = 0;
 
-	int		*si = s->i;
-	double	*sd = s->data;
+	int		*si;
+	double	*sd;
 	double	*yd = y->data;
 
-	int		k = s->p[j];
-	int		pend = s->p[j + 1];
-	for (; k < pend; k++) val += sd[k] * yd[si[k]];
+	int		k;
+	int		p = s->p[j];
+	int		n = s->p[j + 1] - p;
+	int		mod = n % 4;
+
+	// unrolling
+	si = s->i + p;
+	sd = s->data + p;
+	if (mod > 0) {
+		if (mod == 1) val += sd[0] * yd[si[0]];
+		else if (mod == 2) val += sd[0] * yd[si[0]] + sd[1] * yd[si[1]];
+		else val += sd[0] * yd[si[0]] + sd[1] * yd[si[1]] + sd[2] * yd[si[2]];
+	}
+	for (k = mod; k < n; k += 4)
+		val += sd[k] * yd[si[k]] + sd[k + 1] * yd[si[k + 1]] + sd[k + 2] * yd[si[k + 2]] + sd[k + 3] * yd[si[k + 3]];
+
+	sd = s->data;
 	if (mm_real_is_symmetric (s)) {
 		int		k0;
 		int		k1;
@@ -998,6 +1013,7 @@ mm_real_sj_trans_dot_y (const mm_sparse *s, const int j, const mm_dense *y)
 			if (l >= 0) val += sd[l] * yd[k];
 		}
 	}
+
 	return val;
 }
 
