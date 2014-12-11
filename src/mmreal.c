@@ -266,7 +266,25 @@ static void
 mm_real_array_set_all (const int n, double *data, const double val)
 {
 	int		k;
-	for (k = 0; k < n; k++) data[k] = val;
+	int		mod = n % 4;
+	// unrolling
+	if (mod > 0) {
+		if (mod == 1) data[0] = val;
+		else if (mod == 2) {
+			data[0] = val;
+			data[1] = val;
+		} else {
+			data[0] = val;
+			data[1] = val;
+			data[2] = val;
+		}
+	}
+	for (k = mod; k < n; k += 4) {
+		data[k] = val;
+		data[k + 1] = val;
+		data[k + 2] = val;
+		data[k + 3] = val;
+	}
 	return;
 }
 
@@ -728,11 +746,12 @@ mm_real_xj_asum (const mm_real *x, const int j)
 static double
 mm_real_sj_sum (const mm_sparse *s, const int j)
 {
-	int		k = s->p[j];
-	int		pend = s->p[j + 1];
-	double	*sd = s->data;
+	int		k;
+	int		p = s->p[j];
+	int		n = s->p[j + 1] - p;
+	double	*sd = s->data + p;
 	double	sum = 0.;
-	for (; k < pend; k++) sum += sd[k];
+	for (k = 0; k < n; k++) sum += sd[k];
 	if (mm_real_is_symmetric (s)) {
 		int		k0;
 		int		k1;
@@ -743,6 +762,7 @@ mm_real_sj_sum (const mm_sparse *s, const int j)
 			k0 = 0;
 			k1 = j;
 		}
+		sd = s->data;
 		for (k = k0; k < k1; k++) {
 			int		l = find_jth_row_element_of_sk (j, s, k);
 			// if found
@@ -757,6 +777,7 @@ static double
 mm_real_dj_sum (const mm_dense *d, const int j)
 {
 	int		k;
+	double	*dd;
 	double	sum = 0.;
 	if (!mm_real_is_symmetric (d))
 		for (k = 0; k < d->m; k++) sum += d->data[k + j * d->m];
@@ -764,14 +785,18 @@ mm_real_dj_sum (const mm_dense *d, const int j)
 		int		len;
 		if (mm_real_is_upper (d)) {
 			len = j;
-			for (k = 0; k < len; k++) sum += d->data[k + j * d->m];
+			dd = d->data + j * d->m;
+			for (k = 0; k < len; k++) sum += dd[k];
 			len = d->m - j;
-			for (k = 0; k < len; k++) sum += d->data[k * d->m + j * d->m + j];
+			dd = d->data + j * d->m + j;
+			for (k = 0; k < len; k++) sum += dd[k * d->m];
 		} else if (mm_real_is_lower (d)) {
 			len = d->m - j;
-			for (k = 0; k < len; k++) sum += d->data[k + j * d->m + j];
+			dd = d->data + j * d->m + j;
+			for (k = 0; k < len; k++) sum += dd[k];
 			len = j;
-			for (k = 0; k < len; k++) sum += d->data[k * d->m + j];
+			dd = d->data + j;
+			for (k = 0; k < len; k++) sum += d->data[k * d->m];
 		}
 	}
 	return sum;
@@ -877,21 +902,15 @@ mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_de
 			for (j = 0; j < s->n; j++) {
 				int		k = sp[j];
 				int		pend = sp[j + 1];
-				for (; k < pend; k++) {
-					int		i1 = j;
-					int		j1 = si[k];
-					zd[i1] += alpha * sd[k] * yd[j1];
-				}
+				for (; k < pend; k++) zd[j] += alpha * sd[k] * yd[si[k]];
 			}
 		} else {
 			for (j = 0; j < s->n; j++) {
 				int		k = sp[j];
 				int		pend = sp[j + 1];
 				for (; k < pend; k++) {
-					int		i1 = j;
-					int		j1 = si[k];
-					zd[i1] += alpha * sd[k] * yd[j1];
-					if (j != si[k]) zd[j1] += alpha * sd[k] * yd[i1];
+					zd[j] += alpha * sd[k] * yd[si[k]];
+					if (j != si[k]) zd[si[k]] += alpha * sd[k] * yd[j];
 				}
 			}
 		}
@@ -900,21 +919,15 @@ mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_de
 			for (j = 0; j < s->n; j++) {
 				int		k = sp[j];
 				int		pend = sp[j + 1];
-				for (; k < pend; k++) {
-					int		i1 = si[k];
-					int		j1 = j;
-					zd[i1] += alpha * sd[k] * yd[j1];
-				}
+				for (; k < pend; k++) zd[si[k]] += alpha * sd[k] * yd[j];
 			}
 		} else {
 			for (j = 0; j < s->n; j++) {
 				int		k = sp[j];
 				int		pend = sp[j + 1];
 				for (; k < pend; k++) {
-					int		i1 = si[k];
-					int		j1 = j;
-					zd[i1] += alpha * sd[k] * yd[j1];
-					if (j != si[k]) zd[j1] += alpha * sd[k] * yd[i1];
+					zd[si[k]] += alpha * sd[k] * yd[j];
+					if (j != si[k]) zd[j] += alpha * sd[k] * yd[si[k]];
 				}
 			}
 		}
