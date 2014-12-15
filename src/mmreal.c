@@ -885,15 +885,12 @@ static void
 mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_dense *y, const double beta, mm_dense *z)
 {
 	int			j;
-	int			m;
 
 	int			*si = s->i;
 	int			*sp = s->p;
 	double		*sd = s->data;
 	double		*yd = y->data;
 	double		*zd = z->data;
-
-	m = (trans) ? s->n : s->m;
 
 	if (fabs (beta) > 0.) mm_real_xj_scale (z, 0, beta);
 	else mm_real_set_all (z, 0.);
@@ -940,9 +937,6 @@ mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_de
 static void
 mm_real_d_dot_y (bool trans, const double alpha, const mm_dense *d, const mm_dense *y, const double beta, mm_dense *z)
 {
-	int			m;
-	m = (trans) ? d->n : d->m;
-
 	if (!mm_real_is_symmetric (d)) {
 		// z = alpha * d * y + beta * z
 		dgemv_ ((trans) ? "T" : "N", &d->m, &d->n, &alpha, d->data, &d->m, y->data, &ione, &beta, z->data, &ione);
@@ -963,9 +957,10 @@ mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dens
 	if (y->n != 1) error_and_exit ("mm_real_x_dot_y", "y must be vector.", __FILE__, __LINE__);
 	if (!mm_real_is_dense (z)) error_and_exit ("mm_real_x_dot_y", "z must be dense.", __FILE__, __LINE__);
 	if (mm_real_is_symmetric (z)) error_and_exit ("mm_real_x_dot_y", "z must be general.", __FILE__, __LINE__);
-	if (y->m != z->m || y->n != z->n) error_and_exit ("mm_real_x_dot_y", "dimensions of y and z do not match.", __FILE__, __LINE__);
 	if ((trans && x->m != y->m) || (!trans && x->n != y->m))
-		error_and_exit ("mm_real_x_dot_y", "vector and matrix dimensions do not match.", __FILE__, __LINE__);
+		error_and_exit ("mm_real_x_dot_y", "dimensions of x and y do not match.", __FILE__, __LINE__);
+	if ((trans && x->n != z->m) || (!trans && x->m != z->m))
+		error_and_exit ("mm_real_x_dot_y", "dimensions of x and z do not match.", __FILE__, __LINE__);
 
 	return (mm_real_is_sparse (x)) ? mm_real_s_dot_y (trans, alpha, x, y, beta, z) : mm_real_d_dot_y (trans, alpha, x, y, beta, z);
 }
