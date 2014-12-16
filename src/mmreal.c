@@ -300,12 +300,13 @@ mm_real_set_all (mm_real *x, const double val)
 mm_dense *
 mm_real_sparse_to_dense (const mm_sparse *s)
 {
-	int			j;
+	int			j, k;
+	int			p, n;
 	mm_dense	*d;
 
-	int			*si = s->i;
+	int			*si;
+	double		*sd;
 	int			*sp = s->p;
-	double		*sd = s->data;
 	double		*dd;
 
 	if (mm_real_is_dense (s)) return mm_real_copy (s);
@@ -314,9 +315,12 @@ mm_real_sparse_to_dense (const mm_sparse *s)
 
 	dd = d->data;
 	for (j = 0; j < s->n; j++) {
-		int		k = sp[j];
-		int		pend = sp[j + 1];
-		for (; k < pend; k++) dd[si[k] + j * s->m] = sd[k];
+		p = sp[j];
+		n = sp[j + 1] - p;
+		si = s->i + p;
+		sd = s->data + p;
+		dd = d->data + j * s->m;
+		for (k = 0; k < n; k++) dd[si[k]] = sd[k];
 	}
 	return d;
 }
@@ -333,6 +337,7 @@ mm_real_dense_to_sparse (const mm_dense *d, const double threshold)
 	int			*sp;
 	double		*sd;
 	double		*dd = d->data;
+	double		dij;
 
 	if (mm_real_is_sparse (d)) return mm_real_copy (d);
 	s = mm_real_new (MM_REAL_SPARSE, d->symm, d->m, d->n, d->nnz);
@@ -345,7 +350,7 @@ mm_real_dense_to_sparse (const mm_dense *d, const double threshold)
 	if (!mm_real_is_symmetric (d)) {
 		for (j = 0; j < d->n; j++) {
 			for (i = 0; i < d->m; i++) {
-				double	dij = dd[i + j * d->m];
+				dij = dd[i + j * d->m];
 				if (fabs (dij) >= threshold) {
 					si[k] = i;
 					sd[k] = dij;
@@ -358,7 +363,7 @@ mm_real_dense_to_sparse (const mm_dense *d, const double threshold)
 		if (mm_real_is_upper (d)) {
 			for (j = 0; j < d->n; j++) {
 				for (i = 0; i < j + 1; i++) {
-					double	dij = dd[i + j * d->m];
+					dij = dd[i + j * d->m];
 					if (fabs (dij) >= threshold) {
 						si[k] = i;
 						sd[k] = dij;
@@ -370,7 +375,7 @@ mm_real_dense_to_sparse (const mm_dense *d, const double threshold)
 		} else if (mm_real_is_lower (d)) {
 			for (j = 0; j < d->n; j++) {
 				for (i = j; i < d->m; i++) {
-					double	dij = dd[i + j * d->m];
+					dij = dd[i + j * d->m];
 					if (fabs (dij) >= threshold) {
 						si[k] = i;
 						sd[k] = dij;
@@ -780,9 +785,10 @@ mm_real_dj_sum (const mm_dense *d, const int j)
 	int		k;
 	double	*dd;
 	double	sum = 0.;
-	if (!mm_real_is_symmetric (d))
-		for (k = 0; k < d->m; k++) sum += d->data[k + j * d->m];
-	else {
+	if (!mm_real_is_symmetric (d)) {
+		dd = d->data + j * d->m;
+		for (k = 0; k < d->m; k++) sum += dd[k];
+	} else {
 		int		len;
 		if (mm_real_is_upper (d)) {
 			len = j;
@@ -884,11 +890,12 @@ mm_real_xj_nrm2 (const mm_real *x, const int j)
 static void
 mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_dense *y, const double beta, mm_dense *z)
 {
-	int			j;
+	int			j, k;
+	int			p, n;
 
-	int			*si = s->i;
+	int			*si;
+	double		*sd;
 	int			*sp = s->p;
-	double		*sd = s->data;
 	double		*yd = y->data;
 	double		*zd = z->data;
 
@@ -898,34 +905,106 @@ mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_de
 	if (trans) {
 		if (!mm_real_is_symmetric (s)) {
 			for (j = 0; j < s->n; j++) {
-				int		k = sp[j];
-				int		pend = sp[j + 1];
-				for (; k < pend; k++) zd[j] += alpha * sd[k] * yd[si[k]];
+				p = sp[j];
+				n = sp[j + 1] - p;
+				if (n <= 0) continue;
+				si = s->i + p;
+				sd = s->data + p;
+				for (k = 0; k < n; k++) zd[j] += alpha * sd[k] * yd[si[k]];
+			}
+		} else if (mm_real_is_upper (s)) {
+			int		sik;
+			double	alpha_sdk;
+			for (j = 0; j < s->n; j++) {
+				p = sp[j];
+				n = sp[j + 1] - p;
+				si = s->i + p;
+				sd = s->data + p;
+				for (k = 0; k < n - 1; k++) {
+					sik = si[k];
+					alpha_sdk = alpha * sd[k];
+					zd[j] += alpha_sdk * yd[sik];
+					zd[sik] += alpha_sdk * yd[j];
+				}
+				if (n <= 0) continue;
+				sik = si[n - 1];
+				alpha_sdk = alpha * sd[n - 1];
+				zd[j] += alpha_sdk * yd[sik];
+				// omit if diagonal element
+				if (j != sik) zd[sik] += alpha_sdk * yd[j];
 			}
 		} else {
+			int		sik;
+			double	alpha_sdk;
 			for (j = 0; j < s->n; j++) {
-				int		k = sp[j];
-				int		pend = sp[j + 1];
-				for (; k < pend; k++) {
-					zd[j] += alpha * sd[k] * yd[si[k]];
-					if (j != si[k]) zd[si[k]] += alpha * sd[k] * yd[j];
+				p = sp[j];
+				n = sp[j + 1] - p;
+				if (n <= 0) continue;
+				si = s->i + p;
+				sd = s->data + p;
+				sik = si[0];
+				alpha_sdk = alpha * sd[0];
+				zd[j] += alpha_sdk * yd[sik];
+				// omit if diagonal element
+				if (j != sik) zd[sik] += alpha_sdk * yd[j];
+				for (k = 1; k < n; k++) {
+					sik = si[k];
+					alpha_sdk = alpha * sd[k];
+					zd[j] += alpha_sdk * yd[sik];
+					zd[sik] += alpha_sdk * yd[j];
 				}
 			}
 		}
 	} else {
 		if (!mm_real_is_symmetric (s)) {
 			for (j = 0; j < s->n; j++) {
-				int		k = sp[j];
-				int		pend = sp[j + 1];
-				for (; k < pend; k++) zd[si[k]] += alpha * sd[k] * yd[j];
+				p = sp[j];
+				n = sp[j + 1] - p;
+				if (n <= 0) continue;
+				si = s->i + p;
+				sd = s->data + p;
+				for (k = 0; k < n; k++) zd[si[k]] += alpha * sd[k] * yd[j];
+			}
+		} else if (mm_real_is_upper (s)) {
+			int		sik;
+			double	alpha_sdk;
+			for (j = 0; j < s->n; j++) {
+				p = sp[j];
+				n = sp[j + 1] - p;
+				si = s->i + p;
+				sd = s->data + p;
+				for (k = 0; k < n - 1; k++) {
+					sik = si[k];
+					alpha_sdk = alpha * sd[k];
+					zd[sik] += alpha_sdk * yd[j];
+					zd[j] += alpha_sdk * yd[sik];
+				}
+				if (n <= 0) continue;
+				sik = si[n - 1];
+				alpha_sdk = alpha * sd[n - 1];
+				zd[sik] += alpha_sdk * yd[j];
+				// omit if diagonal element
+				if (j != sik) zd[j] += alpha_sdk * yd[sik];
 			}
 		} else {
+			int		sik;
+			double	alpha_sdk;
 			for (j = 0; j < s->n; j++) {
-				int		k = sp[j];
-				int		pend = sp[j + 1];
-				for (; k < pend; k++) {
-					zd[si[k]] += alpha * sd[k] * yd[j];
-					if (j != si[k]) zd[j] += alpha * sd[k] * yd[si[k]];
+				p = sp[j];
+				n = sp[j + 1] - p;
+				if (n <= 0) continue;
+				si = s->i + p;
+				sd = s->data + p;
+				sik = si[0];
+				alpha_sdk = alpha * sd[0];
+				zd[sik] += alpha_sdk * yd[j];
+				// omit if diagonal element
+				if (j != sik) zd[j] += alpha_sdk * yd[sik];
+				for (k = 1; k < n; k++) {
+					sik = si[k];
+					alpha_sdk = alpha * sd[k];
+					zd[sik] += alpha_sdk * yd[j];
+					zd[j] += alpha_sdk * yd[sik];
 				}
 			}
 		}
@@ -955,10 +1034,11 @@ mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dens
 	if (!mm_real_is_dense (y)) error_and_exit ("mm_real_x_dot_y", "y must be dense.", __FILE__, __LINE__);
 	if (mm_real_is_symmetric (y)) error_and_exit ("mm_real_x_dot_y", "y must be general.", __FILE__, __LINE__);
 	if (y->n != 1) error_and_exit ("mm_real_x_dot_y", "y must be vector.", __FILE__, __LINE__);
-	if (!mm_real_is_dense (z)) error_and_exit ("mm_real_x_dot_y", "z must be dense.", __FILE__, __LINE__);
-	if (mm_real_is_symmetric (z)) error_and_exit ("mm_real_x_dot_y", "z must be general.", __FILE__, __LINE__);
 	if ((trans && x->m != y->m) || (!trans && x->n != y->m))
 		error_and_exit ("mm_real_x_dot_y", "dimensions of x and y do not match.", __FILE__, __LINE__);
+	if (!mm_real_is_dense (z)) error_and_exit ("mm_real_x_dot_y", "z must be dense.", __FILE__, __LINE__);
+	if (mm_real_is_symmetric (z)) error_and_exit ("mm_real_x_dot_y", "z must be general.", __FILE__, __LINE__);
+	if (z->n != 1) error_and_exit ("mm_real_x_dot_y", "z must be vector.", __FILE__, __LINE__);
 	if ((trans && x->n != z->m) || (!trans && x->m != z->m))
 		error_and_exit ("mm_real_x_dot_y", "dimensions of x and z do not match.", __FILE__, __LINE__);
 
@@ -991,7 +1071,6 @@ mm_real_sj_trans_dot_y (const mm_sparse *s, const int j, const mm_dense *y)
 	for (k = mod; k < n; k += 4)
 		val += sd[k] * yd[si[k]] + sd[k + 1] * yd[si[k + 1]] + sd[k + 2] * yd[si[k + 2]] + sd[k + 3] * yd[si[k + 3]];
 
-	sd = s->data;
 	if (mm_real_is_symmetric (s)) {
 		int		k0;
 		int		k1;
@@ -1002,6 +1081,7 @@ mm_real_sj_trans_dot_y (const mm_sparse *s, const int j, const mm_dense *y)
 			k0 = 0;
 			k1 = j;
 		}
+		sd = s->data;
 		for (k = k0; k < k1; k++) {
 			int		l = find_jth_row_element_of_sk (j, s, k);
 			// if found
@@ -1052,13 +1132,16 @@ mm_real_xj_trans_dot_y (const mm_real *x, const int j, const mm_dense *y)
 static void
 mm_real_asjpy (const double alpha, const mm_sparse *s, const int j, mm_dense *y)
 {
-	int		*si = s->i;
-	double	*sd = s->data;
+	int		*si;
+	double	*sd;
 	double	*yd = y->data;
 
-	int		k = s->p[j];
-	int		pend = s->p[j + 1];
-	for (; k < pend; k++) yd[si[k]] += alpha * sd[k];
+	int		k;
+	int		p = s->p[j];
+	int		n = s->p[j + 1] - p;
+	si = s->i + p;
+	sd = s->data + p;
+	for (k = 0; k < n; k++) yd[si[k]] += alpha * sd[k];
 	if (mm_real_is_symmetric (s)) {
 		int		k0;
 		int		k1;
@@ -1069,6 +1152,7 @@ mm_real_asjpy (const double alpha, const mm_sparse *s, const int j, mm_dense *y)
 			k0 = 0;
 			k1 = j;
 		}
+		sd = s->data;
 		for (k = k0; k < k1; k++) {
 			int		l = find_jth_row_element_of_sk (j, s, k);
 			// if found
@@ -1117,13 +1201,16 @@ mm_real_axjpy (const double alpha, const mm_real *x, const int j, mm_dense *y)
 static void
 mm_real_asjpy_atomic (const double alpha, const mm_sparse *s, const int j, mm_dense *y)
 {
-	int		*si = s->i;
-	double	*sd = s->data;
+	int		*si;
+	double	*sd;
 	double	*yd = y->data;
 
-	int		k = s->p[j];
-	int		pend = s->p[j + 1];
-	for (; k < pend; k++) atomic_add (yd + si[k], alpha * sd[k]);
+	int		k;
+	int		p = s->p[j];
+	int		n = s->p[j + 1] - p;
+	si = s->i + p;
+	sd = s->data + p;
+	for (k = 0; k < n; k++) atomic_add (yd + si[k], alpha * sd[k]);
 	if (mm_real_is_symmetric (s)) {
 		int		k0;
 		int		k1;
@@ -1134,6 +1221,7 @@ mm_real_asjpy_atomic (const double alpha, const mm_sparse *s, const int j, mm_de
 			k0 = 0;
 			k1 = j;
 		}
+		sd = s->data;
 		for (k = k0; k < k1; k++) {
 			int		l = find_jth_row_element_of_sk (j, s, k);
 			// if found
@@ -1147,24 +1235,29 @@ mm_real_asjpy_atomic (const double alpha, const mm_sparse *s, const int j, mm_de
 static void
 mm_real_adjpy_atomic (const double alpha, const mm_dense *d, const int j, mm_dense *y)
 {
-	double	*dd = d->data;
+	double	*dd;
 	double	*yd = y->data;
 
 	int		k;
 	if (!mm_real_is_symmetric (d)) {
-		for (k = 0; k < d->m; k++) atomic_add (yd + k, alpha * dd[j * d->m + k]);
+		dd = d->data + j * d->m;
+		for (k = 0; k < d->m; k++) atomic_add (yd + k, alpha * dd[k]);
 	} else {
 		int		len;
 		if (mm_real_is_upper (d)) {
 			len = j;
-			for (k = 0; k < len; k++) atomic_add (yd + k, alpha * dd[j * d->m + k]);
+			dd = d->data + j * d->m;
+			for (k = 0; k < len; k++) atomic_add (yd + k, alpha * dd[k]);
 			len = d->m - j;
-			for (k = 0; k < len; k++) atomic_add (yd + j + k, alpha * dd[j * d->m + j + k * d->m]);
+			dd = d->data + j * d->m + j;
+			for (k = 0; k < len; k++) atomic_add (yd + j + k, alpha * dd[k * d->m]);
 		} else if (mm_real_is_lower (d)) {
 			len = d->m - j;
-			for (k = 0; k < len; k++) atomic_add (yd + j + k, alpha * dd[j * d->m + j + k]);
+			dd = d->data + j * d->m + j;
+			for (k = 0; k < len; k++) atomic_add (yd + j + k, alpha * dd[k]);
 			len = j;
-			for (k = 0; k < len; k++) atomic_add (yd + k, alpha * dd[j + k * d->m]);
+			dd = d->data + j;
+			for (k = 0; k < len; k++) atomic_add (yd + k, alpha * dd[k * d->m]);
 		}
 	}
 	return;
