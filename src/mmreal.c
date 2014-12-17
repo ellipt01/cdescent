@@ -476,8 +476,8 @@ mm_real_symmetric_to_general_dense (const mm_dense *x)
 	if (mm_real_is_upper (x)) {
 		for (j = 0; j < x->n; j++) {
 			int		i0 = j + 1;
-			int		len = x->m - i0;
-			dcopy_ (&len, x->data + j + i0 * x->m, &x->m, d->data + i0 + j * d->m, &ione);
+			int		n = x->m - i0;
+			dcopy_ (&n, x->data + j + i0 * x->m, &x->m, d->data + i0 + j * d->m, &ione);
 		}
 	} else {
 		for (j = 0; j < x->n; j++) dcopy_ (&j, x->data + j, &x->m, d->data + j * d->m, &ione);
@@ -549,13 +549,13 @@ mm_real_vertcat_sparse (const mm_sparse *s1, const mm_sparse *s2)
 
 	k = 0;
 	for (j = 0; j < n; j++) {
-		int		len1 = sp1[j + 1] - sp1[j];
-		int		len2 = sp2[j + 1] - sp2[j];
+		int		n1 = sp1[j + 1] - sp1[j];
+		int		n2 = sp2[j + 1] - sp2[j];
 		int		pend;
-		dcopy_ (&len1, s1->data + sp1[j], &ione, s->data + k, &ione);
+		dcopy_ (&n1, s1->data + sp1[j], &ione, s->data + k, &ione);
 		pend = sp1[j + 1];
 		for (i = sp1[j]; i < pend; i++) si[k++] = si1[i];
-		dcopy_ (&len2, s2->data + sp2[j], &ione, s->data + k, &ione);
+		dcopy_ (&n2, s2->data + sp2[j], &ione, s->data + k, &ione);
 		pend = sp2[j + 1];
 		for (i = sp2[j]; i < pend; i++) si[k++] = si2[i] + s1->m;
 		sp[j + 1] = k;
@@ -652,19 +652,19 @@ void
 mm_real_xj_add_const (mm_real *x, const int j, const double alpha)
 {
 	int		k;
-	int		len;
+	int		n;
 	double	*data;
 	if (mm_real_is_symmetric (x)) error_and_exit ("mm_real_xj_add_const", "matrix must be general.", __FILE__, __LINE__);
 	if (j < 0 || x->n <= j) error_and_exit ("mm_real_xj_add_const", "index out of range.", __FILE__, __LINE__);
 
 	if (mm_real_is_sparse (x)) {
-		len = x->p[j + 1] - x->p[j];
+		n = x->p[j + 1] - x->p[j];
 		data = x->data + x->p[j];
 	} else {
-		len = x->m;
+		n = x->m;
 		data = x->data + j * x->m;
 	}
-	for (k = 0; k < len; k++) data[k] += alpha;
+	for (k = 0; k < n; k++) data[k] += alpha;
 
 	return;
 }
@@ -673,19 +673,20 @@ mm_real_xj_add_const (mm_real *x, const int j, const double alpha)
 void
 mm_real_xj_scale (mm_real *x, const int j, const double alpha)
 {
-	int		len;
+	int		n;
 	double	*data;
 	if (mm_real_is_symmetric (x)) error_and_exit ("mm_real_xj_scale", "matrix must be general.", __FILE__, __LINE__);
 	if (j < 0 || x->n <= j) error_and_exit ("mm_real_xj_scale", "index out of range.", __FILE__, __LINE__);
 
 	if (mm_real_is_sparse (x)) {
-		len = x->p[j + 1] - x->p[j];
-		data = x->data + x->p[j];
+		int		p = x->p[j];
+		n = x->p[j + 1] - p;
+		data = x->data + p;
 	} else {
-		len = x->m;
+		n = x->m;
 		data = x->data + j * x->m;
 	}
-	dscal_ (&len, &alpha, data, &ione);
+	dscal_ (&n, &alpha, data, &ione);
 
 	return;
 }
@@ -694,9 +695,10 @@ mm_real_xj_scale (mm_real *x, const int j, const double alpha)
 static double
 mm_real_sj_asum (const mm_sparse *s, const int j)
 {
-	int		size = s->p[j + 1] - s->p[j];
+	int		p = s->p[j];
+	int		n = s->p[j + 1] - p;
 	double	*sd = s->data;
-	double	asum = dasum_ (&size, sd + s->p[j], &ione);
+	double	asum = dasum_ (&n, sd + p, &ione);
 	if (mm_real_is_symmetric (s)) {
 		int		k;
 		int		k0;
@@ -724,17 +726,17 @@ mm_real_dj_asum (const mm_dense *d, const int j)
 	double	val = 0.;
 	if (!mm_real_is_symmetric (d)) val = dasum_ (&d->m, d->data + j * d->m, &ione);
 	else {
-		int		len;
+		int		n;
 		if (mm_real_is_upper (d)) {
-			len = j;
-			val = dasum_ (&len, d->data + j * d->m, &ione);
-			len = d->m - j;
-			val += dasum_ (&len, d->data + j * d->m + j, &d->m);
+			n = j;
+			val = dasum_ (&n, d->data + j * d->m, &ione);
+			n = d->m - j;
+			val += dasum_ (&n, d->data + j * d->m + j, &d->m);
 		} else if (mm_real_is_lower (d)) {
-			len = d->m - j;
-			val = dasum_ (&len, d->data + j * d->m + j, &ione);
-			len = j;
-			val += dasum_ (&len, d->data + j, &d->m);
+			n = d->m - j;
+			val = dasum_ (&n, d->data + j * d->m + j, &ione);
+			n = j;
+			val += dasum_ (&n, d->data + j, &d->m);
 		}
 	}
 	return val;
@@ -789,21 +791,21 @@ mm_real_dj_sum (const mm_dense *d, const int j)
 		dd = d->data + j * d->m;
 		for (k = 0; k < d->m; k++) sum += dd[k];
 	} else {
-		int		len;
+		int		n;
 		if (mm_real_is_upper (d)) {
-			len = j;
+			n = j;
 			dd = d->data + j * d->m;
-			for (k = 0; k < len; k++) sum += dd[k];
-			len = d->m - j;
-			dd = d->data + j * d->m + j;
-			for (k = 0; k < len; k++) sum += dd[k * d->m];
+			for (k = 0; k < n; k++) sum += dd[k];
+			n = d->m - j;
+			dd = d->data + j + j * d->m;
+			for (k = 0; k < n; k++) sum += dd[k * d->m];
 		} else if (mm_real_is_lower (d)) {
-			len = d->m - j;
-			dd = d->data + j * d->m + j;
-			for (k = 0; k < len; k++) sum += dd[k];
-			len = j;
+			n = d->m - j;
+			dd = d->data + j + j * d->m;
+			for (k = 0; k < n; k++) sum += dd[k];
+			n = j;
 			dd = d->data + j;
-			for (k = 0; k < len; k++) sum += d->data[k * d->m];
+			for (k = 0; k < n; k++) sum += dd[k * d->m];
 		}
 	}
 	return sum;
@@ -821,9 +823,10 @@ mm_real_xj_sum (const mm_real *x, const int j)
 static double
 mm_real_sj_ssq (const mm_sparse *s, const int j)
 {
-	int		len = s->p[j + 1] - s->p[j];
+	int		p = s->p[j];
+	int		n = s->p[j + 1] - p;
 	double	*sd = s->data;
-	double	ssq = ddot_ (&len, sd + s->p[j], &ione, sd + s->p[j], &ione);
+	double	ssq = ddot_ (&n, sd + p, &ione, sd + p, &ione);
 	if (mm_real_is_symmetric (s)) {
 		int		k;
 		int		k0;
@@ -851,18 +854,18 @@ mm_real_dj_ssq (const mm_dense *d, const int j)
 	double	ssq;
 	if (!mm_real_is_symmetric (d)) ssq = ddot_ (&d->m, d->data + j * d->m, &ione, d->data + j * d->m, &ione);
 	else {
-		int		len;
+		int		n;
 		ssq = 0.;
 		if (mm_real_is_upper (d)) {
-			len = j;
-			ssq = ddot_ (&len, d->data + j * d->m, &ione, d->data + j * d->m, &ione);
-			len = d->m - j;
-			ssq += ddot_ (&len, d->data + j * d->m + j, &d->m, d->data + j * d->m + j, &d->m);
+			n = j;
+			ssq = ddot_ (&n, d->data + j * d->m, &ione, d->data + j * d->m, &ione);
+			n = d->m - j;
+			ssq += ddot_ (&n, d->data + j * d->m + j, &d->m, d->data + j * d->m + j, &d->m);
 		} else if (mm_real_is_lower (d)) {
-			len = d->m - j;
-			ssq = ddot_ (&len, d->data + j * d->m + j, &ione, d->data + j * d->m + j, &ione);
-			len = j;
-			ssq += ddot_ (&len, d->data + j, &d->m, d->data + j, &d->m);
+			n = d->m - j;
+			ssq = ddot_ (&n, d->data + j * d->m + j, &ione, d->data + j * d->m + j, &ione);
+			n = j;
+			ssq += ddot_ (&n, d->data + j, &d->m, d->data + j, &d->m);
 		}
 	}
 	return ssq;
@@ -1099,17 +1102,17 @@ mm_real_dj_trans_dot_y (const mm_dense *d, const int j, const mm_dense *y)
 	double	val = 0.;
 	if (!mm_real_is_symmetric (d)) val = ddot_ (&d->m, d->data + j * d->m, &ione, y->data, &ione);
 	else {
-		int		len;
+		int		n;
 		if (mm_real_is_upper (d)) {
-			len = j;
-			val = ddot_ (&len, d->data + j * d->m, &ione, y->data, &ione);
-			len = d->m - j;
-			val += ddot_ (&len, d->data + j * d->m + j, &d->m, y->data + j, &ione);
+			n = j;
+			val = ddot_ (&n, d->data + j * d->m, &ione, y->data, &ione);
+			n = d->m - j;
+			val += ddot_ (&n, d->data + j * d->m + j, &d->m, y->data + j, &ione);
 		} else if (mm_real_is_lower (d)) {
-			len = d->m - j;
-			val = ddot_ (&len, d->data + j * d->m + j, &ione, y->data + j, &ione);
-			len = j;
-			val += ddot_ (&len, d->data + j, &d->m, y->data, &ione);
+			n = d->m - j;
+			val = ddot_ (&n, d->data + j * d->m + j, &ione, y->data + j, &ione);
+			n = j;
+			val += ddot_ (&n, d->data + j, &d->m, y->data, &ione);
 		}
 	}
 	return val;
@@ -1168,17 +1171,17 @@ mm_real_adjpy (const double alpha, const mm_dense *d, const int j, mm_dense *y)
 {
 	if (!mm_real_is_symmetric (d)) daxpy_ (&d->m, &alpha, d->data + j * d->m, &ione, y->data, &ione);
 	else {
-		int		len;
+		int		n;
 		if (mm_real_is_upper (d)) {
-			len = j;
-			daxpy_ (&len, &alpha, d->data + j * d->m, &ione, y->data, &ione);
-			len = d->m - j;
-			daxpy_ (&len, &alpha, d->data + j * d->m + j, &d->m, y->data + j, &ione);
+			n = j;
+			daxpy_ (&n, &alpha, d->data + j * d->m, &ione, y->data, &ione);
+			n = d->m - j;
+			daxpy_ (&n, &alpha, d->data + j * d->m + j, &d->m, y->data + j, &ione);
 		} else if (mm_real_is_lower (d)) {
-			len = d->m - j;
-			daxpy_ (&len, &alpha, d->data + j * d->m + j, &ione, y->data + j, &ione);
-			len = j;
-			daxpy_ (&len, &alpha, d->data + j, &d->m, y->data, &ione);
+			n = d->m - j;
+			daxpy_ (&n, &alpha, d->data + j * d->m + j, &ione, y->data + j, &ione);
+			n = j;
+			daxpy_ (&n, &alpha, d->data + j, &d->m, y->data, &ione);
 		}
 	}
 	return;
@@ -1243,21 +1246,21 @@ mm_real_adjpy_atomic (const double alpha, const mm_dense *d, const int j, mm_den
 		dd = d->data + j * d->m;
 		for (k = 0; k < d->m; k++) atomic_add (yd + k, alpha * dd[k]);
 	} else {
-		int		len;
+		int		n;
 		if (mm_real_is_upper (d)) {
-			len = j;
+			n = j;
 			dd = d->data + j * d->m;
-			for (k = 0; k < len; k++) atomic_add (yd + k, alpha * dd[k]);
-			len = d->m - j;
+			for (k = 0; k < n; k++) atomic_add (yd + k, alpha * dd[k]);
+			n = d->m - j;
 			dd = d->data + j * d->m + j;
-			for (k = 0; k < len; k++) atomic_add (yd + j + k, alpha * dd[k * d->m]);
+			for (k = 0; k < n; k++) atomic_add (yd + j + k, alpha * dd[k * d->m]);
 		} else if (mm_real_is_lower (d)) {
-			len = d->m - j;
+			n = d->m - j;
 			dd = d->data + j * d->m + j;
-			for (k = 0; k < len; k++) atomic_add (yd + j + k, alpha * dd[k]);
-			len = j;
+			for (k = 0; k < n; k++) atomic_add (yd + j + k, alpha * dd[k]);
+			n = j;
 			dd = d->data + j;
-			for (k = 0; k < len; k++) atomic_add (yd + k, alpha * dd[k * d->m]);
+			for (k = 0; k < n; k++) atomic_add (yd + k, alpha * dd[k * d->m]);
 		}
 	}
 	return;
