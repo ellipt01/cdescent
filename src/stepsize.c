@@ -10,7 +10,7 @@
 
 #include "private/private.h"
 
-/* soft thresholding
+/* soft thresholding operator
  * S(z, gamma) = sign(z)(|z| - gamma)+
  *             = 0, -gamma <= z <= gamma,
  *               z - gamma, z >  gamma (> 0)
@@ -27,7 +27,7 @@ soft_threshold (const double z, const double gamma)
  * z = d L / d beta_j
  *   = c(j) - X(:,j)' * mu - X(:,j)' * b - lambda2 * D(:,j)' * D * beta
  *     + scale2 * beta_j,
- * however, the last term scale2 * beta_j is omitted */
+ * however, the last term, scale2 * beta_j is omitted */
 static double
 cdescent_gradient (const cdescent *cd, const int j)
 {
