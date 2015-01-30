@@ -86,7 +86,9 @@ cdescent_cyclic_update_once_cycle (cdescent *cd)
 
 	amax_eta = 0.;
 
-	/*** single "one-at-a-time" update of cyclic coordinate descent ***/
+	/*** single "one-at-a-time" update of cyclic coordinate descent
+	 * the following code was referring to shotgun by A.Kyrola,
+	 * https://github.com/akyrola/shotgun ****/
 	if (cd->parallel) {
 #pragma omp parallel for
 		for (j = 0; j < cd->lreg->x->n; j++) cdescent_update_atomic (cd, j, &amax_eta);
@@ -124,7 +126,7 @@ cdescent_cyclic_update (cdescent *cd)
 	return converged;
 }
 
-/* print solution path to stream */
+/* print out solution path to FILE *stream */
 static void
 fprintf_solutionpath (FILE *stream, const int iter, const cdescent *cd)
 {
