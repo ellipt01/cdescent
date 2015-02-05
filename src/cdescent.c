@@ -100,7 +100,8 @@ cdescent_free (cdescent *cd)
 	return;
 }
 
-/*** set penalty factor of adaptive L1 regression ***/
+/*** set penalty factor of adaptive L1 regression
+ * penalty factor = w.^tau ***/
 bool
 cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w, const double tau)
 {
@@ -118,7 +119,11 @@ cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w, const double tau)
 
 	/* copy w */
 	cd->w = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, w->m, 1, w->nnz);
-	for (j = 0; j < w->nnz; j++) cd->w->data[j] = pow (fabs (w->data[j]), tau);
+	if (fabs (tau - 1.) > DBL_EPSILON)	{
+		for (j = 0; j < w->nnz; j++) cd->w->data[j] = pow (fabs (w->data[j]), tau);
+	} else {
+		for (j = 0; j < w->nnz; j++) cd->w->data[j] = fabs (w->data[j]);
+	}
 	return (cd->w != NULL);
 }
 
