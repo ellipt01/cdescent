@@ -68,7 +68,7 @@ struct s_linregmodel {
 
 /* linregmodel.c */
 linregmodel	*linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d, PreProc proc);
-void			linregmodel_free (linregmodel *l);
+void		linregmodel_free (linregmodel *l);
 
 #ifdef __cplusplus
 }

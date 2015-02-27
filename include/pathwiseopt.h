@@ -38,10 +38,10 @@ struct s_pathwiseopt {
 };
 
 pathwiseopt	*pathwiseopt_new (const double log10_lambda1_lower, const double dlog10_lambda1);
-void			pathwiseopt_free (pathwiseopt *path);
-void			pathwiseopt_set_to_outputs_fullpath (pathwiseopt *path, const char *fn);
-void			pathwiseopt_set_to_outputs_bic_info (pathwiseopt *path, const char *fn);
-void			pathwiseopt_set_gamma_bic (pathwiseopt *path, const double gamma_bic);
+void		pathwiseopt_free (pathwiseopt *path);
+void		pathwiseopt_set_to_outputs_fullpath (pathwiseopt *path, const char *fn);
+void		pathwiseopt_set_to_outputs_bic_info (pathwiseopt *path, const char *fn);
+void		pathwiseopt_set_gamma_bic (pathwiseopt *path, const double gamma_bic);
 
 #ifdef __cplusplus
 }

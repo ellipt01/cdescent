@@ -62,11 +62,11 @@ mm_read_unsymmetric_sparse (const char *fname, int *M_, int *N_, int *nz_, doubl
 	/* NOTE: when reading in doubles, ANSI C requires the use of the "l"  */
 	/*   specifier as in "%lg", "%lf", "%le", otherwise errors will occur */
 	/*  (ANSI C X3.159-1989, Sec. 4.9.6.2, p. 136 lines 13-15)			*/
- 
-	for (i = 0; i < nz; i++) {
-		fscanf (f, "%d %d %lg\n", &I[i], &J[i], &val[i]);
+	i = 0;
+	while (fscanf (f, "%d %d %lg\n", &I[i], &J[i], &val[i]) != EOF) {
 		I[i]--;  /* adjust from 1-based to 0-based */
 		J[i]--;
+		if (++i >= nz) break;
 	}
 	fclose (f);
  

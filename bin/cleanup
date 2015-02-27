@@ -30,6 +30,9 @@ rm -f ltmain.sh stamp-h1 config.log config.h config.sub config.status config.gue
 echo "rm -f configure libtool bin/.dirstamp"
 rm -f configure libtool bin/.dirstamp gmon.out
 
+echo "rm -f ar-lib"
+rm -f ar-lib
+
 for i in . src include example; do
 
 	echo "rm -f $i/*.data"
@@ -48,6 +51,9 @@ for i in . src include example; do
 	rm -rf $i/.deps
 
 done
+
+rm -rf src/private/.deps
+rm -f src/private/.dirstamp
 
 echo -n "rm "
 find . -name '*~' -print
