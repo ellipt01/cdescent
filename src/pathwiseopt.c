@@ -11,6 +11,27 @@
 
 #include "private/private.h"
 
+static reweighting_func *
+reweighting_function_alloc (void)
+{
+	reweighting_func	*func = (reweighting_func *) malloc (sizeof (reweighting_func));
+	func->tau = 0.;
+	func->function = NULL;
+	func->data = NULL;
+	return func;
+}
+
+reweighting_func *
+reweighting_function_new (const double tau, const weight_func function, void *data)
+{
+	reweighting_func	*func = reweighting_function_alloc ();
+	func->tau = tau;
+	func->function = function;
+	func->data = data;
+	return func;
+}
+
+
 // default file to output solution path
 static const char	default_fn_path[] = "beta_path.data";
 
@@ -32,6 +53,7 @@ pathwiseopt_alloc (void)
 	path->lambda1_opt = 0.;
 	path->nrm1_opt = 0.;
 	path->min_bic_val = CDESCENT_POSINF;
+	path->func = NULL;
 	return path;
 }
 
@@ -83,3 +105,11 @@ pathwiseopt_set_gamma_bic (pathwiseopt *path, const double gamma_bic)
 	path->gamma_bic = gamma_bic;
 	return;
 }
+
+void
+pathwiseopt_set_reweighting (pathwiseopt *path, reweighting_func *func)
+{
+	path->func = func;
+	return;
+}
+

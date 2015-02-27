@@ -227,6 +227,13 @@ cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 	while (1) {
 		bic_info	*info;
 
+		if (path->func) {
+			mm_dense	*w = path->func->function (iter, cd, path->func->data);
+			cdescent_set_penalty_factor (cd, w, path->func->tau);
+			mm_real_free (w);
+		}
+
+
 		cdescent_set_log10_lambda1 (cd, logt);
 
 		if (!cdescent_cyclic_update (cd)) break;
