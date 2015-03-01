@@ -112,8 +112,10 @@ weight_func0 (int iter, cdescent *cd, void *data)
 	int			i;
 	int			m = cd->beta->m;
 	mm_dense	*w = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, m, 1, m);
-	double		eps = 1.e-3;
-	for (i = 0; i < m; i++) w->data[i] = 1. / (fabs (cd->beta->data[i]) + eps);
+	double		eps = *(double *) data;
+fprintf (stderr, "eps = %f\n", eps);
+	if (iter == 0) mm_real_set_all (w, 1.);
+	else for (i = 0; i < m; i++) w->data[i] = 1. / (fabs (cd->beta->data[i]) + eps);
 	return w;
 }
 
@@ -178,7 +180,8 @@ main (int argc, char **argv)
 	pathwiseopt_set_to_outputs_bic_info (path, NULL);	// output BIC info
 	pathwiseopt_set_gamma_bic (path, gamma_bic);		// set gamma for eBIC
 	{
-		reweighting_func	*func = reweighting_function_new (1., weight_func0, NULL);
+		double				eps = 1.e-3;
+		reweighting_func	*func = reweighting_function_new (1., weight_func0, &eps);
 		pathwiseopt_set_reweighting (path, func);
 	}
 
