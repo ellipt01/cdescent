@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <cdescent.h>
+#include <mmreal.h>
 
 #include "private/private.h"
 #include "private/atomic.h"
@@ -73,8 +74,8 @@ cdescent_update_atomic (cdescent *cd, int j, double *amax_eta)
 }
 
 /*** progress coordinate descent update for one full cycle ***/
-bool
-cdescent_cyclic_update_once_cycle (cdescent *cd)
+static bool
+cdescent_update_once_cycle (cdescent *cd)
 {
 	int		j;
 	double	amax_eta;	// max of |eta(j)| = |beta_new(j) - beta_prev(j)|
@@ -103,10 +104,10 @@ cdescent_cyclic_update_once_cycle (cdescent *cd)
 	return (amax_eta < cd->tolerance);
 }
 
-/*** cyclic coordinate descent
+/*** do cyclic coordinate descent optimization for fixed lambda1
  * repeat coordinate descent until solution is converged ***/
 bool
-cdescent_cyclic_update (cdescent *cd)
+cdescent_do_cyclic_update (cdescent *cd)
 {
 	int		iter = 0;
 	bool	converged = false;
@@ -115,7 +116,7 @@ cdescent_cyclic_update (cdescent *cd)
 
 	while (!converged) {
 
-		converged = cdescent_cyclic_update_once_cycle (cd);
+		converged = cdescent_update_once_cycle (cd);
 
 		if (++iter >= cd->maxiter) {
 			printf_warning ("cdescent_cyclic_update", "reaching max number of iterations.", __FILE__, __LINE__);
@@ -154,7 +155,7 @@ set_logt (const double logt_lower, const double new_logt, double *logt)
 
 /* store lambda1_opt, nrm1_opt and beta_opt */
 static void
-store_optimal (pathwiseopt *path, const double lambda1, const double nrm1, const mm_dense *beta)
+store_optimal (pathwise *path, const double lambda1, const double nrm1, const mm_dense *beta)
 {
 	path->lambda1_opt = lambda1;
 	path->nrm1_opt = nrm1;
@@ -163,15 +164,15 @@ store_optimal (pathwiseopt *path, const double lambda1, const double nrm1, const
 	return;
 }
 
-/*** pathwise cyclic coordinate descent optimization.
- * The regression is starting at the smallest value λ1max for which
- * the entire vector β = 0, and decreasing sequence of values for λ1
- * while log10(λ1) >= path->log10_lambda1_lower.
- * log10(λ1max) is identical with log10 ( max ( abs(X' * y) ) ), where this
+/*** do pathwise cyclic coordinate descent optimization.
+ * The regression is starting at the smallest value lambda1_max for which
+ * the entire vector beta = 0, and decreasing sequence of values for lambda1
+ * while log10(lambda1) >= path->log10_lambda1_lower.
+ * log10(lambda1_max) is identical with log10 ( max ( abs(X' * y) ) ), where this
  * value is stored in cd->lreg->log10camax.
  * The interval of decreasing sequence on the log10 scale is path->dlog10_lambda1. ***/
 bool
-cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
+cdescent_do_pathwise_optimization (cdescent *cd)
 {
 	int		iter = 0;
 	double	logt;
@@ -181,7 +182,7 @@ cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 	FILE	*fp_bic = NULL;
 
 	if (!cd) error_and_exit ("cdescent_cyclic_pathwise", "cdescent *cd is empty.", __FILE__, __LINE__);
-	if (!path) error_and_exit ("cdescent_cyclic_pathwise", "pathwiseopt *path is empty.", __FILE__, __LINE__);
+	if (!cd->path) error_and_exit ("cdescent_cyclic_pathwise", "cd->path is empty.", __FILE__, __LINE__);
 
 	// initialize cdescent if need
 	if (cd->was_modified) {
@@ -193,31 +194,31 @@ cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 		cd->total_iter = 0;
 		cd->was_modified = false;
 	}
-	// initialize pathwiseopt if need
-	if (path->was_modified) {
-		if (path->beta_opt) mm_real_free (path->beta_opt);
-		path->beta_opt = NULL;
-		path->lambda1_opt = 0.;
-		path->nrm1_opt = 0.;
-		path->min_bic_val = CDESCENT_POSINF;
-		path->was_modified = false;
+	// initialize pathwise if need
+	if (cd->path->was_modified) {
+		if (cd->path->beta_opt) mm_real_free (cd->path->beta_opt);
+		cd->path->beta_opt = NULL;
+		cd->path->lambda1_opt = 0.;
+		cd->path->nrm1_opt = 0.;
+		cd->path->min_bic_val = CDESCENT_POSINF;
+		cd->path->was_modified = false;
 	}
 
 	/* warm start */
-	stop_flag = set_logt (path->log10_lambda1_lower, cd->lreg->log10camax, &logt);
+	stop_flag = set_logt (cd->path->log10_lambda1_lower, cd->path->log10_lambda1_upper, &logt);
 
-	if (path->output_fullpath) {
-		if (!(fp_path = fopen (path->fn_path, "w"))) {
+	if (cd->path->output_fullpath) {
+		if (!(fp_path = fopen (cd->path->fn_path, "w"))) {
 			char	msg[80];
-			sprintf (msg, "cannot open file %s.", path->fn_path);
+			sprintf (msg, "cannot open file %s.", cd->path->fn_path);
 			printf_warning ("cdescent_cyclic_pathwise", msg, __FILE__, __LINE__);
 		}
 		if (fp_path) fprintf_solutionpath (fp_path, iter, cd);
 	}
-	if (path->output_bic_info) {
-		if (!(fp_bic = fopen (path->fn_bic, "w"))) {
+	if (cd->path->output_bic_info) {
+		if (!(fp_bic = fopen (cd->path->fn_bic, "w"))) {
 			char	msg[80];
-			sprintf (msg, "cannot open file %s.", path->fn_bic);
+			sprintf (msg, "cannot open file %s.", cd->path->fn_bic);
 			printf_warning ("cdescent_cyclic_pathwise", msg, __FILE__, __LINE__);
 		}
 		// output BIC info headers
@@ -227,26 +228,25 @@ cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 	while (1) {
 		bic_info	*info;
 
-		if (path->func) {
-			mm_dense	*w = path->func->function (iter, cd, path->func->data);
-			cdescent_set_penalty_factor (cd, w, path->func->tau);
+		if (cd->path->func) {
+			mm_dense	*w = cd->path->func->function (iter, cd, cd->path->func->data);
+			cdescent_set_penalty_factor (cd, w, cd->path->func->tau);
 			mm_real_free (w);
 		}
 
-
 		cdescent_set_log10_lambda1 (cd, logt);
 
-		if (!cdescent_cyclic_update (cd)) break;
+		if (!cdescent_do_cyclic_update (cd)) break;
 
 		// output solution path
 		if (fp_path) fprintf_solutionpath (fp_path, iter, cd);
 
-		info = cdescent_eval_bic (cd, path->gamma_bic);
+		info = cdescent_eval_bic (cd, cd->path->gamma_bic);
 		// if bic_val < min_bic_val, update min_bic_val, lambda1_opt, nrm1_opt and beta_opt
-		if (info->bic_val < path->min_bic_val) {
-			store_optimal (path, cd->lambda1, cd->nrm1, cd->beta);
-			path->min_bic_val = info->bic_val;
-			if (!path->was_modified) path->was_modified = true;
+		if (info->bic_val < cd->path->min_bic_val) {
+			store_optimal (cd->path, cd->lambda1, cd->nrm1, cd->beta);
+			cd->path->min_bic_val = info->bic_val;
+			if (!cd->path->was_modified) cd->path->was_modified = true;
 		}
 
 		// output BIC info
@@ -257,7 +257,7 @@ cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 
 		/* if logt - dlog10_lambda1 < log10_lambda1, logt = log10_lambda1 and stop_flag is set to true
 		 * else logt -= dlog10_lambda1 */
-		stop_flag = set_logt (path->log10_lambda1_lower, logt - path->dlog10_lambda1, &logt);
+		stop_flag = set_logt (cd->path->log10_lambda1_lower, logt - cd->path->dlog10_lambda1, &logt);
 
 		iter++;
 	}
@@ -265,5 +265,5 @@ cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path)
 	if (fp_path) fclose (fp_path);
 	if (fp_bic) fclose (fp_bic);
 
-	return path->was_modified;
+	return cd->path->was_modified;
 }

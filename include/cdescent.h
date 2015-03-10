@@ -15,8 +15,7 @@ extern "C" {
 #include <stdbool.h>
 #include <linregmodel.h>
 #include <bic.h>
-#include <s_cdescent.h>
-#include <pathwiseopt.h>
+#include "objects.h"
 
 /* cdescent.c */
 cdescent	*cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool parallel);
@@ -25,10 +24,19 @@ bool		cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w, const double
 bool		cdescent_set_lambda1 (cdescent *cd, const double lambda1);
 bool		cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1);
 
+void		cdescent_set_pathwise_log10_lambda1_upper (cdescent *cd, const double log10_lambda1_upper);
+void		cdescent_set_pathwise_log10_lambda1_lower (cdescent *cd, const double log10_lambda1_lower);
+void		cdescent_set_pathwise_dlog10_lambda1 (cdescent *cd, const double dlog10_lambda1);
+void		cdescent_set_pathwise_outputs_fullpath (cdescent *cd, const char *fn);
+void		cdescent_set_pathwise_outputs_bic_info (cdescent *cd, const char *fn);
+void		cdescent_set_pathwise_gamma_bic (cdescent *cd, const double gamma_bic);
+
+reweighting_func * reweighting_function_new (const double tau, const weight_func func, void *data);
+void		cdescent_set_pathwise_reweighting (cdescent *cd, reweighting_func *func);
+
 /* regression.c */
-bool		cdescent_cyclic_update_once_cycle (cdescent *cd);
-bool		cdescent_cyclic_update (cdescent *cd);
-bool		cdescent_cyclic_pathwise (cdescent *cd, pathwiseopt *path);
+bool		cdescent_do_cyclic_update (cdescent *cd);
+bool		cdescent_do_pathwise_optimization (cdescent *cd);
 
 /* bic.c */
 bic_info	*cdescent_eval_bic (const cdescent *cd, double gamma);

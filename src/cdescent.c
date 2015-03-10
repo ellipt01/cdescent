@@ -6,10 +6,71 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <cdescent.h>
 
 #include "private/private.h"
+
+static reweighting_func *
+reweighting_function_alloc (void)
+{
+	reweighting_func	*func = (reweighting_func *) malloc (sizeof (reweighting_func));
+	func->tau = 0.;
+	func->function = NULL;
+	func->data = NULL;
+	return func;
+}
+
+reweighting_func *
+reweighting_function_new (const double tau, const weight_func function, void *data)
+{
+	reweighting_func	*func = reweighting_function_alloc ();
+	func->tau = tau;
+	func->function = function;
+	func->data = data;
+	return func;
+}
+
+
+// default file to output solution path
+static const char	default_fn_path[] = "beta_path.data";
+
+// default file to output BIC info
+static const char	default_fn_bic[] = "bic_info.data";
+
+/* allocate pathwise optimization object */
+static pathwise *
+pathwise_alloc (void)
+{
+	pathwise	*path = (pathwise *) malloc (sizeof (pathwise));
+	path->was_modified = false;
+
+	path->log10_lambda1_upper = 0.;
+	path->log10_lambda1_lower = 0.;
+	path->dlog10_lambda1 = 0.;
+
+	path->output_fullpath = false;
+	path->output_bic_info = false;
+	path->gamma_bic = 0.;
+	path->beta_opt = NULL;
+	path->lambda1_opt = 0.;
+	path->nrm1_opt = 0.;
+	path->min_bic_val = CDESCENT_POSINF;
+	path->func = NULL;
+	return path;
+}
+
+/*** free pathwise optimization object ***/
+static void
+pathwise_free (pathwise *path)
+{
+	if (path) {
+		if (path->beta_opt) mm_real_free (path->beta_opt);
+		free (path);
+	}
+	return;
+}
 
 /* allocate cdescent object */
 static cdescent *
@@ -38,6 +99,8 @@ cdescent_alloc (void)
 
 	cd->parallel = false;
 	cd->total_iter = 0;
+
+	cd->path = NULL;
 
 	return cd;
 }
@@ -83,6 +146,14 @@ cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool
 	cd->maxiter = maxiter;
 	cd->parallel = parallel;
 
+	cd->path = pathwise_alloc ();
+	/* default values */
+	cd->path->log10_lambda1_upper = lreg->log10camax;
+	cd->path->log10_lambda1_lower = log10 (tol);
+	cd->path->dlog10_lambda1 = 0.25;
+	strcpy (cd->path->fn_path, default_fn_path);	// default filename
+	strcpy (cd->path->fn_bic, default_fn_bic);		// default filename
+
 	return cd;
 }
 
@@ -95,6 +166,7 @@ cdescent_free (cdescent *cd)
 		if (cd->beta) mm_real_free (cd->beta);
 		if (cd->mu) mm_real_free (cd->mu);
 		if (cd->nu) mm_real_free (cd->nu);
+		if (cd->path) pathwise_free (cd->path);
 		free (cd);
 	}
 	return;
@@ -118,6 +190,7 @@ cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w, const double tau)
 	if (w->m != cd->lreg->x->n) error_and_exit ("cdescent_set_penalty_factor", "dimensions of w and cd->lreg->x do not match.", __FILE__, __LINE__);
 
 	/* copy w */
+	if (cd->w) mm_real_free (cd->w);
 	cd->w = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, w->m, 1, w->nnz);
 	if (fabs (tau - 1.) > DBL_EPSILON)	{
 		for (j = 0; j < w->nnz; j++) cd->w->data[j] = pow (fabs (w->data[j]), tau);
@@ -142,8 +215,64 @@ cdescent_set_lambda1 (cdescent *cd, const double lambda1)
 }
 
 /*** set cd->lambda1 to 10^log10_lambda1 ***/
- bool
+bool
 cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1)
 {
 	return cdescent_set_lambda1 (cd, pow (10., log10_lambda1));
+}
+
+/*** routines to tuning pathwise CD optimization ***/
+void
+cdescent_set_pathwise_log10_lambda1_upper (cdescent *cd, const double log10_lambda1_upper)
+{
+	cd->path->log10_lambda1_upper = log10_lambda1_upper;
+	return;
+}
+
+/*** routines to tuning pathwise CD optimization ***/
+void
+cdescent_set_pathwise_log10_lambda1_lower (cdescent *cd, const double log10_lambda1_lower)
+{
+	cd->path->log10_lambda1_lower = log10_lambda1_lower;
+	return;
+}
+
+void
+cdescent_set_pathwise_dlog10_lambda1 (cdescent *cd, const double dlog10_lambda1)
+{
+	cd->path->dlog10_lambda1 = dlog10_lambda1;
+	return;
+}
+
+/*** set outputs_fullpath = true and specify output filename ***/
+void
+cdescent_set_pathwise_outputs_fullpath (cdescent *cd, const char *fn)
+{
+	cd->path->output_fullpath = true;
+	if (fn) strcpy (cd->path->fn_path, fn);
+	return;
+}
+
+/*** set outputs_bic_info = true and specify output filename ***/
+void
+cdescent_set_pathwise_outputs_bic_info (cdescent *cd, const char *fn)
+{
+	cd->path->output_bic_info = true;
+	if (fn) strcpy (cd->path->fn_bic, fn);
+	return;
+}
+
+/*** set gamma of eBIC ***/
+void
+cdescent_set_pathwise_gamma_bic (cdescent *cd, const double gamma_bic)
+{
+	cd->path->gamma_bic = gamma_bic;
+	return;
+}
+
+void
+cdescent_set_pathwise_reweighting (cdescent *cd, reweighting_func *func)
+{
+	cd->path->func = func;
+	return;
 }

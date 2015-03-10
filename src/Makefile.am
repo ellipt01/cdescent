@@ -14,7 +14,6 @@ libcdescent_la_SOURCES =\
 	linregmodel.c\
 	cdescent.c\
 	stepsize.c\
-	pathwiseopt.c\
 	bic.c\
 	regression.c
 

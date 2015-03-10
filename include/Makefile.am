@@ -5,10 +5,9 @@ libcdescent_includedir = $(pkgincludedir)
 libcdescent_include_DATA =\
 	mmio.h\
 	mmreal.h\
-	s_cdescent.h\
+	objects.h\
 	linregmodel.h\
 	bic.h\
-	pathwiseopt.h\
 	cdescent.h
 
 EXTRA_DIST = $(libcdescent_include_DATA)

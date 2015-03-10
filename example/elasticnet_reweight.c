@@ -113,7 +113,6 @@ weight_func0 (int iter, cdescent *cd, void *data)
 	int			m = cd->beta->m;
 	mm_dense	*w = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, m, 1, m);
 	double		eps = *(double *) data;
-fprintf (stderr, "eps = %f\n", eps);
 	if (iter == 0) mm_real_set_all (w, 1.);
 	else for (i = 0; i < m; i++) w->data[i] = 1. / (fabs (cd->beta->data[i]) + eps);
 	return w;
@@ -129,8 +128,6 @@ main (int argc, char **argv)
 	linregmodel	*lreg;
 
 	cdescent	*cd;
-
-	pathwiseopt	*path;
 
 	FILE		*fp;
 
@@ -175,23 +172,23 @@ main (int argc, char **argv)
 	cd = cdescent_new (lreg, tolerance, maxiter, false);
 
 	/*** create pathwise CCD optimization object ***/
-	path = pathwiseopt_new (log10_lambda1, dlog10_lambda1);
-	pathwiseopt_set_to_outputs_fullpath (path, NULL);	// output full solution path
-	pathwiseopt_set_to_outputs_bic_info (path, NULL);	// output BIC info
-	pathwiseopt_set_gamma_bic (path, gamma_bic);		// set gamma for eBIC
+	cdescent_set_pathwise_log10_lambda1_lower (cd, log10_lambda1);
+	cdescent_set_pathwise_dlog10_lambda1 (cd, dlog10_lambda1);
+	cdescent_set_pathwise_outputs_fullpath (cd, NULL);	// output full solution path
+	cdescent_set_pathwise_outputs_bic_info (cd, NULL);	// output BIC info
+	cdescent_set_pathwise_gamma_bic (cd, gamma_bic);		// set gamma for eBIC
 	{
 		double				eps = 1.e-3;
 		reweighting_func	*func = reweighting_function_new (1., weight_func0, &eps);
-		pathwiseopt_set_reweighting (path, func);
+		cdescent_set_pathwise_reweighting (cd, func);
 	}
 
 	/*** do pathwise CCD regression ***/
-	cdescent_cyclic_pathwise (cd, path);
+	cdescent_do_pathwise_optimization (cd);
 
 	fprintf (stderr, "lambda1_opt = %.2f, nrm1(beta_opt) = %.2f, min_bic = %.2f\n",
-		path->lambda1_opt, path->nrm1_opt, path->min_bic_val);
+		cd->path->lambda1_opt, cd->path->nrm1_opt, cd->path->min_bic_val);
 
-	pathwiseopt_free (path);
 	cdescent_free (cd);
 	linregmodel_free (lreg);
 
