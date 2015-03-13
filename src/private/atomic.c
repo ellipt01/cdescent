@@ -10,21 +10,22 @@
 #define atomic_bool_compare_and_swap(p, f, t) __sync_bool_compare_and_swap((p), (f), (t))
 
 /* union with double and long */
-union dlvar {
+union {
 	double	dv;
 	long	lv;
-};
+} dlvar;
 
 /*** atomic add operation ***/
 void
 atomic_add (double *data, double delta)
 {
-	union dlvar	old;
-	union dlvar	new;
+	long	old_lv, new_lv;
 	while (1) {
-		old.dv = *data;
-		new.dv = old.dv + delta;
-		if (atomic_bool_compare_and_swap ((long *) data, *(volatile long *) &old.lv, *(volatile long *) &new.lv))
+		dlvar.dv = *data;
+		old_lv = dlvar.lv;
+		dlvar.dv += delta;
+		new_lv = dlvar.lv;
+		if (atomic_bool_compare_and_swap ((volatile long *) data, old_lv, new_lv))
 			break;
 	}
 	return;
@@ -34,13 +35,14 @@ atomic_add (double *data, double delta)
 void
 atomic_max (double *data, double val)
 {
-	union dlvar	old;
-	union dlvar	new;
+	long	old_lv, new_lv;
 	if (*data >= val) return;
 	while (1) {
-		old.dv = *data;
-		new.dv = val;
-		if (atomic_bool_compare_and_swap ((long *) data, *(volatile long *) &old.lv, *(volatile long *) &new.lv))
+		dlvar.dv = *data;
+		old_lv = dlvar.lv;
+		dlvar.dv = val;
+		new_lv = dlvar.lv;
+		if (atomic_bool_compare_and_swap ((volatile long *) data, old_lv, new_lv))
 			break;
 	}
 	return;

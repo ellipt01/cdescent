@@ -83,7 +83,7 @@ mm_real *
 mm_real_new (MMRealFormat format, MMRealSymm symm, const int m, const int n, const int nnz)
 {
 	mm_real	*x;
-	bool		symmetric;
+	bool	symmetric;
 
 	if (!is_format_valid (format))
 		error_and_exit ("mm_real_new", "invalid MMRealFormat format.", __FILE__, __LINE__);

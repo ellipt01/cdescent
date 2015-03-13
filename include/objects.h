@@ -12,8 +12,10 @@
 extern "C" {
 #endif
 
-typedef struct s_cdescent	cdescent;
-typedef struct s_pathwise	pathwise;
+typedef struct s_cdescent		cdescent;
+typedef struct s_linregmodel	linregmodel;
+typedef struct s_pathwise		pathwise;
+typedef struct s_bic_info		bic_info;
 
 /*** object of coordinate descent regression for L1 regularized linear regression problem
  *       argmin_beta || b - Z * beta ||^2 + sum_j lambda1 * | beta_j |
@@ -49,6 +51,54 @@ struct s_cdescent {
 
 };
 
+/*** Object of convex/nonconvex regularized linear regression problem
+ *
+ *   argmin_beta || b - Z * beta ||^2
+ *
+ *   where
+ *   	b = [y; 0]
+ *   	Z = scale * [X; sqrt(lambda2) * D] ***/
+
+/* flag of data preprocessing */
+typedef enum {
+	DO_NOTHING       = 0x0,		// do nothing
+	DO_CENTERING_Y   = 1 << 0,	// do centering y
+	DO_CENTERING_X   = 1 << 1,	// do centering x
+	DO_NORMALIZING_X = 1 << 2,	// do normalizing x
+	// do standardizing x
+	DO_STANDARDIZING_X = DO_CENTERING_X | DO_NORMALIZING_X
+} PreProc;
+
+struct s_linregmodel {
+	bool		has_copy_y;	// has copy of y
+	bool		has_copy_x;	// has copy of x
+
+	mm_dense	*y;		// dense general: observed data vector y (must be dense)
+	mm_real	*x;		// sparse/dense symmetric/general: matrix of predictors X
+	mm_real	*d;		// sparse/dense symmetric/general: linear operator of penalty D
+
+	double		lambda2;	// weight for penalty term
+
+	mm_dense	*c;				// = x' * y: correlation (constant) vector
+	double		log10camax;	// log10 ( amax(c) )
+
+	bool		ycentered;		// y is centered?
+	bool		xcentered;		// x is centered?
+	bool		xnormalized;	// x is normalized?
+
+	/* sum y. If y is centered, sy = NULL */
+	double		*sy;
+
+	/* sum X(:, j). If X is centered, sx = NULL. */
+	double		*sx;
+
+	/* xtx = diag(X' * X). If X is normalized, xtx = NULL. */
+	double		*xtx;
+
+	/* dtd = diag(D' * D), D = lreg->pen->d */
+	double		*dtd;
+
+};
 
 /*** reweighting function
  * the function weighting_func is called to calculate weight
@@ -70,10 +120,10 @@ struct s_pathwise {
 
 	bool		was_modified;		// whether this object was modified after initialization
 
-	char		fn_path[BUFSIZ];	// file to output solution path
 	bool		output_fullpath;	// whether to outputs full solution path
-	char		fn_bic[BUFSIZ];		// file to output BIC info
+	char		fn_path[BUFSIZ];	// file to output solution path
 	bool		output_bic_info;	// whether to outputs BIC info
+	char		fn_bic[BUFSIZ];		// file to output BIC info
 	double		gamma_bic;			// gamma for eBIC
 
 	double		log10_lambda1_upper;// upper bound of lambda1 on log10 scale
@@ -81,12 +131,26 @@ struct s_pathwise {
 	double		dlog10_lambda1;		// increment of lambda1 on log10 scale
 
 	double		min_bic_val;		// minimum BIC
+	int			index_opt;			// index of optimal beta
 	mm_dense	*beta_opt;			// optimal beta corresponding to min_bic_val
 	double		lambda1_opt;		// optimal lambda1
 	double		nrm1_opt;			// | beta_opt |
 
 	reweighting_func	*func;		// reweighting function
 
+};
+
+/*** Extended Bayesian Information Criterion (Chen and Chen, 2008)
+ * eBIC = log(rss) + df * (log(m) + 2 * gamma * log(n)) / m
+ * 	if gamma = 0, eBIC is identical with the classical BIC ***/
+struct s_bic_info
+{
+	double		m;			// number of data
+	double		n;			// number of variables
+	double		rss;		// residual sum of squares
+	double		df;			// degree of freedom
+	double		gamma;		// tuning parameter for eBIC (0 <= gamma <= 1)
+	double		bic_val;	// value of eBIC
 };
 
 #ifdef __cplusplus

@@ -66,7 +66,7 @@ struct s_mm_real {
 	double			*data;	// nonzero matrix elements: size = nnz
 };
 
-mm_real	*mm_real_new (MMRealFormat format, MMRealSymm symmetric, const int m, const int n, const int nnz);
+mm_real		*mm_real_new (MMRealFormat format, MMRealSymm symm, const int m, const int n, const int nnz);
 void		mm_real_free (mm_real *mm);
 bool		mm_real_realloc (mm_real *mm, const int nnz);
 
@@ -77,17 +77,17 @@ void		mm_real_set_symmetric (mm_real *x);
 void		mm_real_set_upper (mm_real *x);
 void		mm_real_set_lower (mm_real *x);
 
-mm_real	*mm_real_copy (const mm_real *mm);
+mm_real		*mm_real_copy (const mm_real *mm);
 void		mm_real_set_all (mm_real *mm, const double val);
 
 mm_dense	*mm_real_sparse_to_dense (const mm_sparse *s);
 mm_sparse	*mm_real_dense_to_sparse (const mm_dense *x, const double threshold);
-mm_real	*mm_real_symmetric_to_general (const mm_real *x);
+mm_real		*mm_real_symmetric_to_general (const mm_real *x);
 
-mm_real	*mm_real_eye (MMRealFormat type, const int n);
+mm_real		*mm_real_eye (MMRealFormat type, const int n);
 
-mm_real	*mm_real_vertcat (const mm_real *x1, const mm_real *x2);
-mm_real	*mm_real_holzcat (const mm_real *x1, const mm_real *x2);
+mm_real		*mm_real_vertcat (const mm_real *x1, const mm_real *x2);
+mm_real		*mm_real_holzcat (const mm_real *x1, const mm_real *x2);
 
 void		mm_real_xj_add_const (mm_real *x, const int j, const double alpha);
 void		mm_real_xj_scale (mm_real *x, const int j, const double alpha);
@@ -102,7 +102,7 @@ double		mm_real_xj_trans_dot_y (const mm_real *x, const int j, const mm_dense *y
 void		mm_real_axjpy (const double alpha, const mm_real *x, const int j, mm_dense *y);
 void		mm_real_axjpy_atomic (const double alpha, const mm_real *x, const int j, mm_dense *y);
 
-mm_real	*mm_real_fread (FILE *fp);
+mm_real		*mm_real_fread (FILE *fp);
 void		mm_real_fwrite (FILE *stream, const mm_real *x, const char *format);
 
 #ifdef __cplusplus

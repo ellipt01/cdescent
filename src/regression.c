@@ -155,8 +155,9 @@ set_logt (const double logt_lower, const double new_logt, double *logt)
 
 /* store lambda1_opt, nrm1_opt and beta_opt */
 static void
-store_optimal (pathwise *path, const double lambda1, const double nrm1, const mm_dense *beta)
+store_optimal (pathwise *path, const int index, const double lambda1, const double nrm1, const mm_dense *beta)
 {
+	path->index_opt = index;
 	path->lambda1_opt = lambda1;
 	path->nrm1_opt = nrm1;
 	if (path->beta_opt) mm_real_free (path->beta_opt);
@@ -228,6 +229,8 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 	while (1) {
 		bic_info	*info;
 
+		iter++;
+
 		if (cd->path->func) {
 			mm_dense	*w = cd->path->func->function (iter, cd, cd->path->func->data);
 			cdescent_set_penalty_factor (cd, w, cd->path->func->tau);
@@ -244,7 +247,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 		info = cdescent_eval_bic (cd, cd->path->gamma_bic);
 		// if bic_val < min_bic_val, update min_bic_val, lambda1_opt, nrm1_opt and beta_opt
 		if (info->bic_val < cd->path->min_bic_val) {
-			store_optimal (cd->path, cd->lambda1, cd->nrm1, cd->beta);
+			store_optimal (cd->path, iter, cd->lambda1, cd->nrm1, cd->beta);
 			cd->path->min_bic_val = info->bic_val;
 			if (!cd->path->was_modified) cd->path->was_modified = true;
 		}
@@ -259,7 +262,6 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 		 * else logt -= dlog10_lambda1 */
 		stop_flag = set_logt (cd->path->log10_lambda1_lower, logt - cd->path->dlog10_lambda1, &logt);
 
-		iter++;
 	}
 
 	if (fp_path) fclose (fp_path);

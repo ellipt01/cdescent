@@ -13,9 +13,10 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
+#include <mmreal.h>
+#include <objects.h>
 #include <linregmodel.h>
 #include <bic.h>
-#include "objects.h"
 
 /* cdescent.c */
 cdescent	*cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool parallel);
@@ -37,9 +38,6 @@ void		cdescent_set_pathwise_reweighting (cdescent *cd, reweighting_func *func);
 /* regression.c */
 bool		cdescent_do_cyclic_update (cdescent *cd);
 bool		cdescent_do_pathwise_optimization (cdescent *cd);
-
-/* bic.c */
-bic_info	*cdescent_eval_bic (const cdescent *cd, double gamma);
 
 #ifdef __cplusplus
 }

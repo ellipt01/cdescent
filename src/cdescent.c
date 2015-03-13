@@ -53,6 +53,7 @@ pathwise_alloc (void)
 	path->output_fullpath = false;
 	path->output_bic_info = false;
 	path->gamma_bic = 0.;
+	path->index_opt = 0;
 	path->beta_opt = NULL;
 	path->lambda1_opt = 0.;
 	path->nrm1_opt = 0.;
@@ -150,7 +151,7 @@ cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool
 	/* default values */
 	cd->path->log10_lambda1_upper = lreg->log10camax;
 	cd->path->log10_lambda1_lower = log10 (tol);
-	cd->path->dlog10_lambda1 = 0.25;
+	cd->path->dlog10_lambda1 = 0.1;
 	strcpy (cd->path->fn_path, default_fn_path);	// default filename
 	strcpy (cd->path->fn_bic, default_fn_bic);		// default filename
 

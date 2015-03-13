@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include <mmreal.h>
 #include <linregmodel.h>
 
 #include "private/private.h"
