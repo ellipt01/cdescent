@@ -1,69 +1,53 @@
-#!/bin/sh
+#!/bin/bash
+
+d=$(dirname $BASH_SOURCE)
+cd ${d%bin}
+pwd
 
 if [ -e Makefile ]; then
-	echo "make clean"
-	make clean > /dev/null 2>&1
+echo "make clean"
+make clean > /dev/null 2>&1
 fi
-
 echo "cleanworkspace"
-path=${0%/*}
-./"$path"/workspace_clean
-
+./bin/workspace_clean
 echo "rm -rf autom4te.cache"
 rm -rf autom4te.cache
-
 echo "rm -f compile"
 rm -f compile
-
 echo "rm -f config.h.in install-sh missing depcomp aclocal.m4 acinclude.m4"
 rm -f config.h.in install-sh missing depcomp aclocal.m4 acinclude.m4
-
 echo "rm -f stamp-h.in"
 rm -f stamp-h.in
-
 echo "rm -f *.pc"
 rm -f *.pc
-
 echo "rm -f ltmain.sh stamp-h1 config.log config.h config.sub config.status config.guess"
 rm -f ltmain.sh stamp-h1 config.log config.h config.sub config.status config.guess
-
 echo "rm -f configure libtool bin/.dirstamp"
 rm -f configure libtool bin/.dirstamp gmon.out
-
 echo "rm -f ar-lib"
 rm -f ar-lib
-
 for i in . src include example; do
-
-	echo "rm -f $i/*.data"
-	rm -f $i/*.data
-
-	echo "rm -f $i/Makefile"
-	rm -f $i/Makefile
- 
-	echo "rm -f $i/Makefile.am.*"
-	rm -f $i/Makefile.am.*
-
-	echo "rm -f $i/Makefile.in*"
-	rm -f $i/Makefile.in*
-
-	echo "rm -rf $i/.deps"
-	rm -rf $i/.deps
-
+echo "rm -f $i/*.data"
+rm -f $i/*.data
+echo "rm -f $i/Makefile"
+rm -f $i/Makefile
+echo "rm -f $i/Makefile.am.*"
+rm -f $i/Makefile.am.*
+echo "rm -f $i/Makefile.in*"
+rm -f $i/Makefile.in*
+echo "rm -rf $i/.deps"
+rm -rf $i/.deps
 done
-
 rm -rf src/private/.deps
 rm -f src/private/.dirstamp
-
 echo -n "rm "
 find . -name '*~' -print
 find . -name '*~' -exec rm {} \;
-
 DEBUG=Debug
 PAR=$(readlink -f $DEBUG)
 if [ -d $PAR ]; then
-	echo "cd $PAR"
-	cd $PAR
-	echo "make clean"
-	make clean > /dev/null 2>&1
+echo "cd $PAR"
+cd $PAR
+echo "make clean"
+make clean > /dev/null 2>&1
 fi

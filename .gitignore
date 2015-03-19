@@ -37,5 +37,3 @@ Debug
 *.i*86
 *.x86_64
 *.hex
-
-bin/make_release.sh

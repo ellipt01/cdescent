@@ -127,7 +127,8 @@ cdescent_do_cyclic_update (cdescent *cd)
 	return converged;
 }
 
-/* print out solution path to FILE *stream */
+/*** fprint solution path to FILE *stream
+ * iter-th row of outputs indicates beta obtained by iter-th iteration ***/
 static void
 fprintf_solutionpath (FILE *stream, const int iter, const cdescent *cd)
 {

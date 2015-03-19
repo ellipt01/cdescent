@@ -1,11 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 
 d=$(dirname $BASH_SOURCE)
-root=${d%bin}
-
+cd ${d%bin}
+root="."
 find $root -name '*~' -exec rm {} \;
 find $root -name '*.o' -exec rm {} \;
 find $root -name 'beta*' -exec rm {} \;
 find $root -name '*.res' -exec rm {} \;
 find $root -name 'out*.eps' -exec rm {} \;
-
