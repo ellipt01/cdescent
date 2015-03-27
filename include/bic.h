@@ -8,7 +8,15 @@
 #ifndef BIC_H_
 #define BIC_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* bic.c */
 bic_info	*cdescent_eval_bic (const cdescent *cd, double gamma);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* BIC_H_ */

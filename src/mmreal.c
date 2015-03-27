@@ -267,6 +267,8 @@ mm_real_array_set_all (const int n, double *data, const double val)
 {
 	int		k;
 	int		mod = n % 4;
+	double	*dk;
+
 	// unrolling
 	if (mod > 0) {
 		if (mod == 1) data[0] = val;
@@ -279,11 +281,13 @@ mm_real_array_set_all (const int n, double *data, const double val)
 			data[2] = val;
 		}
 	}
+	dk = (double *) data + mod;
 	for (k = mod; k < n; k += 4) {
-		data[k] = val;
-		data[k + 1] = val;
-		data[k + 2] = val;
-		data[k + 3] = val;
+		dk[0] = val;
+		dk[1] = val;
+		dk[2] = val;
+		dk[3] = val;
+		dk += 4;
 	}
 	return;
 }
@@ -1058,6 +1062,9 @@ mm_real_sj_trans_dot_y (const mm_sparse *s, const int j, const mm_dense *y)
 	double	*sd;
 	double	*yd = y->data;
 
+	int		*sik;
+	double	*sdk;
+
 	int		k;
 	int		p = s->p[j];
 	int		n = s->p[j + 1] - p;
@@ -1071,8 +1078,13 @@ mm_real_sj_trans_dot_y (const mm_sparse *s, const int j, const mm_dense *y)
 		else if (mod == 2) val += sd[0] * yd[si[0]] + sd[1] * yd[si[1]];
 		else val += sd[0] * yd[si[0]] + sd[1] * yd[si[1]] + sd[2] * yd[si[2]];
 	}
-	for (k = mod; k < n; k += 4)
-		val += sd[k] * yd[si[k]] + sd[k + 1] * yd[si[k + 1]] + sd[k + 2] * yd[si[k + 2]] + sd[k + 3] * yd[si[k + 3]];
+	sik = si + mod;
+	sdk = sd + mod;
+	for (k = mod; k < n; k += 4) {
+		val += sdk[0] * yd[sik[0]] + sdk[1] * yd[sik[1]] + sdk[2] * yd[sik[2]] + sdk[3] * yd[sik[3]];
+		sik += 4;
+		sdk += 4;
+	}
 
 	if (mm_real_is_symmetric (s)) {
 		int		k0;
