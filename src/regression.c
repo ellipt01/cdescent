@@ -80,8 +80,6 @@ cdescent_update_once_cycle (cdescent *cd)
 	int		j;
 	double	amax_eta;	// max of |eta(j)| = |beta_new(j) - beta_prev(j)|
 
-	if (!cd) error_and_exit ("cdescent_cyclic_update_once_cycle", "cdescent *cd is empty.", __FILE__, __LINE__);
-
 	/* b = (sum(y) - sum(X) * beta) / m */
 	if (!cd->lreg->xcentered) update_intercept (cd);
 
@@ -105,21 +103,21 @@ cdescent_update_once_cycle (cdescent *cd)
 }
 
 /*** do cyclic coordinate descent optimization for fixed lambda1
- * repeat coordinate descent until solution is converged ***/
+ * repeat coordinate descent algorithm until solution is converged ***/
 bool
 cdescent_do_cyclic_update (cdescent *cd)
 {
 	int		iter = 0;
 	bool	converged = false;
 
-	if (!cd) error_and_exit ("cdescent_cyclic_update", "cdescent *cd is empty.", __FILE__, __LINE__);
+	if (!cd) error_and_exit ("cdescent_do_cyclic_update", "cdescent *cd is empty.", __FILE__, __LINE__);
 
 	while (!converged) {
 
 		converged = cdescent_update_once_cycle (cd);
 
 		if (++iter >= cd->maxiter) {
-			printf_warning ("cdescent_cyclic_update", "reaching max number of iterations.", __FILE__, __LINE__);
+			printf_warning ("cdescent_do_cyclic_update", "reaching max number of iterations.", __FILE__, __LINE__);
 			break;
 		}
 	}
@@ -166,6 +164,33 @@ store_optimal (pathwise *path, const int index, const double lambda1, const doub
 	return;
 }
 
+/* reset cdescent object */
+static void
+cdescent_reset (cdescent *cd)
+{
+	cd->nrm1 = 0.;
+	cd->b = 0.;
+	mm_real_set_all (cd->beta, 0.);
+	mm_real_set_all (cd->mu, 0.);
+	if (!cd->is_regtype_lasso) mm_real_set_all (cd->nu, 0.);
+	cd->total_iter = 0;
+	cd->was_modified = false;
+	return;
+}
+
+/* reset pathwise object */
+static void
+pathwise_reset (pathwise *path)
+{
+	if (path->beta_opt) mm_real_free (path->beta_opt);
+	path->beta_opt = NULL;
+	path->lambda1_opt = 0.;
+	path->nrm1_opt = 0.;
+	path->min_bic_val = CDESCENT_POSINF;
+	path->was_modified = false;
+	return;
+}
+
 /*** do pathwise cyclic coordinate descent optimization.
  * The regression is starting at the smallest value lambda1_max for which
  * the entire vector beta = 0, and decreasing sequence of values for lambda1
@@ -183,28 +208,13 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 	FILE	*fp_path = NULL;
 	FILE	*fp_bic = NULL;
 
-	if (!cd) error_and_exit ("cdescent_cyclic_pathwise", "cdescent *cd is empty.", __FILE__, __LINE__);
-	if (!cd->path) error_and_exit ("cdescent_cyclic_pathwise", "cd->path is empty.", __FILE__, __LINE__);
+	if (!cd) error_and_exit ("cdescent_do_pathwise_optimization", "cdescent *cd is empty.", __FILE__, __LINE__);
+	if (!cd->path) error_and_exit ("cdescent_do_pathwise_optimization", "cd->path is empty.", __FILE__, __LINE__);
 
-	// initialize cdescent if need
-	if (cd->was_modified) {
-		cd->nrm1 = 0.;
-		cd->b = 0.;
-		mm_real_set_all (cd->beta, 0.);
-		mm_real_set_all (cd->mu, 0.);
-		if (!cd->is_regtype_lasso) mm_real_set_all (cd->nu, 0.);
-		cd->total_iter = 0;
-		cd->was_modified = false;
-	}
-	// initialize pathwise if need
-	if (cd->path->was_modified) {
-		if (cd->path->beta_opt) mm_real_free (cd->path->beta_opt);
-		cd->path->beta_opt = NULL;
-		cd->path->lambda1_opt = 0.;
-		cd->path->nrm1_opt = 0.;
-		cd->path->min_bic_val = CDESCENT_POSINF;
-		cd->path->was_modified = false;
-	}
+	// reset cdescent object if need
+	if (cd->was_modified) cdescent_reset (cd);
+	// reset pathwise object if need
+	if (cd->path->was_modified) pathwise_reset (cd->path);
 
 	/* warm start */
 	stop_flag = set_logt (cd->path->log10_lambda1_lower, cd->path->log10_lambda1_upper, &logt);
@@ -213,7 +223,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 		if (!(fp_path = fopen (cd->path->fn_path, "w"))) {
 			char	msg[80];
 			sprintf (msg, "cannot open file %s.", cd->path->fn_path);
-			printf_warning ("cdescent_cyclic_pathwise", msg, __FILE__, __LINE__);
+			printf_warning ("cdescent_do_pathwise_optimization", msg, __FILE__, __LINE__);
 		}
 		if (fp_path) fprintf_solutionpath (fp_path, iter, cd);
 	}
@@ -221,7 +231,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 		if (!(fp_bic = fopen (cd->path->fn_bic, "w"))) {
 			char	msg[80];
 			sprintf (msg, "cannot open file %s.", cd->path->fn_bic);
-			printf_warning ("cdescent_cyclic_pathwise", msg, __FILE__, __LINE__);
+			printf_warning ("cdescent_do_pathwise_optimization", msg, __FILE__, __LINE__);
 		}
 		// output BIC info headers
 		if (fp_bic) fprintf (fp_bic, "t\t\teBIC\t\tRSS\t\tdf\n");
