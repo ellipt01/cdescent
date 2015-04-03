@@ -132,10 +132,8 @@ void
 mm_real_free (mm_real *x)
 {
 	if (x) {
-		if (mm_real_is_sparse (x)) {
-			if (x->i) free (x->i);
-			if (x->p) free (x->p);
-		}
+		if (x->i) free (x->i);
+		if (x->p) free (x->p);
 		if (x->data) free (x->data);
 		free (x);
 	}
@@ -157,26 +155,8 @@ mm_real_realloc (mm_real *x, const int nnz)
 	return true;
 }
 
-/*** set to sparse ***/
-void
-mm_real_set_sparse (mm_real *x)
-{
-	if (mm_real_is_sparse (x)) return;
-	mm_set_sparse (&(x->typecode));
-	return;
-}
-
-/*** set to dense ***/
-void
-mm_real_set_dense (mm_real *x)
-{
-	if (mm_real_is_dense (x)) return;
-	mm_set_dense (&(x->typecode));
-	return;
-}
-
 /*** set to general ***/
-void
+static void
 mm_real_set_general (mm_real *x)
 {
 	if (!mm_real_is_symmetric (x)) return;
@@ -188,10 +168,9 @@ mm_real_set_general (mm_real *x)
 /*** set to symmetric
  * by default, assume symmetric upper
  * i.e., x->symm is set to MM_SYMMETRIC | MM_UPPER ***/
-void
+static void
 mm_real_set_symmetric (mm_real *x)
 {
-	if (x->m != x->n) error_and_exit ("mm_real_set_symmetric", "symmetric matrix must be square.", __FILE__, __LINE__);
 	if (mm_real_is_symmetric (x)) return;
 	mm_set_symmetric (&(x->typecode));
 	x->symm = MM_SYMMETRIC | MM_UPPER;	// by default, assume symmetric upper
@@ -199,22 +178,18 @@ mm_real_set_symmetric (mm_real *x)
 }
 
 /*** set to symmetric upper ***/
-void
+static void
 mm_real_set_upper (mm_real *x)
 {
-	if (x->m != x->n) error_and_exit ("mm_real_set_upper", "symmetric matrix must be square.", __FILE__, __LINE__);
-	if (!mm_real_is_symmetric (x)) error_and_exit ("mm_real_set_upper", "matrix must be symmetric.", __FILE__, __LINE__);
 	if (mm_real_is_upper (x)) return;
 	x->symm = MM_SYMMETRIC | MM_UPPER;
 	return;
 }
 
 /*** set to symmetric lower ***/
-void
+static void
 mm_real_set_lower (mm_real *x)
 {
-	if (x->m != x->n) error_and_exit ("mm_real_set_lower", "symmetric matrix must be square.", __FILE__, __LINE__);
-	if (!mm_real_is_symmetric (x)) error_and_exit ("mm_real_set_lower", "matrix must be symmetric.", __FILE__, __LINE__);
 	if (mm_real_is_lower (x)) return;
 	x->symm = MM_SYMMETRIC | MM_LOWER;
 	return;
@@ -1362,6 +1337,7 @@ mm_real_fread (FILE *fp)
 		error_and_exit ("mm_real_fread", msg, __FILE__, __LINE__);
 	}
 	x = (mm_is_sparse (typecode)) ? mm_real_fread_sparse (fp, typecode) : mm_real_fread_dense (fp, typecode);
+	if (!x) error_and_exit ("mm_real_fread", "failed to read mm_real.", __FILE__, __LINE__);
 	if (mm_real_is_symmetric (x) && x->m != x->n) error_and_exit ("mm_real_fread", "symmetric matrix must be square.", __FILE__, __LINE__);
 	return x;
 }

@@ -70,13 +70,6 @@ mm_real		*mm_real_new (MMRealFormat format, MMRealSymm symm, const int m, const 
 void		mm_real_free (mm_real *mm);
 bool		mm_real_realloc (mm_real *mm, const int nnz);
 
-void		mm_real_set_sparse (mm_real *x);
-void		mm_real_set_dense (mm_real *x);
-void		mm_real_set_general (mm_real *x);
-void		mm_real_set_symmetric (mm_real *x);
-void		mm_real_set_upper (mm_real *x);
-void		mm_real_set_lower (mm_real *x);
-
 mm_real		*mm_real_copy (const mm_real *mm);
 void		mm_real_set_all (mm_real *mm, const double val);
 
