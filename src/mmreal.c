@@ -235,30 +235,7 @@ static void
 mm_real_array_set_all (const int n, double *data, const double val)
 {
 	int		k;
-	int		mod = n % 4;
-	double	*d;
-
-	d = data;
-	if (mod == 1) {
-		d[0] = val;
-		d++;
-	} else if (mod == 2) {
-		d[0] = val;
-		d[1] = val;
-		d += 2;
-	} else if (mod == 3) {
-		d[0] = val;
-		d[1] = val;
-		d[2] = val;
-		d += 3;
-	}
-	for (k = mod; k < n; k += 4) {
-		d[0] = val;
-		d[1] = val;
-		d[2] = val;
-		d[3] = val;
-		d += 4;
-	}
+	for (k = 0; k < n; k++) data[k] = val;
 	return;
 }
 
