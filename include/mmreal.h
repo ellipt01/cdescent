@@ -55,15 +55,15 @@ typedef struct s_mm_real	mm_sparse;
 struct s_mm_real {
 	MM_typecode	typecode;	// type of matrix. see mmio.h
 
-	MMRealSymm		symm;
+	MMRealSymm	symm;
 
-	int				m;		// num of rows of matrix
-	int				n;		// num of columns
-	int				nnz;	// num of nonzero matrix elements
+	int			m;			// num of rows of matrix
+	int			n;			// num of columns
+	int			nnz;		// num of nonzero matrix elements
 
-	int				*i;		// row index of each nonzero elements: size = nnz
-	int				*p;		// p[0] = 0, p[j+1] = num of nonzeros in X(:,1:j): size = n + 1
-	double			*data;	// nonzero matrix elements: size = nnz
+	int			*i;			// row index of each nonzero elements: size = nnz
+	int			*p;			// p[0] = 0, p[j+1] = num of nonzeros in X(:,1:j): size = n + 1
+	double		*data;		// nonzero matrix elements: size = nnz
 };
 
 mm_real		*mm_real_new (MMRealFormat format, MMRealSymm symm, const int m, const int n, const int nnz);

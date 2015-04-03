@@ -106,10 +106,12 @@ mm_real_new (MMRealFormat format, MMRealSymm symm, const int m, const int n, con
 		x->i = (int *) malloc (x->nnz * sizeof (int));
 		x->p = (int *) malloc ((x->n + 1) * sizeof (int));
 		if (x->i == NULL || x->p == NULL) error_and_exit ("mm_real_new", "cannot allocate memory.", __FILE__, __LINE__);
+		// initialize x->p[0]
+		x->p[0] = 0;
 	} else mm_set_array (&x->typecode);
 
 	x->symm = symm;
-	// typecode[3] = 'S'
+	// typecode[3] = 'G' -> 'S'
 	if (symmetric) mm_set_symmetric (&x->typecode);
 
 	if (!is_type_supported (x->typecode)) {
@@ -117,18 +119,10 @@ mm_real_new (MMRealFormat format, MMRealSymm symm, const int m, const int n, con
 		sprintf (msg, "matrix type does not supported :[%s].", mm_typecode_to_str (x->typecode));
 		error_and_exit ("mm_real_new", msg, __FILE__, __LINE__);
 	}
-	if (format == MM_REAL_SPARSE) mm_set_coordinate (&x->typecode);
 
 	// allocate arrays
 	x->data = (double *) malloc (x->nnz * sizeof (double));
 	if (x->data == NULL) error_and_exit ("mm_real_new", "cannot allocate memory.", __FILE__, __LINE__);
-	if (mm_real_is_sparse (x)) {
-		x->i = (int *) malloc (x->nnz * sizeof (int));
-		x->p = (int *) malloc ((x->n + 1) * sizeof (int));
-		if (x->i == NULL || x->p == NULL) error_and_exit ("mm_real_new", "cannot allocate memory.", __FILE__, __LINE__);
-		// initialize x->p[0]
-		x->p[0] = 0;
-	}
 
 	return x;
 }
@@ -267,27 +261,28 @@ mm_real_array_set_all (const int n, double *data, const double val)
 {
 	int		k;
 	int		mod = n % 4;
-	double	*dk;
+	double	*d;
 
-	// unrolling
-	if (mod > 0) {
-		if (mod == 1) data[0] = val;
-		else if (mod == 2) {
-			data[0] = val;
-			data[1] = val;
-		} else {
-			data[0] = val;
-			data[1] = val;
-			data[2] = val;
-		}
+	d = data;
+	if (mod == 1) {
+		d[0] = val;
+		d++;
+	} else if (mod == 2) {
+		d[0] = val;
+		d[1] = val;
+		d += 2;
+	} else if (mod == 3) {
+		d[0] = val;
+		d[1] = val;
+		d[2] = val;
+		d += 3;
 	}
-	dk = (double *) data + mod;
 	for (k = mod; k < n; k += 4) {
-		dk[0] = val;
-		dk[1] = val;
-		dk[2] = val;
-		dk[3] = val;
-		dk += 4;
+		d[0] = val;
+		d[1] = val;
+		d[2] = val;
+		d[3] = val;
+		d += 4;
 	}
 	return;
 }
@@ -1062,9 +1057,6 @@ mm_real_sj_trans_dot_y (const mm_sparse *s, const int j, const mm_dense *y)
 	double	*sd;
 	double	*yd = y->data;
 
-	int		*sik;
-	double	*sdk;
-
 	int		k;
 	int		p = s->p[j];
 	int		n = s->p[j + 1] - p;
@@ -1073,17 +1065,23 @@ mm_real_sj_trans_dot_y (const mm_sparse *s, const int j, const mm_dense *y)
 	// unrolling
 	si = s->i + p;
 	sd = s->data + p;
-	if (mod > 0) {
-		if (mod == 1) val += sd[0] * yd[si[0]];
-		else if (mod == 2) val += sd[0] * yd[si[0]] + sd[1] * yd[si[1]];
-		else val += sd[0] * yd[si[0]] + sd[1] * yd[si[1]] + sd[2] * yd[si[2]];
+	if (mod == 1) {
+		val += sd[0] * yd[si[0]];
+		si++;
+		sd++;
+	} else if (mod == 2) {
+		val += sd[0] * yd[si[0]] + sd[1] * yd[si[1]];
+		si += 2;
+		sd += 2;
+	} else if (mod == 3) {
+		val += sd[0] * yd[si[0]] + sd[1] * yd[si[1]] + sd[2] * yd[si[2]];
+		si += 3;
+		sd += 3;
 	}
-	sik = si + mod;
-	sdk = sd + mod;
 	for (k = mod; k < n; k += 4) {
-		val += sdk[0] * yd[sik[0]] + sdk[1] * yd[sik[1]] + sdk[2] * yd[sik[2]] + sdk[3] * yd[sik[3]];
-		sik += 4;
-		sdk += 4;
+		val += sd[0] * yd[si[0]] + sd[1] * yd[si[1]] + sd[2] * yd[si[2]] + sd[3] * yd[si[3]];
+		si += 4;
+		sd += 4;
 	}
 
 	if (mm_real_is_symmetric (s)) {
