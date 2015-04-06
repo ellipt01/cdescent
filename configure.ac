@@ -14,7 +14,8 @@ AC_SUBST(CDESCENT_LT_VERSION)
 
 AM_INIT_AUTOMAKE([foreign subdir-objects -Wall])
 
-AM_PROG_AR([ACT-IF-FAIL])
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR([ACT-IF-FAIL])])
+
 # Checks for programs.
 AC_PROG_CC
 AM_PROG_CC_C_O
