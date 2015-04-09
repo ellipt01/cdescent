@@ -8,7 +8,9 @@
 #ifndef EXAMPLE_H_
 #define EXAMPLE_H_
 
-/* example.c */
 mm_real	*penalty_smooth (MMRealFormat format, const int n);
+
+void	usage (char *toolname);
+bool	read_params (int argc, char **argv);
 
 #endif /* EXAMPLE_H_ */
