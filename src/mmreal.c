@@ -200,6 +200,8 @@ static mm_sparse *
 mm_real_copy_sparse (const mm_sparse *src)
 {
 	int			k;
+	int			n = src->n;
+	int			nnz = src->nnz;
 	mm_sparse	*dest = mm_real_new (MM_REAL_SPARSE, src->symm, src->m, src->n, src->nnz);
 
 	int			*si = src->i;
@@ -207,9 +209,9 @@ mm_real_copy_sparse (const mm_sparse *src)
 	int			*di = dest->i;
 	int			*dp = dest->p;
 
-	for (k = 0; k < src->nnz; k++) di[k] = si[k];
-	for (k = 0; k <= src->n; k++) dp[k] = sp[k];
-	dcopy_ (&src->nnz, src->data, &ione, dest->data, &ione);
+	for (k = 0; k < nnz; k++) di[k] = si[k];
+	for (k = 0; k <= n; k++) dp[k] = sp[k];
+	dcopy_ (&nnz, src->data, &ione, dest->data, &ione);
 
 	return dest;
 }
@@ -287,6 +289,9 @@ mm_real_dense_to_sparse (const mm_dense *d, const double threshold)
 	int			*si;
 	int			*sp;
 	double		*sd;
+
+	int			dm = d->m;
+	int			dn = d->n;
 	double		*dd = d->data;
 	double		dij;
 
@@ -299,9 +304,9 @@ mm_real_dense_to_sparse (const mm_dense *d, const double threshold)
 
 	k = 0;
 	if (!mm_real_is_symmetric (d)) {
-		for (j = 0; j < d->n; j++) {
-			for (i = 0; i < d->m; i++) {
-				dij = dd[i + j * d->m];
+		for (j = 0; j < dn; j++) {
+			for (i = 0; i < dm; i++) {
+				dij = dd[i + j * dm];
 				if (fabs (dij) >= threshold) {
 					si[k] = i;
 					sd[k] = dij;
@@ -312,9 +317,9 @@ mm_real_dense_to_sparse (const mm_dense *d, const double threshold)
 		}
 	} else {
 		if (mm_real_is_upper (d)) {
-			for (j = 0; j < d->n; j++) {
+			for (j = 0; j < dn; j++) {
 				for (i = 0; i < j + 1; i++) {
-					dij = dd[i + j * d->m];
+					dij = dd[i + j * dm];
 					if (fabs (dij) >= threshold) {
 						si[k] = i;
 						sd[k] = dij;
@@ -324,9 +329,9 @@ mm_real_dense_to_sparse (const mm_dense *d, const double threshold)
 				sp[j + 1] = k;
 			}
 		} else if (mm_real_is_lower (d)) {
-			for (j = 0; j < d->n; j++) {
-				for (i = j; i < d->m; i++) {
-					dij = dd[i + j * d->m];
+			for (j = 0; j < dn; j++) {
+				for (i = j; i < dm; i++) {
+					dij = dd[i + j * dm];
 					if (fabs (dij) >= threshold) {
 						si[k] = i;
 						sd[k] = dij;
@@ -368,6 +373,7 @@ mm_real_symmetric_to_general_sparse (const mm_sparse *x)
 	int			*si;
 	int			*sp;
 	double		*sd;
+	int			xn = x->n;
 	int			*xi = x->i;
 	int			*xp = x->p;
 	double		*xd = x->data;
@@ -380,7 +386,7 @@ mm_real_symmetric_to_general_sparse (const mm_sparse *x)
 	sd = s->data;
 
 	m = 0;
-	for (j = 0; j < x->n; j++) {
+	for (j = 0; j < xn; j++) {
 		int		k;
 		int		pend = xp[j + 1];
 		if (mm_real_is_upper (x)) {
@@ -388,7 +394,7 @@ mm_real_symmetric_to_general_sparse (const mm_sparse *x)
 				si[m] = xi[k];
 				sd[m++] = xd[k];
 			}
-			for (k = j + 1; k < x->n; k++) {
+			for (k = j + 1; k < xn; k++) {
 				int		l = find_jth_row_element_of_sk (j, x, k);
 				// if found
 				if (l >= 0) {
@@ -1261,7 +1267,7 @@ mm_real_fread_sparse (FILE *fp, MM_typecode typecode)
 	}
 
 	l = 0;
-	for (k = 0; k < s->nnz; k++) {
+	for (k = 0; k < nnz; k++) {
 		s->i[k]--;	// fortran -> c
 		while (l < j[k]) s->p[l++] = k;
 	}
@@ -1269,7 +1275,7 @@ mm_real_fread_sparse (FILE *fp, MM_typecode typecode)
 
 	if (mm_is_symmetric (typecode)) {
 		mm_real_set_symmetric (s);
-		for (k = 0; k < s->nnz; k++) {
+		for (k = 0; k < nnz; k++) {
 			if (s->i[k] == j[k] - 1) continue;
 			(s->i[k] < j[k] - 1) ? mm_real_set_upper (s) : mm_real_set_lower (s);
 			break;

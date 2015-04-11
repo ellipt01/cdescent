@@ -7,30 +7,16 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
-#include <unistd.h>
 
 #include <cdescent.h>
 
 #include "example.h"
+#include "settings.h"
 
 /***************************************************
  * An example program of elastic net regression
  *           using cdescent library.
  ***************************************************/
-
-/*** store input file name ***/
-char			infn_x[80];	// design matrix
-char			infn_y[80];	// observed data
-
-/*** default settings ***/
-double			lambda2 = 0.;			// L2 penalty parameter
-double			log10_lambda1 = -2.;	// start log10(lambda1) for warm start
-double			dlog10_lambda1 = 0.1;	// increment of log10(lambda1)
-double			gamma_bic = 0.;			// classical BIC
-
-double			tolerance = 1.e-3;
-int				maxiter = 100000;
 
 int
 main (int argc, char **argv)

@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <cdescent.h>
 
 /*** 1D derivation operator for the L2 penalty of s-lasso ***/
@@ -80,7 +81,6 @@ extern double	dlog10_lambda1;
 extern double	gamma_bic;	// classical BIC
 extern double	tolerance;
 extern int		maxiter;
-
 
 /*** read command line options ***/
 bool
