@@ -1,3 +1,11 @@
+2015-04-13 Mitsuru Utsugi <utsugi@mountain.ocn.ne.jp>
+ * release 0.4.5
+ * add an example of reweighting L1 regression using coordinate descent 
+ * fix bug of function mmreal_new
+ * fix bug of function atmic_add
+ * add some functions for reweighting L1 regression
+ * modify configure.ac for automake >= 1.12
+
 2015-01-16 Mitsuru Utsugi <utsugi@mountain.ocn.ne.jp>
  * release 0.4.4
  * optimize mm_real routines
