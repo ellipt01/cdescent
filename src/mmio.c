@@ -6,7 +6,6 @@
 *
 */
 
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -16,12 +15,12 @@
 int
 mm_read_unsymmetric_sparse (const char *fname, int *M_, int *N_, int *nz_, double **val_, int **I_, int **J_)
 {
-	FILE			*f;
+	FILE		*f;
 	MM_typecode	matcode;
-	int				M, N, nz;
-	int				i;
-	double			*val;
-	int				*I, *J;
+	int			M, N, nz;
+	int			i;
+	double		*val;
+	int			*I, *J;
  
 	if ((f = fopen (fname, "r")) == NULL)
 			return -1;

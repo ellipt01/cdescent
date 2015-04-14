@@ -68,6 +68,7 @@ static void
 do_centering (mm_dense *x, const double *sum)
 {
 	int		j;
+#pragma omp parallel for
 	for (j = 0; j < x->n; j++) {
 		double	meanj = sum[j] / (double) x->m;
 		if (meanj > SQRT_DBL_EPSILON) mm_real_xj_add_const (x, j, - meanj);
@@ -81,6 +82,7 @@ static void
 do_normalizing (mm_real *x, const double *ssq)
 {
 	int		j;
+#pragma omp parallel for
 	for (j = 0; j < x->n; j++) {
 		double	nrm2j = sqrt (ssq[j]);
 		if (nrm2j > SQRT_DBL_EPSILON) mm_real_xj_scale (x, j, 1. / nrm2j);

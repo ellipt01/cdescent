@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-
 const int		ione  =  1;
 const double	dzero =  0.;
 const double	done  =  1.;
