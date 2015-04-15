@@ -70,6 +70,8 @@ mm_real		*mm_real_new (MMRealFormat format, MMRealSymm symm, const int m, const 
 void		mm_real_free (mm_real *mm);
 bool		mm_real_realloc (mm_real *mm, const int nnz);
 
+void		mm_real_sort (mm_real *x);
+
 mm_real		*mm_real_copy (const mm_real *mm);
 void		mm_real_set_all (mm_real *mm, const double val);
 

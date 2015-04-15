@@ -195,6 +195,60 @@ mm_real_set_lower (mm_real *x)
 	return;
 }
 
+/*** sort mm_sparse ***/
+typedef struct {
+	int		i;
+	double	data;
+} matrix_element;
+
+int
+compare_row_index (const void *a, const void *b)
+{
+	matrix_element	*ta = (matrix_element *) a;
+	matrix_element	*tb = (matrix_element *) b;
+	return ta->i - tb->i;
+}
+
+static void
+mm_real_sort_sparse (mm_sparse *s)
+{
+	int		j;
+	int		*si = s->i;
+	double	*sdata = s->data;
+	int		*sp = s->p;
+	matrix_element	t[s->m];
+
+	for (j = 0; j < s->n; j++) {
+		int		k;
+		int		p = sp[j];
+		int		n = sp[j + 1] - p;
+
+		if (n < 2) continue;
+
+		for (k = 0; k < n; k++) {
+			t[k].i = si[k + p];
+			t[k].data = sdata[k + p];
+		}
+
+		qsort (t, n, sizeof (matrix_element), compare_row_index);
+
+		for (k = 0; k < n; k++) {
+			si[k + p] = t[k].i;
+			sdata[k + p] = t[k].data;
+		}
+
+	}
+	return;
+}
+
+void
+mm_real_sort (mm_real *x)
+{
+	if (mm_real_is_dense (x)) return;
+	mm_real_sort_sparse (x);
+	return;
+}
+
 /* copy sparse */
 static mm_sparse *
 mm_real_copy_sparse (const mm_sparse *src)
@@ -370,7 +424,7 @@ find_jth_row_element_of_sk (const int j, const mm_sparse *s, const int k)
 	int		n = s->p[k + 1] - p;
 	int		*si = s->i + p;
 	int		res = bin_search (j, si, n);
-	return (res < 0) ? res : res + p;
+	return (res < 0) ? -1 : res + p;
 }
 
 /* convert sparse symmetric -> sparse general */
