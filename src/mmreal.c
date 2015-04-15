@@ -346,21 +346,31 @@ mm_real_dense_to_sparse (const mm_dense *d, const double threshold)
 	return s;
 }
 
+/* binary search: search the value key from array *s of length n.
+ * if found, return its index otherwise -1 */
+static int
+bin_search (const int key, const int *s, const int n)
+{
+	int	start = 0;
+	int	end = n - 1;
+	int	mid;
+	while (start < end) {
+		mid = (start + end) / 2;
+		if (key <= s[mid]) end = mid;
+		else start = mid + 1;
+	}
+	return (key == s[end]) ? end : -1;
+}
+
 /* find element that s->i[l] = j in the k-th column of s and return its index l */
 static int
 find_jth_row_element_of_sk (const int j, const mm_sparse *s, const int k)
 {
-	int		l;
 	int		p = s->p[k];
 	int		n = s->p[k + 1] - p;
 	int		*si = s->i + p;
-	for (l = 0; l < n; l++) {
-		int		sil = si[l];
-		if (sil < j) continue;
-		if (sil == j) return l + p;	// found
-		else break;
-	}
-	return -1;	// not found
+	int		res = bin_search (j, si, n);
+	return (res < 0) ? res : res + p;
 }
 
 /* convert sparse symmetric -> sparse general */
