@@ -195,7 +195,7 @@ mm_real_set_lower (mm_real *x)
 	return;
 }
 
-/*** sort mm_sparse ***/
+/*** sort each columns of mm_sparse ***/
 typedef struct {
 	int		i;
 	double	data;
@@ -204,9 +204,9 @@ typedef struct {
 int
 compare_row_index (const void *a, const void *b)
 {
-	matrix_element	*ta = (matrix_element *) a;
-	matrix_element	*tb = (matrix_element *) b;
-	return ta->i - tb->i;
+	matrix_element	*_a = (matrix_element *) a;
+	matrix_element	*_b = (matrix_element *) b;
+	return _a->i - _b->i;
 }
 
 static void
@@ -244,8 +244,7 @@ mm_real_sort_sparse (mm_sparse *s)
 void
 mm_real_sort (mm_real *x)
 {
-	if (mm_real_is_dense (x)) return;
-	mm_real_sort_sparse (x);
+	if (mm_real_is_sparse (x)) mm_real_sort_sparse (x);
 	return;
 }
 
@@ -923,7 +922,7 @@ mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_de
 	double		*yd = y->data;
 	double		*zd = z->data;
 
-	if (fabs (beta) > 0.) mm_real_xj_scale (z, 0, beta);
+	if (fabs (beta) > DBL_EPSILON) mm_real_xj_scale (z, 0, beta);
 	else mm_real_set_all (z, 0.);
 
 	if (trans) {

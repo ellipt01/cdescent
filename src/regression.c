@@ -107,7 +107,7 @@ cdescent_update_once_cycle (cdescent *cd)
 bool
 cdescent_do_cyclic_update (cdescent *cd)
 {
-	int		iter = 0;
+	int		ccd_iter = 0;
 	bool	converged = false;
 
 	if (!cd) error_and_exit ("cdescent_do_cyclic_update", "cdescent *cd is empty.", __FILE__, __LINE__);
@@ -116,12 +116,13 @@ cdescent_do_cyclic_update (cdescent *cd)
 
 		converged = cdescent_update_once_cycle (cd);
 
-		if (++iter >= cd->maxiter) {
+		if (++ccd_iter >= cd->maxiter) {
 			printf_warning ("cdescent_do_cyclic_update", "reaching max number of iterations.", __FILE__, __LINE__);
 			break;
 		}
+
 	}
-	cd->total_iter += iter;
+	cd->total_iter += ccd_iter;
 	return converged;
 }
 
@@ -201,7 +202,7 @@ pathwise_reset (pathwise *path)
 bool
 cdescent_do_pathwise_optimization (cdescent *cd)
 {
-	int		iter = 0;
+	int		pathwise_iter = 0;
 	double	logt;
 	bool	stop_flag = false;
 
@@ -225,7 +226,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 			sprintf (msg, "cannot open file %s.", cd->path->fn_path);
 			printf_warning ("cdescent_do_pathwise_optimization", msg, __FILE__, __LINE__);
 		}
-		if (fp_path) fprintf_solutionpath (fp_path, iter, cd);
+		if (fp_path) fprintf_solutionpath (fp_path, pathwise_iter, cd);
 	}
 	if (cd->path->output_bic_info) {
 		if (!(fp_bic = fopen (cd->path->fn_bic, "w"))) {
@@ -240,10 +241,10 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 	while (1) {
 		bic_info	*info;
 
-		iter++;
+		pathwise_iter++;
 
 		if (cd->path->func) {
-			mm_dense	*w = cd->path->func->function (iter, cd, cd->path->func->data);
+			mm_dense	*w = cd->path->func->function (pathwise_iter, cd, cd->path->func->data);
 			cdescent_set_penalty_factor (cd, w, cd->path->func->tau);
 			mm_real_free (w);
 		}
@@ -253,12 +254,12 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 		if (!cdescent_do_cyclic_update (cd)) break;
 
 		// output solution path
-		if (fp_path) fprintf_solutionpath (fp_path, iter, cd);
+		if (fp_path) fprintf_solutionpath (fp_path, pathwise_iter, cd);
 
 		info = cdescent_eval_bic (cd, cd->path->gamma_bic);
 		// if bic_val < min_bic_val, update min_bic_val, lambda1_opt, nrm1_opt and beta_opt
 		if (info->bic_val < cd->path->min_bic_val) {
-			store_optimal (cd->path, iter, cd->lambda1, cd->nrm1, cd->beta);
+			store_optimal (cd->path, pathwise_iter, cd->lambda1, cd->nrm1, cd->beta);
 			cd->path->min_bic_val = info->bic_val;
 			if (!cd->path->was_modified) cd->path->was_modified = true;
 		}

@@ -9,24 +9,24 @@
 
 #define atomic_bool_compare_and_swap(p, f, t) __sync_bool_compare_and_swap((p), (f), (t))
 
-/* union with double and long */
-union {
-	double	dv;
-	long	lv;
-} dlvar;
-
 /*** atomic add operation ***/
 void
 atomic_add (double *data, double delta)
 {
-	long	old_lv, new_lv;
+	union {
+		double	dv;
+		long	lv;
+	} old;
+
+	union {
+		double	dv;
+		long	lv;
+	} new;
+
 	while (1) {
-		dlvar.dv = *data;
-		old_lv = dlvar.lv;
-		dlvar.dv += delta;
-		new_lv = dlvar.lv;
-		if (atomic_bool_compare_and_swap ((volatile long *) data, old_lv, new_lv))
-			break;
+		old.lv = *(volatile long *) data;
+		new.dv = old.dv + delta;
+		if (atomic_bool_compare_and_swap ((volatile long *) data, old.lv, new.lv)) break;
 	}
 	return;
 }
@@ -35,15 +35,22 @@ atomic_add (double *data, double delta)
 void
 atomic_max (double *data, double val)
 {
-	long	old_lv, new_lv;
 	if (*data >= val) return;
+
+	union {
+		double	dv;
+		long	lv;
+	} old;
+
+	union {
+		double	dv;
+		long	lv;
+	} new;
+
 	while (1) {
-		dlvar.dv = *data;
-		old_lv = dlvar.lv;
-		dlvar.dv = val;
-		new_lv = dlvar.lv;
-		if (atomic_bool_compare_and_swap ((volatile long *) data, old_lv, new_lv))
-			break;
+		old.lv = *(volatile long *) data;
+		new.dv = val;
+		if (atomic_bool_compare_and_swap ((volatile long *) data, old.lv, new.lv)) break;
 	}
 	return;
 }
