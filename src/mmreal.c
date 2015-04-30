@@ -730,7 +730,6 @@ mm_real_sj_asum (const mm_sparse *s, const int j)
 			k0 = 0;
 			k1 = j;
 		}
-#pragma omp parallel for reduction (+:asum)
 		for (k = k0; k < k1; k++) {
 			int		l = find_jth_row_element_of_sk (j, s, k);
 			// if found
@@ -792,7 +791,6 @@ mm_real_sj_sum (const mm_sparse *s, const int j)
 			k1 = j;
 		}
 		sd = s->data;
-#pragma omp parallel for reduction (+:sum)
 		for (k = k0; k < k1; k++) {
 			int		l = find_jth_row_element_of_sk (j, s, k);
 			// if found
@@ -860,7 +858,6 @@ mm_real_sj_ssq (const mm_sparse *s, const int j)
 			k0 = 0;
 			k1 = j;
 		}
-#pragma omp parallel for reduction (+:ssq)
 		for (k = k0; k < k1; k++) {
 			int		l = find_jth_row_element_of_sk (j, s, k);
 			// if found
@@ -1119,7 +1116,6 @@ mm_real_sj_trans_dot_y (const mm_sparse *s, const int j, const mm_dense *y)
 			k1 = j;
 		}
 		sd = s->data;
-#pragma omp parallel for reduction (+:val)
 		for (k = k0; k < k1; k++) {
 			int		l = find_jth_row_element_of_sk (j, s, k);
 			// if found
@@ -1191,7 +1187,6 @@ mm_real_asjpy (const double alpha, const mm_sparse *s, const int j, mm_dense *y)
 			k1 = j;
 		}
 		sd = s->data;
-#pragma omp parallel for
 		for (k = k0; k < k1; k++) {
 			int		l = find_jth_row_element_of_sk (j, s, k);
 			// if found

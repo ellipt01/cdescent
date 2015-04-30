@@ -84,12 +84,6 @@ cdescent_update_once_cycle (cdescent *cd)
 	int		j;
 	double	amax_eta;	// max of |eta(j)| = |beta_new(j) - beta_prev(j)|
 
-#ifdef _OPENMP
-	bool	nest_enabled;
-	nest_enabled = omp_get_nested ();
-	if (nest_enabled) omp_set_nested (false);
-#endif
-
 	/* b = (sum(y) - sum(X) * beta) / m */
 	if (!cd->lreg->xcentered) update_intercept (cd);
 
@@ -108,10 +102,6 @@ cdescent_update_once_cycle (cdescent *cd)
 	cd->nrm1 = mm_real_xj_asum (cd->beta, 0);
 
 	if (!cd->was_modified) cd->was_modified = true;
-
-#ifdef _OPENMP
-	if (nest_enabled) omp_set_nested (true);
-#endif
 
 	return (amax_eta < cd->tolerance);
 }
