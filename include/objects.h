@@ -70,10 +70,7 @@ typedef enum {
 } PreProc;
 
 struct s_linregmodel {
-	bool		has_copy_y;	// has copy of y
-	bool		has_copy_x;	// has copy of x
-
-	mm_dense	*y;		// dense general: observed data vector y (must be dense)
+	mm_dense	*y;	// dense general: observed data vector y (must be dense)
 	mm_real	*x;		// sparse/dense symmetric/general: matrix of predictors X
 	mm_real	*d;		// sparse/dense symmetric/general: linear operator of penalty D
 
