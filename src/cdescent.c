@@ -54,6 +54,7 @@ pathwise_alloc (void)
 	path->output_bic_info = false;
 	path->gamma_bic = 0.;
 	path->index_opt = 0;
+	path->b_opt = 0.;
 	path->beta_opt = NULL;
 	path->lambda1_opt = 0.;
 	path->nrm1_opt = 0.;
@@ -93,6 +94,8 @@ cdescent_alloc (void)
 	cd->tolerance = 0.;
 
 	cd->nrm1 = 0.;
+
+	cd->update_intercept = true;
 	cd->b = 0.;
 	cd->beta = NULL;
 	cd->mu = NULL;
@@ -128,8 +131,6 @@ cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool
 
 	cd->lambda1_max = pow (10., lreg->log10camax);
 	cd->lambda1 = cd->lambda1_max;
-
-	if (!lreg->ycentered) cd->b = *(lreg->sy) / (double) lreg->y->m;
 
 	cd->beta = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, lreg->x->n, 1, lreg->x->n);
 	mm_real_set_all (cd->beta, 0.);	// in initial, set to 0
@@ -220,6 +221,13 @@ bool
 cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1)
 {
 	return cdescent_set_lambda1 (cd, pow (10., log10_lambda1));
+}
+
+void
+cdescent_set_update_intercept (cdescent *cd, bool update_intercept)
+{
+	cd->update_intercept = update_intercept;
+	return;
 }
 
 /*** routines to tuning pathwise CD optimization ***/

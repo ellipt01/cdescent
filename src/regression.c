@@ -85,7 +85,7 @@ cdescent_update_once_cycle (cdescent *cd)
 	double	amax_eta;	// max of |eta(j)| = |beta_new(j) - beta_prev(j)|
 
 	/* b = (sum(y) - sum(X) * beta) / m */
-	if (!cd->lreg->xcentered) update_intercept (cd);
+	if (cd->update_intercept && !cd->lreg->xcentered) update_intercept (cd);
 
 	amax_eta = 0.;
 
@@ -159,11 +159,12 @@ set_logt (const double logt_lower, const double new_logt, double *logt)
 
 /* store lambda1_opt, nrm1_opt and beta_opt */
 static void
-store_optimal (pathwise *path, const int index, const double lambda1, const double nrm1, const mm_dense *beta)
+store_optimal (pathwise *path, const int index, const double lambda1, const double nrm1, const double b, const mm_dense *beta)
 {
 	path->index_opt = index;
 	path->lambda1_opt = lambda1;
 	path->nrm1_opt = nrm1;
+	path->b_opt = b;
 	if (path->beta_opt) mm_real_free (path->beta_opt);
 	path->beta_opt = mm_real_copy (beta);
 	return;
@@ -263,7 +264,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 		info = cdescent_eval_bic (cd, cd->path->gamma_bic);
 		// if bic_val < min_bic_val, update min_bic_val, lambda1_opt, nrm1_opt and beta_opt
 		if (info->bic_val < cd->path->min_bic_val) {
-			store_optimal (cd->path, pathwise_iter, cd->lambda1, cd->nrm1, cd->beta);
+			store_optimal (cd->path, pathwise_iter, cd->lambda1, cd->nrm1, cd->b, cd->beta);
 			cd->path->min_bic_val = info->bic_val;
 			if (!cd->path->was_modified) cd->path->was_modified = true;
 		}

@@ -37,6 +37,8 @@ struct s_cdescent {
 	double				tolerance;		// tolerance of convergence
 
 	double				nrm1;			// L1 norm of beta (= sum_j |beta_j|)
+
+	bool				update_intercept;
 	double				b;				// intercept
 	mm_dense			*beta;			// estimated regression coefficients
 	mm_dense			*mu;			// mu = X * beta, estimate of y
@@ -129,6 +131,7 @@ struct s_pathwise {
 
 	double		min_bic_val;		// minimum BIC
 	int			index_opt;			// index of optimal beta
+	double		b_opt;				// optimal intercept
 	mm_dense	*beta_opt;			// optimal beta corresponding to min_bic_val
 	double		lambda1_opt;		// optimal lambda1
 	double		nrm1_opt;			// | beta_opt |
