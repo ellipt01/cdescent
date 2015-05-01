@@ -31,14 +31,13 @@ struct s_cdescent {
 	const linregmodel	*lreg;			// linear regression model
 
 	double				lambda1;		// regularization parameter of L1 penalty
-	double				lambda1_max;	// maximum value of lambda1
 	mm_dense			*w;				// dense general: weight for L1 penalty (penalty factor)
 
 	double				tolerance;		// tolerance of convergence
 
 	double				nrm1;			// L1 norm of beta (= sum_j |beta_j|)
 
-	bool				update_intercept;
+	bool				update_intercept;	// whether update intercept on each iteration (default is true)
 	double				b;				// intercept
 	mm_dense			*beta;			// estimated regression coefficients
 	mm_dense			*mu;			// mu = X * beta, estimate of y
@@ -72,14 +71,14 @@ typedef enum {
 } PreProc;
 
 struct s_linregmodel {
-	mm_dense	*y;	// dense general: observed data vector y (must be dense)
-	mm_real	*x;		// sparse/dense symmetric/general: matrix of predictors X
-	mm_real	*d;		// sparse/dense symmetric/general: linear operator of penalty D
+	mm_dense	*y;		// dense general: observed data vector y (must be dense)
+	mm_real		*x;		// sparse/dense symmetric/general: matrix of predictors X
+	mm_real		*d;		// sparse/dense symmetric/general: linear operator of penalty D
 
-	double		lambda2;	// weight for penalty term
+	double		lambda2;		// weight for penalty term
 
 	mm_dense	*c;				// = x' * y: correlation (constant) vector
-	double		log10camax;	// log10 ( amax(c) )
+	double		camax;			// log10 ( amax(c) )
 
 	bool		ycentered;		// y is centered?
 	bool		xcentered;		// x is centered?
@@ -105,7 +104,7 @@ struct s_linregmodel {
 typedef struct s_reweighting_func reweighting_func;
 
 /* weighting function */
-typedef mm_dense* (*weight_func) (int i, cdescent *cd, void *data);
+typedef mm_dense* (*weight_func) (cdescent *cd, void *data);
 
 
 struct s_reweighting_func {

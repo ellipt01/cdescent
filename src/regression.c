@@ -248,12 +248,6 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 
 		pathwise_iter++;
 
-		if (cd->path->func) {
-			mm_dense	*w = cd->path->func->function (pathwise_iter, cd, cd->path->func->data);
-			cdescent_set_penalty_factor (cd, w, cd->path->func->tau);
-			mm_real_free (w);
-		}
-
 		cdescent_set_log10_lambda1 (cd, logt);
 
 		if (!cdescent_do_cyclic_update (cd)) break;
@@ -274,6 +268,12 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 		free (info);
 
 		if (stop_flag) break;
+
+		if (cd->path->func) {
+			mm_dense	*w = cd->path->func->function (cd, cd->path->func->data);
+			cdescent_set_penalty_factor (cd, w, cd->path->func->tau);
+			mm_real_free (w);
+		}
 
 		/* if logt - dlog10_lambda1 < log10_lambda1, logt = log10_lambda1 and stop_flag is set to true
 		 * else logt -= dlog10_lambda1 */

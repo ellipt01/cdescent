@@ -104,7 +104,7 @@ linregmodel_alloc (void)
 	lreg->lambda2 = 0.;
 
 	lreg->c = NULL;
-	lreg->log10camax = 0.;
+	lreg->camax = 0.;
 
 	lreg->ycentered = false;
 	lreg->xcentered = false;
@@ -133,8 +133,7 @@ linregmodel_alloc (void)
 linregmodel *
 linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d, PreProc proc)
 {
-	int				j;
-	double			camax;
+	int			j;
 	linregmodel	*lreg;
 
 	/* check whether x and y are not empty */
@@ -241,8 +240,7 @@ linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d
 	}
 
 	// camax = max ( abs (c) )
-	camax = fabs (lreg->c->data[idamax_ (&lreg->c->nnz, lreg->c->data, &ione) - 1]);
-	lreg->log10camax = floor (log10 (camax)) + 1.;
+	lreg->camax = fabs (lreg->c->data[idamax_ (&lreg->c->nnz, lreg->c->data, &ione) - 1]);
 
 	return lreg;
 }

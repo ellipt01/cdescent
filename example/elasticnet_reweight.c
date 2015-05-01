@@ -21,14 +21,13 @@
 
 /* after Candes et al.,2008 */
 mm_dense *
-weight_func0 (int iter, cdescent *cd, void *data)
+weight_func0 (cdescent *cd, void *data)
 {
 	int			i;
 	int			m = cd->beta->m;
 	mm_dense	*w = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, m, 1, m);
 	double		eps = *(double *) data;
-	if (iter == 0) mm_real_set_all (w, 1.);
-	else for (i = 0; i < m; i++) w->data[i] = 1. / (fabs (cd->beta->data[i]) + eps);
+	for (i = 0; i < m; i++) w->data[i] = 1. / (fabs (cd->beta->data[i]) + eps);
 	return w;
 }
 

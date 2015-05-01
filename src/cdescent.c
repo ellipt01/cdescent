@@ -87,7 +87,6 @@ cdescent_alloc (void)
 
 	cd->lreg = NULL;
 
-	cd->lambda1_max = 0.;
 	cd->lambda1 = 0.;
 	cd->w = NULL;
 
@@ -129,8 +128,7 @@ cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool
 
 	cd->tolerance = tol;
 
-	cd->lambda1_max = pow (10., lreg->log10camax);
-	cd->lambda1 = cd->lambda1_max;
+	cd->lambda1 = cd->lreg->camax;
 
 	cd->beta = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, lreg->x->n, 1, lreg->x->n);
 	mm_real_set_all (cd->beta, 0.);	// in initial, set to 0
@@ -150,7 +148,7 @@ cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool
 
 	cd->path = pathwise_alloc ();
 	/* default values */
-	cd->path->log10_lambda1_upper = lreg->log10camax;
+	cd->path->log10_lambda1_upper = floor (log10 (cd->lreg->camax)) + 1.;
 	cd->path->log10_lambda1_lower = log10 (tol);
 	cd->path->dlog10_lambda1 = 0.1;
 	strcpy (cd->path->fn_path, default_fn_path);	// default filename
@@ -192,8 +190,7 @@ cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w, const double tau)
 	if (w->m != cd->lreg->x->n) error_and_exit ("cdescent_set_penalty_factor", "dimensions of w and cd->lreg->x do not match.", __FILE__, __LINE__);
 
 	/* copy w */
-	if (cd->w) mm_real_free (cd->w);
-	cd->w = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, w->m, 1, w->nnz);
+	if (!cd->w) cd->w = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, w->m, 1, w->nnz);
 	if (fabs (tau - 1.) > DBL_EPSILON)	{
 		for (j = 0; j < w->nnz; j++) cd->w->data[j] = pow (fabs (w->data[j]), tau);
 	} else {
@@ -208,8 +205,8 @@ cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w, const double tau)
 bool
 cdescent_set_lambda1 (cdescent *cd, const double lambda1)
 {
-	if (cd->lambda1_max <= lambda1) {
-		cd->lambda1 = cd->lambda1_max;
+	if (cd->lreg->camax <= lambda1) {
+		cd->lambda1 = cd->lreg->camax;
 		return false;
 	}
 	cd->lambda1 = lambda1;
