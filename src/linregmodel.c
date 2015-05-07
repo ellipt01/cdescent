@@ -71,7 +71,7 @@ do_centering (mm_dense *x, const double *sum)
 #pragma omp parallel for
 	for (j = 0; j < x->n; j++) {
 		double	meanj = sum[j] / (double) x->m;
-		if (meanj > SQRT_DBL_EPSILON) mm_real_xj_add_const (x, j, - meanj);
+		if (fabs (meanj) > SQRT_DBL_EPSILON) mm_real_xj_add_const (x, j, - meanj);
 	}
 	return;
 }
