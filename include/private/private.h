@@ -50,11 +50,6 @@ extern const double	dmone;	// -1.
 #define DBL_EPSILON		2.2204460492503131e-16
 #endif
 
-/* SQRT_DBL_EPSILOM */
-#ifndef SQRT_DBL_EPSILON
-#define SQRT_DBL_EPSILON	1.4901161193847656e-08
-#endif
-
 /* print error message and terminate program */
 void	error_and_exit (const char * function_name, const char *error_msg, const char *file, const int line);
 /* print warning message */

@@ -24,7 +24,7 @@ calc_sum (const mm_real *x, double **sum)
 	// check whether mean is all 0 (x is already centered)
 	centered = true;
 	for (j = 0; j < x->n; j++) {
-		if (fabs (_sum[j] / (double) x->m) > SQRT_DBL_EPSILON) {
+		if (fabs (_sum[j] / (double) x->m) > DBL_EPSILON) {
 			centered = false;
 			break;
 		}
@@ -49,7 +49,7 @@ calc_ssq (const mm_real *x, double **ssq)
 	// check whether norm is all 1 (x is already normalized)
 	normalized = true;
 	for (j = 0; j < x->n; j++) {
-		if (fabs (_ssq[j] - 1.) > SQRT_DBL_EPSILON) {
+		if (fabs (_ssq[j] - 1.) > DBL_EPSILON) {
 			normalized = false;
 			break;
 		}
@@ -71,7 +71,7 @@ do_centering (mm_dense *x, const double *sum)
 #pragma omp parallel for
 	for (j = 0; j < x->n; j++) {
 		double	meanj = sum[j] / (double) x->m;
-		if (fabs (meanj) > SQRT_DBL_EPSILON) mm_real_xj_add_const (x, j, - meanj);
+		if (fabs (meanj) > DBL_EPSILON) mm_real_xj_add_const (x, j, - meanj);
 	}
 	return;
 }
@@ -85,7 +85,7 @@ do_normalizing (mm_real *x, const double *ssq)
 #pragma omp parallel for
 	for (j = 0; j < x->n; j++) {
 		double	nrm2j = sqrt (ssq[j]);
-		if (nrm2j > SQRT_DBL_EPSILON) mm_real_xj_scale (x, j, 1. / nrm2j);
+		if (fabs (nrm2j - 1.) > DBL_EPSILON) mm_real_xj_scale (x, j, 1. / nrm2j);
 	}
 	return;
 }
