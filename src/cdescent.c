@@ -12,27 +12,6 @@
 
 #include "private/private.h"
 
-static reweighting_func *
-reweighting_function_alloc (void)
-{
-	reweighting_func	*func = (reweighting_func *) malloc (sizeof (reweighting_func));
-	func->tau = 0.;
-	func->function = NULL;
-	func->data = NULL;
-	return func;
-}
-
-reweighting_func *
-reweighting_function_new (const double tau, const weight_func function, void *data)
-{
-	reweighting_func	*func = reweighting_function_alloc ();
-	func->tau = tau;
-	func->function = function;
-	func->data = data;
-	return func;
-}
-
-
 // default file to output solution path
 static const char	default_fn_path[] = "beta_path.data";
 
@@ -59,7 +38,6 @@ pathwise_alloc (void)
 	path->lambda1_opt = 0.;
 	path->nrm1_opt = 0.;
 	path->min_bic_val = CDESCENT_POSINF;
-	path->func = NULL;
 	return path;
 }
 
@@ -72,6 +50,36 @@ pathwise_free (pathwise *path)
 		free (path);
 	}
 	return;
+}
+
+static reweighting_func *
+reweighting_function_alloc (void)
+{
+	reweighting_func	*func = (reweighting_func *) malloc (sizeof (reweighting_func));
+	func->tau = 0.;
+	func->function = NULL;
+	func->data = NULL;
+	return func;
+}
+
+reweighting_func *
+reweighting_function_new (const double tau, const weight_func function, void *data)
+{
+	reweighting_func	*func = reweighting_function_alloc ();
+	func->tau = tau;
+	func->function = function;
+	func->data = data;
+	return func;
+}
+
+static reweighting *
+reweighting_alloc (void)
+{
+	reweighting	*rwt = (reweighting *) malloc (sizeof (reweighting));
+	rwt->maxiter = 0;
+	rwt->tolerance = 0.;
+	rwt->func = NULL;
+	return rwt;
 }
 
 /* allocate cdescent object */
@@ -104,6 +112,7 @@ cdescent_alloc (void)
 	cd->total_iter = 0;
 
 	cd->path = NULL;
+	cd->rwt = NULL;
 
 	return cd;
 }
@@ -167,6 +176,7 @@ cdescent_free (cdescent *cd)
 		if (cd->mu) mm_real_free (cd->mu);
 		if (cd->nu) mm_real_free (cd->nu);
 		if (cd->path) pathwise_free (cd->path);
+		if (cd->rwt) free (cd->rwt);
 		free (cd);
 	}
 	return;
@@ -277,8 +287,11 @@ cdescent_set_pathwise_gamma_bic (cdescent *cd, const double gamma_bic)
 }
 
 void
-cdescent_set_pathwise_reweighting (cdescent *cd, reweighting_func *func)
+cdescent_set_reweighting (cdescent *cd, const int maxiter, const double tolerance, reweighting_func *func)
 {
-	cd->path->func = func;
+	cd->rwt = reweighting_alloc ();
+	cd->rwt->maxiter = maxiter;
+	cd->rwt->tolerance = tolerance;
+	cd->rwt->func = func;
 	return;
 }

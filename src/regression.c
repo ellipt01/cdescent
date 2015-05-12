@@ -197,6 +197,104 @@ pathwise_reset (pathwise *path)
 	return;
 }
 
+/* snapshot of solution */
+typedef struct {
+	mm_dense	*beta;
+	mm_dense	*mu;
+	mm_dense	*nu;
+	double		nrm1;
+	double		b;
+} snapshot;
+
+static snapshot *
+snapshot_alloc (void)
+{
+	snapshot	*snap = (snapshot *) malloc (sizeof (snapshot));
+	snap->beta = NULL;
+	snap->mu = NULL;
+	snap->nu = NULL;
+	snap->nrm1 = 0.;
+	snap->b = 0.;
+	return snap;
+}
+
+static void
+snapshot_free (snapshot *snap)
+{
+	if (snap) {
+		if (snap->beta) mm_real_free (snap->beta);
+		if (snap->mu) mm_real_free (snap->mu);
+		if (snap->nu) mm_real_free (snap->nu);
+		free (snap);
+	}
+	return;
+}
+
+static snapshot *
+cdescent_take_snapshot (const cdescent *cd)
+{
+	snapshot	*snap = snapshot_alloc ();
+	if (cd->beta) snap->beta = mm_real_copy (cd->beta);
+	if (cd->mu) snap->mu = mm_real_copy (cd->mu);
+	if (cd->nu) snap->nu = mm_real_copy (cd->nu);
+	snap->nrm1 = cd->nrm1;
+	snap->b = cd->b;
+	return snap;
+}
+
+static void
+cdescent_revert_to_snapshot (cdescent *cd, const snapshot *snap)
+{
+	if (snap->beta) {
+		if (cd->beta) mm_real_free (cd->beta);
+		cd->beta = mm_real_copy (snap->beta);
+	}
+	if (snap->mu) {
+		if (cd->mu) mm_real_free (cd->mu);
+		cd->mu = mm_real_copy (snap->mu);
+	}
+	if (snap->nu) {
+		if (cd->nu) mm_real_free (cd->nu);
+		cd->nu = mm_real_copy (snap->nu);
+	}
+	cd->nrm1 = snap->nrm1;
+	cd->b = snap->b;
+	return;
+}
+
+/*** do reweighted coordinate descent optimization.
+ * The weight for L1 norm is updated by calling reweighting function
+ * cd->path->func using beta of the previous iteration. ***/
+bool
+cdescent_do_reweighting (cdescent *cd)
+{
+	int			iter;
+	double		dnrm1;
+	bool		converged = true;
+
+	if (!cd->rwt) error_and_exit ("cdescent_do_reweighting", "cd->rwt is empty.", __FILE__, __LINE__);
+	if (!cd->rwt->func) error_and_exit ("cdescent_do_reweighting", "cd->rwt->func is empty.", __FILE__, __LINE__);
+
+	iter = 0;
+	do {
+		double		nrm1_prev = cd->nrm1;
+		mm_dense	*w = cd->rwt->func->function (cd, cd->rwt->func->data);
+		cdescent_set_penalty_factor (cd, w, cd->rwt->func->tau);
+		mm_real_free (w);
+
+		if (!(converged = cdescent_do_cyclic_update (cd))) break;
+
+		if (++iter > cd->rwt->maxiter) {
+			printf_warning ("cdescent_do_reweighting", "reaching max number of iterations.", __FILE__, __LINE__);
+			break;
+		}
+
+		dnrm1 = fabs (cd->nrm1 - nrm1_prev);
+	} while (dnrm1 > cd->rwt->tolerance);
+
+	return converged;
+}
+
 /*** do pathwise cyclic coordinate descent optimization.
  * The regression is starting at the smallest value lambda1_max for which
  * the entire vector beta = 0, and decreasing sequence of values for lambda1
@@ -207,12 +305,16 @@ pathwise_reset (pathwise *path)
 bool
 cdescent_do_pathwise_optimization (cdescent *cd)
 {
-	int		pathwise_iter = 0;
-	double	logt;
-	bool	stop_flag = false;
+	int			iter = 0;
+	double		logt;
+	bool		stop_flag = false;
 
-	FILE	*fp_path = NULL;
-	FILE	*fp_bic = NULL;
+	bool		converged;
+
+	snapshot	*snap = NULL;
+
+	FILE		*fp_path = NULL;
+	FILE		*fp_bic = NULL;
 
 	if (!cd) error_and_exit ("cdescent_do_pathwise_optimization", "cdescent *cd is empty.", __FILE__, __LINE__);
 	if (!cd->path) error_and_exit ("cdescent_do_pathwise_optimization", "cd->path is empty.", __FILE__, __LINE__);
@@ -231,7 +333,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 			sprintf (msg, "cannot open file %s.", cd->path->fn_path);
 			printf_warning ("cdescent_do_pathwise_optimization", msg, __FILE__, __LINE__);
 		}
-		if (fp_path) fprintf_solutionpath (fp_path, pathwise_iter, cd);
+		if (fp_path) fprintf_solutionpath (fp_path, iter, cd);
 	}
 	if (cd->path->output_bic_info) {
 		if (!(fp_bic = fopen (cd->path->fn_bic, "w"))) {
@@ -246,19 +348,26 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 	while (1) {
 		bic_info	*info;
 
-		pathwise_iter++;
+		iter++;
 
 		cdescent_set_log10_lambda1 (cd, logt);
 
-		if (!cdescent_do_cyclic_update (cd)) break;
+		if (!(converged = cdescent_do_cyclic_update (cd))) break;
+
+		// reweighting
+		if (cd->rwt) {
+			// backup current solution
+			snap = cdescent_take_snapshot (cd);
+			if (!(converged = cdescent_do_reweighting (cd))) break;
+		}
 
 		// output solution path
-		if (fp_path) fprintf_solutionpath (fp_path, pathwise_iter, cd);
+		if (fp_path) fprintf_solutionpath (fp_path, iter, cd);
 
 		info = cdescent_eval_bic (cd, cd->path->gamma_bic);
 		// if bic_val < min_bic_val, update min_bic_val, lambda1_opt, nrm1_opt and beta_opt
 		if (info->bic_val < cd->path->min_bic_val) {
-			store_optimal (cd->path, pathwise_iter, cd->lambda1, cd->nrm1, cd->b, cd->beta);
+			store_optimal (cd->path, iter, cd->lambda1, cd->nrm1, cd->b, cd->beta);
 			cd->path->min_bic_val = info->bic_val;
 			if (!cd->path->was_modified) cd->path->was_modified = true;
 		}
@@ -269,11 +378,8 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 
 		if (stop_flag) break;
 
-		if (cd->path->func) {
-			mm_dense	*w = cd->path->func->function (cd, cd->path->func->data);
-			cdescent_set_penalty_factor (cd, w, cd->path->func->tau);
-			mm_real_free (w);
-		}
+		// restore solution
+		if (cd->rwt) cdescent_revert_to_snapshot (cd, snap);
 
 		/* if logt - dlog10_lambda1 < log10_lambda1, logt = log10_lambda1 and stop_flag is set to true
 		 * else logt -= dlog10_lambda1 */
@@ -281,8 +387,10 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 
 	}
 
+	if (snap) snapshot_free (snap);
+
 	if (fp_path) fclose (fp_path);
 	if (fp_bic) fclose (fp_bic);
 
-	return cd->path->was_modified;
+	return converged;
 }

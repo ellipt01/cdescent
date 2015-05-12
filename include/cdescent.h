@@ -16,6 +16,7 @@ extern "C" {
 #include <mmreal.h>
 #include <objects.h>
 #include <linregmodel.h>
+#include <regression.h>
 #include <bic.h>
 
 /* cdescent.c */
@@ -35,10 +36,6 @@ void		cdescent_set_pathwise_gamma_bic (cdescent *cd, const double gamma_bic);
 
 reweighting_func * reweighting_function_new (const double tau, const weight_func func, void *data);
 void		cdescent_set_pathwise_reweighting (cdescent *cd, reweighting_func *func);
-
-/* regression.c */
-bool		cdescent_do_cyclic_update (cdescent *cd);
-bool		cdescent_do_pathwise_optimization (cdescent *cd);
 
 #ifdef __cplusplus
 }

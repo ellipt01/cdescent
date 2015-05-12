@@ -15,6 +15,7 @@ extern "C" {
 typedef struct s_cdescent		cdescent;
 typedef struct s_linregmodel	linregmodel;
 typedef struct s_pathwise		pathwise;
+typedef struct s_reweighting	reweighting;
 typedef struct s_bic_info		bic_info;
 
 /*** object of coordinate descent regression for L1 regularized linear regression problem
@@ -50,6 +51,7 @@ struct s_cdescent {
 
 	pathwise			*path;			// pathwise CD optimization object
 
+	reweighting			*rwt;
 };
 
 /*** Object of convex/nonconvex regularized linear regression problem
@@ -98,21 +100,6 @@ struct s_linregmodel {
 
 };
 
-/*** reweighting function
- * the function weighting_func is called to calculate weight
- * for each iteration of pathwise optimization ***/
-typedef struct s_reweighting_func reweighting_func;
-
-/* weighting function */
-typedef mm_dense* (*weight_func) (cdescent *cd, void *data);
-
-
-struct s_reweighting_func {
-	double		tau;
-	weight_func	function;
-	void		*data;
-};
-
 /*** object of pathwise CD optimization ***/
 struct s_pathwise {
 
@@ -134,9 +121,30 @@ struct s_pathwise {
 	mm_dense	*beta_opt;			// optimal beta corresponding to min_bic_val
 	double		lambda1_opt;		// optimal lambda1
 	double		nrm1_opt;			// | beta_opt |
+};
 
+/*** object of reweighted CD optimization ***/
+
+/*** reweighting function
+ * the function weighting_func is called to calculate weight
+ * for each iteration of coordinate descent optimization ***/
+typedef struct s_reweighting_func reweighting_func;
+
+/* weighting function */
+typedef mm_dense* (*weight_func) (cdescent *cd, void *data);
+
+
+struct s_reweighting_func {
+	double		tau;
+	weight_func	function;
+	void		*data;
+};
+
+/* object of reweighting procedure */
+struct s_reweighting {
+	int			maxiter;
+	double		tolerance;
 	reweighting_func	*func;		// reweighting function
-
 };
 
 /*** Extended Bayesian Information Criterion (Chen and Chen, 2008)

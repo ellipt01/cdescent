@@ -1,7 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
 # sample program
-noinst_PROGRAMS = elasticnet adaelasticnet elasticnet_rw
+noinst_PROGRAMS = elasticnet adaelasticnet elasticnet_rwt
 
 noinst_LTLIBRARIES = libexample.la 
 
@@ -36,10 +36,10 @@ adaelasticnet_LDADD =\
 	$(top_srcdir)/example/libexample.la
 
 # sample program
-elasticnet_rw_SOURCES = elasticnet_reweight.c
-elasticnet_rw_CPPFLAGS =\
+elasticnet_rwt_SOURCES = elasticnet_reweight.c
+elasticnet_rwt_CPPFLAGS =\
 	-I$(top_srcdir)/include\
 	-I$(top_srcdir)/example
 
-elasticnet_rw_LDADD =\
+elasticnet_rwt_LDADD =\
 	$(top_srcdir)/example/libexample.la
