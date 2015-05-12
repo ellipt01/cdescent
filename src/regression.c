@@ -197,71 +197,6 @@ pathwise_reset (pathwise *path)
 	return;
 }
 
-/* snapshot of solution */
-typedef struct {
-	mm_dense	*beta;
-	mm_dense	*mu;
-	mm_dense	*nu;
-	double		nrm1;
-	double		b;
-} snapshot;
-
-static snapshot *
-snapshot_alloc (void)
-{
-	snapshot	*snap = (snapshot *) malloc (sizeof (snapshot));
-	snap->beta = NULL;
-	snap->mu = NULL;
-	snap->nu = NULL;
-	snap->nrm1 = 0.;
-	snap->b = 0.;
-	return snap;
-}
-
-static void
-snapshot_free (snapshot *snap)
-{
-	if (snap) {
-		if (snap->beta) mm_real_free (snap->beta);
-		if (snap->mu) mm_real_free (snap->mu);
-		if (snap->nu) mm_real_free (snap->nu);
-		free (snap);
-	}
-	return;
-}
-
-static snapshot *
-cdescent_take_snapshot (const cdescent *cd)
-{
-	snapshot	*snap = snapshot_alloc ();
-	if (cd->beta) snap->beta = mm_real_copy (cd->beta);
-	if (cd->mu) snap->mu = mm_real_copy (cd->mu);
-	if (cd->nu) snap->nu = mm_real_copy (cd->nu);
-	snap->nrm1 = cd->nrm1;
-	snap->b = cd->b;
-	return snap;
-}
-
-static void
-cdescent_revert_to_snapshot (cdescent *cd, const snapshot *snap)
-{
-	if (snap->beta) {
-		if (cd->beta) mm_real_free (cd->beta);
-		cd->beta = mm_real_copy (snap->beta);
-	}
-	if (snap->mu) {
-		if (cd->mu) mm_real_free (cd->mu);
-		cd->mu = mm_real_copy (snap->mu);
-	}
-	if (snap->nu) {
-		if (cd->nu) mm_real_free (cd->nu);
-		cd->nu = mm_real_copy (snap->nu);
-	}
-	cd->nrm1 = snap->nrm1;
-	cd->b = snap->b;
-	return;
-}
-
 /*** do reweighted coordinate descent optimization.
  * The weight for L1 norm is updated by calling reweighting function
  * cd->path->func using beta of the previous iteration. ***/
@@ -311,8 +246,6 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 
 	bool		converged;
 
-	snapshot	*snap = NULL;
-
 	FILE		*fp_path = NULL;
 	FILE		*fp_bic = NULL;
 
@@ -355,11 +288,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 		if (!(converged = cdescent_do_cyclic_update (cd))) break;
 
 		// reweighting
-		if (cd->rwt) {
-			// backup current solution
-			snap = cdescent_take_snapshot (cd);
-			if (!(converged = cdescent_do_reweighting (cd))) break;
-		}
+		if (cd->rwt && !(converged = cdescent_do_reweighting (cd))) break;
 
 		// output solution path
 		if (fp_path) fprintf_solutionpath (fp_path, iter, cd);
@@ -378,16 +307,11 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 
 		if (stop_flag) break;
 
-		// restore solution
-		if (cd->rwt) cdescent_revert_to_snapshot (cd, snap);
-
 		/* if logt - dlog10_lambda1 < log10_lambda1, logt = log10_lambda1 and stop_flag is set to true
 		 * else logt -= dlog10_lambda1 */
 		stop_flag = set_logt (cd->path->log10_lambda1_lower, logt - cd->path->dlog10_lambda1, &logt);
 
 	}
-
-	if (snap) snapshot_free (snap);
 
 	if (fp_path) fclose (fp_path);
 	if (fp_bic) fclose (fp_bic);

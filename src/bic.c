@@ -41,6 +41,8 @@ calc_rss (const cdescent *cd)
 	if (fabs (cd->b) > 0.) mm_real_xj_add_const (r, 0, - cd->b);	// r = y - mu - b
 	rss = mm_real_xj_ssq (r, 0);	// rss = | y - mu |^2
 	mm_real_free (r);
+	// if not lasso, rss = | y - mu |^2 + lambda2 * | nu |^2
+	if (!cd->is_regtype_lasso && cd->nu) rss += cd->lreg->lambda2 * mm_real_xj_ssq (cd->nu, 0);
 	return rss;
 }
 
