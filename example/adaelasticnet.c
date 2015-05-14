@@ -76,11 +76,13 @@ main (int argc, char **argv)
 	cdescent_set_pathwise_dlog10_lambda1 (cd, dlog10_lambda1);
 	cdescent_set_pathwise_gamma_bic (cd, gamma_bic);			// set gamma for eBIC
 
-	/*** do pathwise coordinate descent regression ***/
+	/*** do pathwise coordinate descent regression to obtain low bias solution ***/
 	cdescent_do_pathwise_optimization (cd);
 
 	/*** adaptive lasso ***/
-	cdescent_set_penalty_factor (cd, cd->beta, 0.25);	// set weight = | beta_ols |
+	/* use low bias solution (beta of lambda1 = 10^log10_lambda1_lower) for L1 norm weight */
+	cdescent_set_penalty_factor (cd, cd->beta, 0.25);	// set weight = | beta_low_bias |^(1/4)
+
 	cdescent_set_pathwise_outputs_fullpath (cd, NULL);	// output full solution path
 	cdescent_set_pathwise_outputs_bic_info (cd, NULL);	// output BIC info
 	/* do pathwise coordinate descent again */
@@ -94,3 +96,4 @@ main (int argc, char **argv)
 
 	return EXIT_SUCCESS;
 }
+

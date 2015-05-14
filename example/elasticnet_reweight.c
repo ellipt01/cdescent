@@ -19,7 +19,7 @@
  *             using cdescent library.
  *********************************************************/
 
-/* after Candes et al.,2008 */
+/* anternative of L0 norm regression after Candes et al.,2008 */
 mm_dense *
 weight_func0 (cdescent *cd, void *data)
 {
@@ -41,6 +41,9 @@ main (int argc, char **argv)
 	linregmodel	*lreg;
 
 	cdescent	*cd;
+
+	double				eps = 1.e-3;
+	reweighting_func	*func;
 
 	FILE		*fp;
 
@@ -90,13 +93,12 @@ main (int argc, char **argv)
 	cdescent_set_pathwise_outputs_fullpath (cd, NULL);	// output full solution path
 	cdescent_set_pathwise_outputs_bic_info (cd, NULL);	// output BIC info
 	cdescent_set_pathwise_gamma_bic (cd, gamma_bic);	// set gamma for eBIC
-	{
-		double				eps = 1.e-3;
-		reweighting_func	*func = reweighting_function_new (1., weight_func0, &eps);
-		cdescent_set_reweighting (cd, maxiter, tolerance, func);
-	}
 
-	/*** do pathwise coordinate descent regression ***/
+	/* setup reweighting */
+	func  = reweighting_function_new (1., weight_func0, &eps);
+	cdescent_set_reweighting (cd, maxiter, tolerance, func);
+
+	/*** do reweighted pathwise coordinate descent regression ***/
 	cdescent_do_pathwise_optimization (cd);
 	fprintf (stderr, "lambda1_opt = %.2f, nrm1(beta_opt) = %.2f, min_bic = %.2f\n",
 		cd->path->lambda1_opt, cd->path->nrm1_opt, cd->path->min_bic_val);

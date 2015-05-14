@@ -80,7 +80,7 @@ struct s_linregmodel {
 	double		lambda2;		// weight for penalty term
 
 	mm_dense	*c;				// = x' * y: correlation (constant) vector
-	double		camax;			// log10 ( amax(c) )
+	double		camax;			// max ( abs (c) )
 
 	bool		ycentered;		// y is centered?
 	bool		xcentered;		// x is centered?
