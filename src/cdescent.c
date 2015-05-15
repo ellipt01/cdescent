@@ -92,6 +92,8 @@ cdescent_alloc (void)
 	cd->was_modified = false;
 
 	cd->is_regtype_lasso = true;
+	cd->update_intercept = true;
+	cd->force_beta_nonnegative = false;
 
 	cd->lreg = NULL;
 
@@ -102,7 +104,6 @@ cdescent_alloc (void)
 
 	cd->nrm1 = 0.;
 
-	cd->update_intercept = true;
 	cd->b = 0.;
 	cd->beta = NULL;
 	cd->mu = NULL;
