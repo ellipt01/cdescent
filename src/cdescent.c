@@ -95,6 +95,8 @@ cdescent_alloc (void)
 	cd->update_intercept = true;
 	cd->force_beta_nonnegative = false;
 
+	cd->m = NULL;
+	cd->n = NULL;
 	cd->lreg = NULL;
 
 	cd->lambda1 = 0.;
@@ -132,6 +134,8 @@ cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool
 	cd->was_modified = false;
 
 	cd->lreg = lreg;
+	cd->m = &cd->lreg->y->m;
+	cd->n = &cd->lreg->x->n;
 
 	/* if lreg->lambda2 == 0 || lreg->d == NULL, regression type is Lasso */
 	cd->is_regtype_lasso =  (cd->lreg->lambda2 < DBL_EPSILON || cd->lreg->d == NULL);
@@ -140,16 +144,16 @@ cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool
 
 	cd->lambda1 = cd->lreg->camax;
 
-	cd->beta = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, lreg->x->n, 1, lreg->x->n);
+	cd->beta = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, *cd->n, 1, *cd->n);
 	mm_real_set_all (cd->beta, 0.);	// in initial, set to 0
 
 	// mu = X * beta
-	cd->mu = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, lreg->x->m, 1, lreg->x->m);
+	cd->mu = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, *cd->m, 1, *cd->m);
 	mm_real_set_all (cd->mu, 0.);	// in initial, set to 0
 
 	// nu = D * beta
 	if (!cd->is_regtype_lasso) {
-		cd->nu = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, lreg->d->m, 1, lreg->d->m);
+		cd->nu = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, cd->lreg->d->m, 1, cd->lreg->d->m);
 		mm_real_set_all (cd->nu, 0.);	// in initial, set to 0
 	}
 
@@ -198,7 +202,7 @@ cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w, const double tau)
 	/* check whether w is vector */
 	if (w->n != 1) error_and_exit ("cdescent_set_penalty_factor", "w must be vector.", __FILE__, __LINE__);
 	/* check dimensions of x and w */
-	if (w->m != cd->lreg->x->n) error_and_exit ("cdescent_set_penalty_factor", "dimensions of w and cd->lreg->x do not match.", __FILE__, __LINE__);
+	if (w->m != *cd->n) error_and_exit ("cdescent_set_penalty_factor", "dimensions of w does not match.", __FILE__, __LINE__);
 
 	/* copy w */
 	if (!cd->w) cd->w = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, w->m, 1, w->nnz);

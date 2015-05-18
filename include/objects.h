@@ -31,6 +31,8 @@ struct s_cdescent {
 	bool				update_intercept;		// whether update intercept on each iteration (default is true)
 	bool				force_beta_nonnegative;	// whether force beta is nonnegative or not
 
+	const int			*m;						// number of observations, points cd->lreg->y->m
+	const int			*n;						// number of variables, points cd->lreg->x->n
 	const linregmodel	*lreg;					// linear regression model
 
 	double				lambda1;				// regularization parameter of L1 penalty

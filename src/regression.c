@@ -28,8 +28,8 @@ update_intercept (cdescent *cd)
 	// b += bar(y)
 	if (!cd->lreg->ycentered) cd->b += *(cd->lreg->sy);
 	// b -= bar(X) * beta
-	if (!cd->lreg->xcentered) cd->b -= ddot_ (&cd->lreg->x->n, cd->lreg->sx, &ione, cd->beta->data, &ione);
-	if (fabs (cd->b) > 0.) cd->b /= (double) cd->lreg->x->m;
+	if (!cd->lreg->xcentered) cd->b -= ddot_ (cd->n, cd->lreg->sx, &ione, cd->beta->data, &ione);
+	if (fabs (cd->b) > 0.) cd->b /= (double) *cd->m;
 	return;
 }
 
@@ -95,6 +95,7 @@ static bool
 cdescent_update_once_cycle (cdescent *cd)
 {
 	int		j;
+	int		n = *cd->n;
 	double	amax_eta;	// max of |eta(j)| = |beta_new(j) - beta_prev(j)|
 
 	/* b = (sum(y) - sum(X) * beta) / m */
@@ -107,9 +108,9 @@ cdescent_update_once_cycle (cdescent *cd)
 	 * https://github.com/akyrola/shotgun ****/
 	if (cd->parallel) {
 #pragma omp parallel for
-		for (j = 0; j < cd->lreg->x->n; j++) cdescent_update_atomic (cd, j, &amax_eta);
+		for (j = 0; j < n; j++) cdescent_update_atomic (cd, j, &amax_eta);
 	} else {
-		for (j = 0; j < cd->lreg->x->n; j++) cdescent_update (cd, j, &amax_eta);
+		for (j = 0; j < n; j++) cdescent_update (cd, j, &amax_eta);
 	}
 
 	cd->nrm1 = mm_real_xj_asum (cd->beta, 0);
@@ -146,11 +147,11 @@ cdescent_do_cyclic_update (cdescent *cd)
 /*** fprint solution path to FILE *stream
  * iter-th row of outputs indicates beta obtained by iter-th iteration ***/
 static void
-fprintf_solutionpath (FILE *stream, const int iter, const cdescent *cd)
+fprintf_solutionpath (FILE *stream, const int iter, const mm_dense *beta)
 {
 	int		j;
-	fprintf (stream, "%d %.4e", iter, cd->nrm1);
-	for (j = 0; j < cd->beta->m; j++) fprintf (stream, " %.4e", cd->beta->data[j]);
+	fprintf (stream, "%d %.4e", iter, mm_real_xj_asum (beta, 0));
+	for (j = 0; j < beta->m; j++) fprintf (stream, " %.4e", beta->data[j]);
 	fprintf (stream, "\n");
 	return;
 }
@@ -279,7 +280,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 			sprintf (msg, "cannot open file %s.", cd->path->fn_path);
 			printf_warning ("cdescent_do_pathwise_optimization", msg, __FILE__, __LINE__);
 		}
-		if (fp_path) fprintf_solutionpath (fp_path, iter, cd);
+		if (fp_path) fprintf_solutionpath (fp_path, iter, cd->beta);
 	}
 	if (cd->path->output_bic_info) {
 		if (!(fp_bic = fopen (cd->path->fn_bic, "w"))) {
@@ -304,7 +305,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 		if (cd->rwt && !(converged = cdescent_do_reweighting (cd))) break;
 
 		// output solution path
-		if (fp_path) fprintf_solutionpath (fp_path, iter, cd);
+		if (fp_path) fprintf_solutionpath (fp_path, iter, cd->beta);
 
 		info = cdescent_eval_bic (cd, cd->path->gamma_bic);
 		// if bic_val < min_bic_val, update min_bic_val, lambda1_opt, nrm1_opt and beta_opt

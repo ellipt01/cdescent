@@ -42,7 +42,7 @@ calc_rss (const cdescent *cd)
 	rss = mm_real_xj_ssq (r, 0);	// rss = | y - mu |^2
 	mm_real_free (r);
 	// if not lasso, rss = | y - mu |^2 + lambda2 * | nu |^2
-	if (!cd->is_regtype_lasso && cd->nu) rss += cd->lreg->lambda2 * mm_real_xj_ssq (cd->nu, 0);
+//	if (!cd->is_regtype_lasso && cd->nu) rss += cd->lreg->lambda2 * mm_real_xj_ssq (cd->nu, 0);
 	return rss;
 }
 
@@ -91,8 +91,8 @@ cdescent_eval_bic (const cdescent *cd, const double gamma)
 	info->gamma = gamma;
 	info->rss = calc_rss (cd);
 	info->df = calc_degree_of_freedom (cd);
-	info->m = (double) cd->lreg->x->m;
-	info->n = (double) cd->lreg->x->n;
+	info->m = (double) *cd->m;
+	info->n = (double) *cd->n;
 	info->bic_val = log (info->rss) + info->df * log (info->m) / info->m;
 	if (fabs (gamma) > 0.) info->bic_val += 2. * info->df * info->gamma * log (info->n) / info->m;
 	return info;
