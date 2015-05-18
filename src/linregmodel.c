@@ -149,18 +149,11 @@ linregmodel_new (mm_real *y, mm_real *x, const double lambda2, const mm_real *d,
 	/* check whether y is vector */
 	if (y->n != 1) error_and_exit ("linregmodel_new", "y must be vector.", __FILE__, __LINE__);
 
-	/* if x is symmetric, check whether it is square */
-	if (mm_real_is_symmetric (x) && x->m != x->n) error_and_exit ("linregmodel_new", "x: symmetric matrix must be square.", __FILE__, __LINE__);
-
 	/* check dimensions of x and y */
 	if (y->m != x->m) error_and_exit ("linregmodel_new", "dimensions of x and y do not match.", __FILE__, __LINE__);
 
-	if (d) {
-		/* if d is symmetric, check whether it is square */
-		if (mm_real_is_symmetric (d) && d->m != d->n) error_and_exit ("linregmodel_new", "d: symmetric matrix must be square.", __FILE__, __LINE__);
-		/* check dimensions of vector and matrix */
-		if (x->n != d->n) error_and_exit ("linregmodel_new", "dimensions of x and d do not match.", __FILE__, __LINE__);
-	}
+	/* check dimensions of x and d */
+	if (d && x->n != d->n) error_and_exit ("linregmodel_new", "dimensions of x and d do not match.", __FILE__, __LINE__);
 
 	lreg = linregmodel_alloc ();
 	if (lreg == NULL) error_and_exit ("linregmodel_new", "failed to allocate memory for linregmodel object.", __FILE__, __LINE__);
@@ -171,9 +164,9 @@ linregmodel_new (mm_real *y, mm_real *x, const double lambda2, const mm_real *d,
 	lreg->has_copy_y = false;
 	lreg->y = y;
 	lreg->ycentered = calc_sum (lreg->y, &lreg->sy);
-	/* If DO_CENTERING_Y is set and y is not already centered */
+	/* if DO_CENTERING_Y is set and y is not already centered */
 	if ((proc & DO_CENTERING_Y) && !lreg->ycentered) {
-		/* if lreg->x is sparse, convert to dense matrix */
+		/* if lreg->y is sparse, convert to dense vector */
 		if (mm_real_is_sparse (lreg->y)) {
 			mm_real	*tmp = lreg->y;
 			lreg->y = mm_real_sparse_to_dense (tmp);
@@ -186,7 +179,7 @@ linregmodel_new (mm_real *y, mm_real *x, const double lambda2, const mm_real *d,
 	lreg->has_copy_x = false;
 	lreg->x = x;
 	lreg->xcentered = calc_sum (lreg->x, &lreg->sx);
-	/* If DO_CENTERING_X is set and x is not already centered */
+	/* if DO_CENTERING_X is set and x is not already centered */
 	if ((proc & DO_CENTERING_X) && !lreg->xcentered) {
 		/* if lreg->x is sparse, convert to dense matrix */
 		if (mm_real_is_sparse (lreg->x)) {
@@ -206,7 +199,7 @@ linregmodel_new (mm_real *y, mm_real *x, const double lambda2, const mm_real *d,
 	};
 
 	lreg->xnormalized = calc_ssq (lreg->x, &lreg->xtx);
-	/* If DO_NORMALIZING_X is set and x is not already normalized */
+	/* if DO_NORMALIZING_X is set and x is not already normalized */
 	if ((proc & DO_NORMALIZING_X) && !lreg->xnormalized) {
 		/* if lreg->x is symmetric, convert to general matrix */
 		if (mm_real_is_symmetric (lreg->x)) {
