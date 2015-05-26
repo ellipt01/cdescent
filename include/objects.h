@@ -77,33 +77,33 @@ typedef enum {
 
 struct s_linregmodel {
 
-	bool		has_copy_y;
-	bool		has_copy_x;
+	bool			has_copy_y;
+	bool			has_copy_x;
 
-	mm_dense	*y;		// dense general: observed data vector y (must be dense)
-	mm_real		*x;		// sparse/dense symmetric/general: matrix of predictors X
-	mm_real		*d;		// sparse/dense symmetric/general: linear operator of penalty D
+	mm_dense		*y;		// dense general: observed data vector y (must be dense)
+	mm_real			*x;		// sparse/dense symmetric/general: matrix of predictors X
+	const mm_real	*d;		// sparse/dense symmetric/general: linear operator of penalty D
 
-	double		lambda2;		// weight for penalty term
+	double			lambda2;		// weight for penalty term
 
-	mm_dense	*c;				// = x' * y: correlation (constant) vector
-	double		camax;			// max ( abs (c) )
+	mm_dense		*c;				// = x' * y: correlation (constant) vector
+	double			camax;			// max ( abs (c) )
 
-	bool		ycentered;		// y is centered?
-	bool		xcentered;		// x is centered?
-	bool		xnormalized;	// x is normalized?
+	bool			ycentered;		// y is centered?
+	bool			xcentered;		// x is centered?
+	bool			xnormalized;	// x is normalized?
 
 	/* sum y. If y is centered, sy = NULL */
-	double		*sy;
+	double			*sy;
 
 	/* sum X(:, j). If X is centered, sx = NULL. */
-	double		*sx;
+	double			*sx;
 
 	/* xtx = diag(X' * X). If X is normalized, xtx = NULL. */
-	double		*xtx;
+	double			*xtx;
 
 	/* dtd = diag(D' * D), D = lreg->pen->d */
-	double		*dtd;
+	double			*dtd;
 
 };
 

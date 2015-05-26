@@ -214,7 +214,7 @@ linregmodel_new (mm_real *y, mm_real *x, const double lambda2, const mm_real *d,
 
 	/* copy d */
 	if (d) {
-		lreg->d = mm_real_copy (d);
+		lreg->d = d;
 		lreg->dtd = (double *) malloc (lreg->d->n * sizeof (double));
 #pragma omp parallel for
 		for (j = 0; j < lreg->d->n; j++) {
@@ -242,7 +242,6 @@ linregmodel_free (linregmodel *lreg)
 	if (lreg) {
 		if (lreg->y && lreg->has_copy_y) mm_real_free (lreg->y);
 		if (lreg->x && lreg->has_copy_x) mm_real_free (lreg->x);
-		if (lreg->d) mm_real_free (lreg->d);
 		if (lreg->sy) free (lreg->sy);
 		if (lreg->sx) free (lreg->sx);
 		if (lreg->xtx) free (lreg->xtx);
