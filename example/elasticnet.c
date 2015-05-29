@@ -64,10 +64,6 @@ main (int argc, char **argv)
 	     for || y - x * beta ||^2 + lambda2 * || d * beta ||^2 ***/
 	lreg = linregmodel_new (y, x, lambda2, d, DO_CENTERING_Y | DO_STANDARDIZING_X);
 
-	mm_real_free (y);
-	mm_real_free (x);
-	if (d) mm_real_free (d);
-
 	/*** create coordinate descent object ***/
 	cd = cdescent_new (lreg, tolerance, maxiter, false);
 
@@ -86,6 +82,10 @@ main (int argc, char **argv)
 
 	cdescent_free (cd);
 	linregmodel_free (lreg);
+
+	mm_real_free (y);
+	mm_real_free (x);
+	if (d) mm_real_free (d);
 
 	return EXIT_SUCCESS;
 }
