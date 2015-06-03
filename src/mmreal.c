@@ -417,7 +417,7 @@ bin_search (const int key, const int *s, const int n)
 
 /* find element that s->i[l] = j in the k-th column of s and return its index l */
 static int
-find_jth_row_element_of_sk (const int j, const mm_sparse *s, const int k)
+find_row_element (const int j, const mm_sparse *s, const int k)
 {
 	int		p = s->p[k];
 	int		n = s->p[k + 1] - p;
@@ -458,7 +458,7 @@ mm_real_symmetric_to_general_sparse (const mm_sparse *x)
 				sd[m++] = xd[k];
 			}
 			for (k = j + 1; k < xn; k++) {
-				int		l = find_jth_row_element_of_sk (j, x, k);
+				int		l = find_row_element (j, x, k);
 				// if found
 				if (l >= 0) {
 					si[m] = k;
@@ -467,7 +467,7 @@ mm_real_symmetric_to_general_sparse (const mm_sparse *x)
 			}
 		} else if (mm_real_is_lower (x)) {
 			for (k = 0; k < j; k++) {
-				int		l = find_jth_row_element_of_sk (j, x, k);
+				int		l = find_row_element (j, x, k);
 				// if found
 				if (l >= 0) {
 					si[m] = k;
@@ -731,7 +731,7 @@ mm_real_sj_asum (const mm_sparse *s, const int j)
 			k1 = j;
 		}
 		for (k = k0; k < k1; k++) {
-			int		l = find_jth_row_element_of_sk (j, s, k);
+			int		l = find_row_element (j, s, k);
 			// if found
 			if (l >= 0) asum += fabs (sd[l]);
 		}
@@ -792,7 +792,7 @@ mm_real_sj_sum (const mm_sparse *s, const int j)
 		}
 		sd = s->data;
 		for (k = k0; k < k1; k++) {
-			int		l = find_jth_row_element_of_sk (j, s, k);
+			int		l = find_row_element (j, s, k);
 			// if found
 			if (l >= 0) sum += sd[l];
 		}
@@ -859,7 +859,7 @@ mm_real_sj_ssq (const mm_sparse *s, const int j)
 			k1 = j;
 		}
 		for (k = k0; k < k1; k++) {
-			int		l = find_jth_row_element_of_sk (j, s, k);
+			int		l = find_row_element (j, s, k);
 			// if found
 			if (l >= 0) ssq += pow (sd[l], 2.);
 		}
@@ -909,21 +909,22 @@ mm_real_xj_nrm2 (const mm_real *x, const int j)
 	return sqrt (ssq);
 }
 
-/* z = alpha * s * y + beta * z, where s is sparse matrix and y is dense vector */
+/* z = alpha * s * y(:,k) + beta * z, where s is sparse matrix and y is dense general */
 static void
-mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_dense *y, const double beta, mm_dense *z)
+mm_real_s_dot_yk (const bool trans, const double alpha, const mm_sparse *s, const mm_dense *y, const int k, const double beta, mm_dense *z)
 {
-	int			j, k;
-	int			p, n;
+	int			j, l;
+	int			p, m, n;
 
 	int			*si;
 	double		*sd;
 	int			*sp = s->p;
-	double		*yd = y->data;
-	double		*zd = z->data;
+	double		*yk = y->data + k * y->m;
+	double		*zk = z->data + k * z->m;
 
-	if (fabs (beta) > DBL_EPSILON) mm_real_xj_scale (z, 0, beta);
-	else mm_real_set_all (z, 0.);
+	m = (!trans) ? s->m : s->n;
+	if (fabs (beta) > DBL_EPSILON) dscal_ (&m, &beta, zk, &ione);
+	else mm_real_array_set_all (m, zk, 0.);
 
 	if (trans) {
 		if (!mm_real_is_symmetric (s)) {
@@ -933,48 +934,48 @@ mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_de
 				if (n <= 0) continue;
 				si = s->i + p;
 				sd = s->data + p;
-				for (k = 0; k < n; k++) zd[j] += alpha * sd[k] * yd[si[k]];
+				for (l = 0; l < n; l++) zk[j] += alpha * sd[l] * yk[si[l]];
 			}
 		} else if (mm_real_is_upper (s)) {
-			int		sik;
+			int		sil;
 			double	alpha_sdk;
 			for (j = 0; j < s->n; j++) {
 				p = sp[j];
 				n = sp[j + 1] - p;
 				si = s->i + p;
 				sd = s->data + p;
-				for (k = 0; k < n - 1; k++) {
-					sik = si[k];
-					alpha_sdk = alpha * sd[k];
-					zd[j] += alpha_sdk * yd[sik];
-					zd[sik] += alpha_sdk * yd[j];
+				for (l = 0; l < n - 1; l++) {
+					sil = si[l];
+					alpha_sdk = alpha * sd[l];
+					zk[j] += alpha_sdk * yk[sil];
+					zk[sil] += alpha_sdk * yk[j];
 				}
 				if (n <= 0) continue;
-				sik = si[n - 1];
+				sil = si[n - 1];
 				alpha_sdk = alpha * sd[n - 1];
-				zd[j] += alpha_sdk * yd[sik];
+				zk[j] += alpha_sdk * yk[sil];
 				// omit if diagonal element
-				if (j != sik) zd[sik] += alpha_sdk * yd[j];
+				if (j != sil) zk[sil] += alpha_sdk * yk[j];
 			}
 		} else {
-			int		sik;
-			double	alpha_sdk;
+			int		sil;
+			double	alpha_sdl;
 			for (j = 0; j < s->n; j++) {
 				p = sp[j];
 				n = sp[j + 1] - p;
 				if (n <= 0) continue;
 				si = s->i + p;
 				sd = s->data + p;
-				sik = si[0];
-				alpha_sdk = alpha * sd[0];
-				zd[j] += alpha_sdk * yd[sik];
+				sil = si[0];
+				alpha_sdl = alpha * sd[0];
+				zk[j] += alpha_sdl * yk[sil];
 				// omit if diagonal element
-				if (j != sik) zd[sik] += alpha_sdk * yd[j];
-				for (k = 1; k < n; k++) {
-					sik = si[k];
-					alpha_sdk = alpha * sd[k];
-					zd[j] += alpha_sdk * yd[sik];
-					zd[sik] += alpha_sdk * yd[j];
+				if (j != sil) zk[sil] += alpha_sdl * yk[j];
+				for (l = 1; l < n; l++) {
+					sil = si[l];
+					alpha_sdl = alpha * sd[l];
+					zk[j] += alpha_sdl * yk[sil];
+					zk[sil] += alpha_sdl * yk[j];
 				}
 			}
 		}
@@ -986,48 +987,48 @@ mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_de
 				if (n <= 0) continue;
 				si = s->i + p;
 				sd = s->data + p;
-				for (k = 0; k < n; k++) zd[si[k]] += alpha * sd[k] * yd[j];
+				for (l = 0; l < n; l++) zk[si[l]] += alpha * sd[l] * yk[j];
 			}
 		} else if (mm_real_is_upper (s)) {
-			int		sik;
-			double	alpha_sdk;
+			int		sil;
+			double	alpha_sdl;
 			for (j = 0; j < s->n; j++) {
 				p = sp[j];
 				n = sp[j + 1] - p;
 				si = s->i + p;
 				sd = s->data + p;
-				for (k = 0; k < n - 1; k++) {
-					sik = si[k];
-					alpha_sdk = alpha * sd[k];
-					zd[sik] += alpha_sdk * yd[j];
-					zd[j] += alpha_sdk * yd[sik];
+				for (l = 0; l < n - 1; l++) {
+					sil = si[l];
+					alpha_sdl = alpha * sd[l];
+					zk[sil] += alpha_sdl * yk[j];
+					zk[j] += alpha_sdl * yk[sil];
 				}
 				if (n <= 0) continue;
-				sik = si[n - 1];
-				alpha_sdk = alpha * sd[n - 1];
-				zd[sik] += alpha_sdk * yd[j];
+				sil = si[n - 1];
+				alpha_sdl = alpha * sd[n - 1];
+				zk[sil] += alpha_sdl * yk[j];
 				// omit if diagonal element
-				if (j != sik) zd[j] += alpha_sdk * yd[sik];
+				if (j != sil) zk[j] += alpha_sdl * yk[sil];
 			}
 		} else {
-			int		sik;
-			double	alpha_sdk;
+			int		sil;
+			double	alpha_sdl;
 			for (j = 0; j < s->n; j++) {
 				p = sp[j];
 				n = sp[j + 1] - p;
 				if (n <= 0) continue;
 				si = s->i + p;
 				sd = s->data + p;
-				sik = si[0];
-				alpha_sdk = alpha * sd[0];
-				zd[sik] += alpha_sdk * yd[j];
+				sil = si[0];
+				alpha_sdl = alpha * sd[0];
+				zk[sil] += alpha_sdl * yk[j];
 				// omit if diagonal element
-				if (j != sik) zd[j] += alpha_sdk * yd[sik];
-				for (k = 1; k < n; k++) {
-					sik = si[k];
-					alpha_sdk = alpha * sd[k];
-					zd[sik] += alpha_sdk * yd[j];
-					zd[j] += alpha_sdk * yd[sik];
+				if (j != sil) zk[j] += alpha_sdl * yk[sil];
+				for (l = 1; l < n; l++) {
+					sil = si[l];
+					alpha_sdl = alpha * sd[l];
+					zk[sil] += alpha_sdl * yk[j];
+					zk[j] += alpha_sdl * yk[sil];
 				}
 			}
 		}
@@ -1035,131 +1036,138 @@ mm_real_s_dot_y (bool trans, const double alpha, const mm_sparse *s, const mm_de
 	return;
 }
 
-/* z = alpha * d * y + beta * z, where d is dense matrix and y is dense vector */
+/* z = alpha * d * y(:,k) + beta * z, where d is dense matrix and y is dense general */
 static void
-mm_real_d_dot_y (bool trans, const double alpha, const mm_dense *d, const mm_dense *y, const double beta, mm_dense *z)
+mm_real_d_dot_yk (const bool trans, const double alpha, const mm_dense *d, const mm_dense *y, const int k, const double beta, mm_dense *z)
 {
+	double	*yk = y->data + k * y->m;
+	double	*zk = z->data + k * z->m;
 	if (!mm_real_is_symmetric (d)) {
 		// z = alpha * d * y + beta * z
-		dgemv_ ((trans) ? "T" : "N", &d->m, &d->n, &alpha, d->data, &d->m, y->data, &ione, &beta, z->data, &ione);
+		dgemv_ ((trans) ? "T" : "N", &d->m, &d->n, &alpha, d->data, &d->m, yk, &ione, &beta, zk, &ione);
 	} else {
 		char	uplo = (mm_real_is_upper (d)) ? 'U' : 'L';
 		// z = alpha * d * y + beta * z
-		dsymv_ (&uplo, &d->m, &alpha, d->data, &d->m, y->data, &ione, &beta, z->data, &ione);
+		dsymv_ (&uplo, &d->m, &alpha, d->data, &d->m, yk, &ione, &beta, zk, &ione);
 	}
 	return;
 }
 
-/*** alpha * x * y, where x is sparse/dense matrix and y is dense vector ***/
-void
-mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dense *y, const double beta, mm_dense *z)
+/*** alpha * x * y(:,k), where x is sparse/dense matrix and y is dense general ***/
+static void
+mm_real_x_dot_yk (const bool trans, const double alpha, const mm_real *x, const mm_dense *y, const int k, const double beta, mm_dense *z)
 {
+	return (mm_real_is_sparse (x)) ? mm_real_s_dot_yk (trans, alpha, x, y, k, beta, z) : mm_real_d_dot_yk (trans, alpha, x, y, k, beta, z);
+}
+
+/*** alpha * x * y, where x is sparse/dense matrix and y is dense matrix ***/
+void
+mm_real_x_dot_y (const bool trans, const double alpha, const mm_real *x, const mm_dense *y, const double beta, mm_dense *z)
+{
+	int		k;
 	if (!mm_real_is_dense (y)) error_and_exit ("mm_real_x_dot_y", "y must be dense.", __FILE__, __LINE__);
 	if (mm_real_is_symmetric (y)) error_and_exit ("mm_real_x_dot_y", "y must be general.", __FILE__, __LINE__);
-	if (y->n != 1) error_and_exit ("mm_real_x_dot_y", "y must be vector.", __FILE__, __LINE__);
 	if ((trans && x->m != y->m) || (!trans && x->n != y->m))
 		error_and_exit ("mm_real_x_dot_y", "dimensions of x and y do not match.", __FILE__, __LINE__);
 	if (!mm_real_is_dense (z)) error_and_exit ("mm_real_x_dot_y", "z must be dense.", __FILE__, __LINE__);
 	if (mm_real_is_symmetric (z)) error_and_exit ("mm_real_x_dot_y", "z must be general.", __FILE__, __LINE__);
-	if (z->n != 1) error_and_exit ("mm_real_x_dot_y", "z must be vector.", __FILE__, __LINE__);
 	if ((trans && x->n != z->m) || (!trans && x->m != z->m))
 		error_and_exit ("mm_real_x_dot_y", "dimensions of x and z do not match.", __FILE__, __LINE__);
-
-	return (mm_real_is_sparse (x)) ? mm_real_s_dot_y (trans, alpha, x, y, beta, z) : mm_real_d_dot_y (trans, alpha, x, y, beta, z);
+#pragma omp parallel for
+	for (k = 0; k < y->n; k++) mm_real_x_dot_yk (trans, alpha, x, y, k, beta, z);
+	return;
 }
 
-/* s(:,j)' * y */
+/* s(:,j)' * y(:,k) */
 static double
-mm_real_sj_trans_dot_y (const mm_sparse *s, const int j, const mm_dense *y)
+mm_real_sj_trans_dot_yk (const mm_sparse *s, const int j, const mm_dense *y, const int k)
 {
 	double	val = 0;
 
 	int		*si;
 	double	*sd;
-	double	*yd = y->data;
+	double	*yk = y->data + k * y->m;
 
-	int		k;
+	int		l;
 	int		p = s->p[j];
 	int		n = s->p[j + 1] - p;
-	int		mod = n % 4;
 
-	// unrolling
 	si = s->i + p;
 	sd = s->data + p;
-	if (mod == 1) {
-		val += sd[0] * yd[si[0]];
-		si++;
-		sd++;
-	} else if (mod == 2) {
-		val += sd[0] * yd[si[0]] + sd[1] * yd[si[1]];
-		si += 2;
-		sd += 2;
-	} else if (mod == 3) {
-		val += sd[0] * yd[si[0]] + sd[1] * yd[si[1]] + sd[2] * yd[si[2]];
-		si += 3;
-		sd += 3;
-	}
-	for (k = mod; k < n; k += 4) {
-		val += sd[0] * yd[si[0]] + sd[1] * yd[si[1]] + sd[2] * yd[si[2]] + sd[3] * yd[si[3]];
-		si += 4;
-		sd += 4;
-	}
+	for (l = 0; l < n; l++) val += sd[l] * yk[si[l]];
 
 	if (mm_real_is_symmetric (s)) {
-		int		k0;
-		int		k1;
+		int		l0;
+		int		l1;
 		if (mm_real_is_upper (s)) {
-			k0 = j + 1;
-			k1 = s->n;
+			l0 = j + 1;
+			l1 = s->n;
 		} else {
-			k0 = 0;
-			k1 = j;
+			l0 = 0;
+			l1 = j;
 		}
 		sd = s->data;
-		for (k = k0; k < k1; k++) {
-			int		l = find_jth_row_element_of_sk (j, s, k);
+		for (l = l0; l < l1; l++) {
+			int		t = find_row_element (j, s, l);
 			// if found
-			if (l >= 0) val += sd[l] * yd[k];
+			if (t >= 0) val += sd[t] * yk[l];
 		}
 	}
 
 	return val;
 }
 
-/* d(:,j)' * y */
+/* d(:,j)' * y(:,k) */
 static double
-mm_real_dj_trans_dot_y (const mm_dense *d, const int j, const mm_dense *y)
+mm_real_dj_trans_dot_yk (const mm_dense *d, const int j, const mm_dense *y, const int k)
 {
 	double	val = 0.;
-	if (!mm_real_is_symmetric (d)) val = ddot_ (&d->m, d->data + j * d->m, &ione, y->data, &ione);
+	double	*yk = y->data + k * y->m;
+	if (!mm_real_is_symmetric (d)) val = ddot_ (&d->m, d->data + j * d->m, &ione, yk, &ione);
 	else {
 		int		n;
 		if (mm_real_is_upper (d)) {
 			n = j;
-			val = ddot_ (&n, d->data + j * d->m, &ione, y->data, &ione);
+			val = ddot_ (&n, d->data + j * d->m, &ione, yk, &ione);
 			n = d->m - j;
-			val += ddot_ (&n, d->data + j * d->m + j, &d->m, y->data + j, &ione);
+			val += ddot_ (&n, d->data + j * d->m + j, &d->m, yk + j, &ione);
 		} else if (mm_real_is_lower (d)) {
 			n = d->m - j;
-			val = ddot_ (&n, d->data + j * d->m + j, &ione, y->data + j, &ione);
+			val = ddot_ (&n, d->data + j * d->m + j, &ione, yk + j, &ione);
 			n = j;
-			val += ddot_ (&n, d->data + j, &d->m, y->data, &ione);
+			val += ddot_ (&n, d->data + j, &d->m, yk, &ione);
 		}
 	}
 	return val;
 }
 
-/*** x(:,j)' * y ***/
+/*** x(:,j)' * y(:,k) ***/
 double
+mm_real_xj_trans_dot_yk (const mm_real *x, const int j, const mm_dense *y, const int k)
+{
+	if (j < 0 || x->n <= j) error_and_exit ("mm_real_xj_trans_dot_yk", "first index out of range.", __FILE__, __LINE__);
+	if (k < 0 || y->n <= k) error_and_exit ("mm_real_xj_trans_dot_yk", "second index out of range.", __FILE__, __LINE__);
+	if (!mm_real_is_dense (y)) error_and_exit ("mm_real_xj_trans_dot_yk", "y must be dense.", __FILE__, __LINE__);
+	if (mm_real_is_symmetric (y)) error_and_exit ("mm_real_xj_trans_dot_yk", "y must be general.", __FILE__, __LINE__);
+	if (x->m != y->m) error_and_exit ("mm_real_xj_trans_dot_yk", "matrix dimensions do not match.", __FILE__, __LINE__);
+
+	return (mm_real_is_sparse (x)) ? mm_real_sj_trans_dot_yk (x, j, y, k) : mm_real_dj_trans_dot_yk (x, j, y, k);
+}
+
+/*** x(:,j)' * y ***/
+mm_dense *
 mm_real_xj_trans_dot_y (const mm_real *x, const int j, const mm_dense *y)
 {
-	if (j < 0 || x->n <= j) error_and_exit ("mm_real_xj_trans_dot_y", "index out of range.", __FILE__, __LINE__);
+	int			k;
+	mm_dense	*z;
+	if (j < 0 || x->n <= j) error_and_exit ("mm_real_xj_trans_dot_y", "first index out of range.", __FILE__, __LINE__);
 	if (!mm_real_is_dense (y)) error_and_exit ("mm_real_xj_trans_dot_y", "y must be dense.", __FILE__, __LINE__);
 	if (mm_real_is_symmetric (y)) error_and_exit ("mm_real_xj_trans_dot_y", "y must be general.", __FILE__, __LINE__);
-	if (y->n != 1) error_and_exit ("mm_real_xj_trans_dot_y", "y must be vector.", __FILE__, __LINE__);
-	if (x->m != y->m) error_and_exit ("mm_real_xj_trans_dot_y", "vector and matrix dimensions do not match.", __FILE__, __LINE__);
-
-	return (mm_real_is_sparse (x)) ? mm_real_sj_trans_dot_y (x, j, y) : mm_real_dj_trans_dot_y (x, j, y);
+	if (x->m != y->m) error_and_exit ("mm_real_xj_trans_dot_y", "matrix dimensions do not match.", __FILE__, __LINE__);
+	z = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, 1, y->n, y->n);
+#pragma omp parallel for
+	for (k = 0; k < y->n; k++) z->data[k] = mm_real_xj_trans_dot_yk (x, j, y, k);
+	return z;
 }
 
 /* y = alpha * s(:,j) + y */
@@ -1188,7 +1196,7 @@ mm_real_asjpy (const double alpha, const mm_sparse *s, const int j, mm_dense *y)
 		}
 		sd = s->data;
 		for (k = k0; k < k1; k++) {
-			int		l = find_jth_row_element_of_sk (j, s, k);
+			int		l = find_row_element (j, s, k);
 			// if found
 			if (l >= 0) yd[k] += alpha * sd[l];
 		}
@@ -1257,7 +1265,7 @@ mm_real_asjpy_atomic (const double alpha, const mm_sparse *s, const int j, mm_de
 		}
 		sd = s->data;
 		for (k = k0; k < k1; k++) {
-			int		l = find_jth_row_element_of_sk (j, s, k);
+			int		l = find_row_element (j, s, k);
 			// if found
 			if (l >= 0) atomic_add (yd + k, alpha * sd[l]);
 		}

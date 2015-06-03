@@ -226,7 +226,7 @@ linregmodel_new (mm_real *y, mm_real *x, const double lambda2, const mm_real *d,
 	lreg->c = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, lreg->x->n, 1, lreg->x->n);
 #pragma omp parallel for
 	for (j = 0; j < lreg->x->n; j++) {
-		lreg->c->data[j] = mm_real_xj_trans_dot_y (lreg->x, j, lreg->y);
+		lreg->c->data[j] = mm_real_xj_trans_dot_yk (lreg->x, j, lreg->y, 0);
 	}
 
 	// camax = max ( abs (c) )

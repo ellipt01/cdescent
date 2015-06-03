@@ -92,8 +92,11 @@ double		mm_real_xj_sum (const mm_real *x, const int j);
 double		mm_real_xj_ssq (const mm_real *x, const int j);
 double		mm_real_xj_nrm2 (const mm_real *x, const int j);
 
-void		mm_real_x_dot_y (bool trans, const double alpha, const mm_real *x, const mm_dense *y, const double beta, mm_dense *z);
-double		mm_real_xj_trans_dot_y (const mm_real *x, const int j, const mm_dense *y);
+void		mm_real_x_dot_y (const bool trans, const double alpha, const mm_real *x, const mm_dense *y, const double beta, mm_dense *z);
+
+double		mm_real_xj_trans_dot_yk (const mm_real *x, const int j, const mm_dense *y, const int k);
+mm_dense	*mm_real_xj_trans_dot_y (const mm_real *x, const int j, const mm_dense *y);
+
 void		mm_real_axjpy (const double alpha, const mm_real *x, const int j, mm_dense *y);
 void		mm_real_axjpy_atomic (const double alpha, const mm_real *x, const int j, mm_dense *y);
 
