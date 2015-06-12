@@ -96,8 +96,8 @@ main (int argc, char **argv)
 
 	/*** do reweighted pathwise coordinate descent regression ***/
 	cdescent_do_pathwise_optimization (cd);
-	fprintf (stderr, "lambda1_opt = %.2f, nrm1(beta_opt) = %.2f, min_bic = %.2f\n",
-		cd->path->lambda1_opt, cd->path->nrm1_opt, cd->path->min_bic_val);
+	fprintf (stderr, "lambda_opt = %.2f, nrm1(beta_opt) = %.2f, min_bic = %.2f\n",
+		cd->path->lambda_opt, cd->path->nrm1_opt, cd->path->min_bic_val);
 
 	fprintf (stderr, "lambda1_rwt = %.2f, nrm1(beta_rwt) = %.2f\n", cd->lambda1, cd->nrm1);
 

@@ -64,7 +64,7 @@ usage (char *toolname)
 	if (p) p++;
 	else p = toolname;
 	fprintf (stderr, "\nUSAGE:\n%s -x <input file of matrix x> -y <input file of vector y>\n", p);
-	fprintf (stderr, "[optional]  { -l <lambda2; default = 0>\n");
+	fprintf (stderr, "[optional]  { -a <alpha; default = 1.>\n");
 	fprintf (stderr, "              -r <log10_lambda1_min:d_log10_lambda1; default = -2:0.1>\n");
 	fprintf (stderr, "              -g <gamma of eBIC in [0, 1]; default = 0>\n");
 	fprintf (stderr, "              -t <tolerance; default = 1.e-3> }\n\n");

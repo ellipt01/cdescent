@@ -11,8 +11,8 @@
 /*** default settings ***/
 char			infn_x[80] = "\0";		// store input file name of design matrix
 char			infn_y[80] = "\0";		// store input file name of observed data
-double			alpha = 0.;			// L2 penalty parameter
-double			log10_lambda = -2.;		// start log10(lambda1) for warm start
+double			alpha = 1.;				// raito of L1 / L2 penalty parameter
+double			log10_lambda = -2.;		// lower bound of log10(lambda1) for warm start
 double			dlog10_lambda = 0.1;	// increment of log10(lambda1)
 double			gamma_bic = 0.;			// classical BIC
 

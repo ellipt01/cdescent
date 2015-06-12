@@ -35,7 +35,7 @@ pathwise_alloc (void)
 	path->index_opt = 0;
 	path->b0_opt = 0.;
 	path->beta_opt = NULL;
-	path->lambda1_opt = 0.;
+	path->lambda_opt = 0.;
 	path->nrm1_opt = 0.;
 	path->min_bic_val = CDESCENT_POSINF;
 	return path;
@@ -102,8 +102,10 @@ cdescent_alloc (void)
 
 	cd->alpha1 = 0.;
 	cd->alpha2 = 0.;
+	cd->lambda  = 0.;
 	cd->lambda1 = 0.;
 	cd->lambda2 = 0.;
+
 	cd->w = NULL;
 
 	cd->tolerance = 0.;
@@ -131,7 +133,7 @@ cdescent_new (const double alpha, const linregmodel *lreg, const double tol, con
 	cdescent	*cd;
 
 	if (!lreg) error_and_exit ("cdescent_new", "linregmodel *lreg is empty.", __FILE__, __LINE__);
-	if (alpha < 0 || 1. < alpha) error_and_exit ("cdescent_new", "alpha must be 0 <= alpha <= 1.", __FILE__, __LINE__);
+	if (alpha < 0. || 1. < alpha) error_and_exit ("cdescent_new", "alpha must be 0 <= alpha <= 1.", __FILE__, __LINE__);
 
 	cd = cdescent_alloc ();
 	if (cd == NULL) error_and_exit ("cdescent_new", "failed to allocate object.", __FILE__, __LINE__);

@@ -176,7 +176,7 @@ static void
 store_optimal (cdescent *cd, const int index)
 {
 	cd->path->index_opt = index;
-	cd->path->lambda1_opt = cd->lambda1;
+	cd->path->lambda_opt = cd->lambda;
 	cd->path->nrm1_opt = cd->nrm1;
 	if (cd->use_intercept) cd->path->b0_opt = cd->b0;
 	if (cd->path->beta_opt) mm_real_free (cd->path->beta_opt);
@@ -204,7 +204,8 @@ pathwise_reset (pathwise *path)
 {
 	if (path->beta_opt) mm_real_free (path->beta_opt);
 	path->beta_opt = NULL;
-	path->lambda1_opt = 0.;
+	path->b0_opt = 0.;
+	path->lambda_opt = 0.;
 	path->nrm1_opt = 0.;
 	path->min_bic_val = CDESCENT_POSINF;
 	path->was_modified = false;
