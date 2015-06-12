@@ -86,9 +86,5 @@ main (int argc, char **argv)
 	mm_real_free (x);
 	if (d) mm_real_free (d);
 
-	mm_real_free (y);
-	mm_real_free (x);
-	if (d) mm_real_free (d);
-
 	return EXIT_SUCCESS;
 }

@@ -92,7 +92,7 @@ cdescent_alloc (void)
 	cd->was_modified = false;
 
 	cd->is_regtype_lasso = true;
-	cd->update_intercept = true;
+	cd->use_intercept = true;
 	cd->force_beta_nonnegative = false;
 
 	cd->m = NULL;
@@ -106,7 +106,7 @@ cdescent_alloc (void)
 
 	cd->nrm1 = 0.;
 
-	cd->b = 0.;
+	cd->b0 = 0.;
 	cd->beta = NULL;
 	cd->mu = NULL;
 	cd->nu = NULL;
@@ -236,9 +236,16 @@ cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1)
 }
 
 void
-cdescent_set_update_intercept (cdescent *cd, bool update_intercept)
+cdescent_set_beta_nonnegative (cdescent *cd, bool nonnegative)
 {
-	cd->update_intercept = update_intercept;
+	cd->force_beta_nonnegative = nonnegative;
+	return;
+}
+
+void
+cdescent_set_use_intercept (cdescent *cd, bool use_intercept)
+{
+	cd->use_intercept = use_intercept;
 	return;
 }
 

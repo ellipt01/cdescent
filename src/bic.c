@@ -38,7 +38,7 @@ calc_rss (const cdescent *cd)
 	mm_dense	*r = mm_real_copy (cd->lreg->y);	// r = y
 	mm_real_axjpy (-1., cd->mu, 0, r);	// r = y - mu
 	// intercept
-	if (fabs (cd->b) > 0.) mm_real_xj_add_const (r, 0, - cd->b);	// r = y - mu - b
+	if (cd->use_intercept && fabs (cd->b0) > 0.) mm_real_xj_add_const (r, 0, - cd->b0);	// r = y - mu - b
 	rss = mm_real_xj_ssq (r, 0);	// rss = | y - mu |^2
 	mm_real_free (r);
 	// if not lasso, rss = | y - mu |^2 + lambda2 * | nu |^2

@@ -38,7 +38,9 @@ cdescent_gradient (const cdescent *cd, const int j)
 	double	z = cj - xjmu;
 
 	// if X is not centered and cd->b != 0, z -= sum(X(:,j)) * b
-	if (!cd->lreg->xcentered && fabs (cd->b) > 0.) z -= cd->lreg->sx[j] * cd->b;
+	if (cd->use_intercept) {
+		if (!cd->lreg->xcentered && fabs (cd->b0) > 0.) z -= cd->lreg->sx[j] * cd->b0;
+	}
 
 	// not lasso, z -= lambda2 * D(:,j)' * nu (nu = D * beta)
 	if (!cd->is_regtype_lasso)
