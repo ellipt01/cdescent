@@ -173,14 +173,14 @@ set_logt (const double logt_lower, const double new_logt, double *logt)
 
 /* store lambda1_opt, nrm1_opt and beta_opt */
 static void
-store_optimal (cdescent *cd, const int index, const double lambda1, const double nrm1, const double b, const mm_dense *beta)
+store_optimal (cdescent *cd, const int index)
 {
 	cd->path->index_opt = index;
-	cd->path->lambda1_opt = lambda1;
-	cd->path->nrm1_opt = nrm1;
-	if (cd->use_intercept) cd->path->b_opt = b;
+	cd->path->lambda1_opt = cd->lambda1;
+	cd->path->nrm1_opt = cd->nrm1;
+	if (cd->use_intercept) cd->path->b0_opt = cd->b0;
 	if (cd->path->beta_opt) mm_real_free (cd->path->beta_opt);
-	cd->path->beta_opt = mm_real_copy (beta);
+	cd->path->beta_opt = mm_real_copy (cd->beta);
 	return;
 }
 
@@ -310,7 +310,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 		info = cdescent_eval_bic (cd, cd->path->gamma_bic);
 		// if bic_val < min_bic_val, update min_bic_val, lambda1_opt, nrm1_opt and beta_opt
 		if (info->bic_val < cd->path->min_bic_val) {
-			store_optimal (cd, iter, cd->lambda1, cd->nrm1, cd->b0, cd->beta);
+			store_optimal (cd, iter);
 			cd->path->min_bic_val = info->bic_val;
 			if (!cd->path->was_modified) cd->path->was_modified = true;
 		}

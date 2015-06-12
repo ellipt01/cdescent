@@ -33,7 +33,7 @@ pathwise_alloc (void)
 	path->output_bic_info = false;
 	path->gamma_bic = 0.;
 	path->index_opt = 0;
-	path->b_opt = 0.;
+	path->b0_opt = 0.;
 	path->beta_opt = NULL;
 	path->lambda1_opt = 0.;
 	path->nrm1_opt = 0.;

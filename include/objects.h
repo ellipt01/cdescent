@@ -125,7 +125,7 @@ struct s_pathwise {
 
 	double		min_bic_val;		// minimum BIC
 	int			index_opt;			// index of optimal beta
-	double		b_opt;				// optimal intercept
+	double		b0_opt;				// optimal intercept
 	mm_dense	*beta_opt;			// optimal beta corresponding to min_bic_val
 	double		lambda1_opt;		// optimal lambda1
 	double		nrm1_opt;			// | beta_opt |
