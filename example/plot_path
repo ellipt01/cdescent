@@ -10,7 +10,7 @@ if [ $major -lt 4 ]; then
 fi
 
 if [ -z "$1" ]; then
-	echo "USAGE: $0 <num of variables> { <lambda1> [x1:x2] [y1:y2] }"
+	echo "USAGE: $0 <num of variables> { <lambda> [x1:x2] [y1:y2] }"
 	exit
 fi
 
@@ -22,7 +22,7 @@ echo "unset key" >> tmp.gnuplot
 
 echo -n "set title \"Trace Plot of solution path by Lasso, Elastic net" >> tmp.gnuplot
 if [ -n "$2" ]; then
-	echo -n " ({/Symbol l}_2 = $2)"  >> tmp.gnuplot
+	echo -n " ({/Symbol a} = $2)"  >> tmp.gnuplot
 fi
 echo "\""  >> tmp.gnuplot
 

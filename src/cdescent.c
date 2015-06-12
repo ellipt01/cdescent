@@ -94,7 +94,7 @@ cdescent_alloc (void)
 	cd->is_regtype_lasso = true;
 	cd->use_intercept = true;
 	cd->force_beta_nonnegative = false;
-	cd->use_constant_lambda2 = false;
+	cd->use_fixed_lambda2 = false;
 
 	cd->m = NULL;
 	cd->n = NULL;
@@ -242,9 +242,9 @@ cdescent_force_beta_nonnegative (cdescent *cd)
 }
 
 void
-cdescent_use_constant_lambda2 (cdescent *cd, const double lambda2)
+cdescent_use_fixed_lambda2 (cdescent *cd, const double lambda2)
 {
-	cd->use_constant_lambda2 = true;
+	cd->use_fixed_lambda2 = true;
 	cd->lambda2 = lambda2;
 	return;
 }
@@ -257,7 +257,7 @@ cdescent_set_lambda (cdescent *cd, const double lambda)
 {
 	cd->lambda = lambda;
 	cd->lambda1 = cd->alpha1 * lambda;
-	if (!cd->use_constant_lambda2) cd->lambda2 = cd->alpha2 * lambda;
+	if (!cd->use_fixed_lambda2) cd->lambda2 = cd->alpha2 * lambda;
 	return;
 }
 

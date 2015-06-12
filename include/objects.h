@@ -28,8 +28,9 @@ struct s_cdescent {
 
 	/* whether regression type is Lasso */
 	bool				is_regtype_lasso;		// = (d == NULL)
+	bool				use_intercept;			// whether use intercept (default is true)
 	bool				force_beta_nonnegative;	// force beta to be non-negative (default is false)
-	bool				use_constant_lambda2;	// use fixed lambda2 value (default is false)
+	bool				use_fixed_lambda2;		// use fixed lambda2 value (default is false)
 
 	const int			*m;						// number of observations, points cd->lreg->y->m
 	const int			*n;						// number of variables, points cd->lreg->x->n
@@ -49,7 +50,6 @@ struct s_cdescent {
 
 	double				nrm1;					// L1 norm of beta (= sum_j |beta_j|)
 
-	bool				use_intercept;			// whether use intercept (default is true)
 	double				b0;						// intercept
 
 	mm_dense			*beta;					// estimated regression coefficients
