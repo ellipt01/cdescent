@@ -78,14 +78,14 @@ main (int argc, char **argv)
 
 	/*** create linear regression model object
 	     for || y - x * beta ||^2 + lambda2 * || d * beta ||^2 ***/
-	lreg = linregmodel_new (y, x, lambda2, d, DO_CENTERING_Y | DO_STANDARDIZING_X);
+	lreg = linregmodel_new (y, x, d, DO_CENTERING_Y | DO_STANDARDIZING_X);
 
 	/*** create coordinate descent object ***/
-	cd = cdescent_new (lreg, tolerance, maxiter, false);
+	cd = cdescent_new (alpha, lreg, tolerance, maxiter, false);
 
 	/*** set parameters of pathwise coordinate descent optimization ***/
-	cdescent_set_pathwise_log10_lambda1_lower (cd, log10_lambda1);
-	cdescent_set_pathwise_dlog10_lambda1 (cd, dlog10_lambda1);
+	cdescent_set_pathwise_log10_lambda_lower (cd, log10_lambda);
+	cdescent_set_pathwise_dlog10_lambda (cd, dlog10_lambda);
 	cdescent_set_pathwise_outputs_fullpath (cd, NULL);	// output full solution path
 	cdescent_set_pathwise_outputs_bic_info (cd, NULL);	// output BIC info
 	cdescent_set_pathwise_gamma_bic (cd, gamma_bic);	// set gamma for eBIC

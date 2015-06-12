@@ -75,9 +75,9 @@ usage (char *toolname)
 /*** parameters ***/
 extern char		infn_x[];
 extern char		infn_y[];
-extern double	lambda2;
-extern double	log10_lambda1;
-extern double	dlog10_lambda1;
+extern double	alpha;
+extern double	log10_lambda;
+extern double	dlog10_lambda;
 extern double	gamma_bic;	// classical BIC
 extern double	tolerance;
 extern int		maxiter;
@@ -89,7 +89,7 @@ read_params (int argc, char **argv)
 	bool	status = true;
 	char	c;
 
-	while ((c = getopt (argc, argv, "x:y:l:r:g:t:m:")) != -1) {
+	while ((c = getopt (argc, argv, "x:y:a:r:g:t:m:")) != -1) {
 
 		switch (c) {
 
@@ -101,14 +101,14 @@ read_params (int argc, char **argv)
 				strcpy (infn_y, optarg);
 				break;
 
-			case 'l':
-					lambda2 = (double) atof (optarg);
+			case 'a':
+					alpha = (double) atof (optarg);
 				break;
 
 			case 'r':
 					if (strchr (optarg, ':')) {
-						sscanf (optarg, "%lf:%lf", &log10_lambda1, &dlog10_lambda1);
-					} else log10_lambda1 = (double) atof (optarg);
+						sscanf (optarg, "%lf:%lf", &log10_lambda, &dlog10_lambda);
+					} else log10_lambda = (double) atof (optarg);
 				break;
 
 			case 'g':

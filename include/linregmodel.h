@@ -17,7 +17,7 @@ extern "C" {
 #include <objects.h>
 
 /* linregmodel.c */
-linregmodel	*linregmodel_new (mm_dense *y, mm_real *x, const double lambda2, const mm_real *d, PreProc proc);
+linregmodel	*linregmodel_new (mm_dense *y, mm_real *x, const mm_real *d, PreProc proc);
 void		linregmodel_free (linregmodel *l);
 
 #ifdef __cplusplus

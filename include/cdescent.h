@@ -20,17 +20,20 @@ extern "C" {
 #include <bic.h>
 
 /* cdescent.c */
-cdescent	*cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool parallel);
+cdescent	*cdescent_new (const double alpha, const linregmodel *lreg, const double tol, const int maxiter, bool parallel);
 void		cdescent_free (cdescent *cd);
 bool		cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w, const double tau);
-bool		cdescent_set_lambda1 (cdescent *cd, const double lambda1);
-bool		cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1);
-void		cdescent_set_beta_nonnegative (cdescent *cd, bool update_intercept);
-void		cdescent_set_use_intercept (cdescent *cd, bool update_intercept);
 
-void		cdescent_set_pathwise_log10_lambda1_upper (cdescent *cd, const double log10_lambda1_upper);
-void		cdescent_set_pathwise_log10_lambda1_lower (cdescent *cd, const double log10_lambda1_lower);
-void		cdescent_set_pathwise_dlog10_lambda1 (cdescent *cd, const double dlog10_lambda1);
+void		cdescent_not_use_intercept (cdescent *cd);
+void		cdescent_force_beta_nonnegative (cdescent *cd);
+void		cdescent_use_intercept (cdescent *cd, const double lambda2);
+
+void		cdescent_set_lambda (cdescent *cd, const double lambda);
+void		cdescent_set_log10_lambda (cdescent *cd, const double log10_lambda);
+
+void		cdescent_set_pathwise_log10_lambda_upper (cdescent *cd, const double log10_lambda_upper);
+void		cdescent_set_pathwise_log10_lambda_lower (cdescent *cd, const double log10_lambda_lower);
+void		cdescent_set_pathwise_dlog10_lambda (cdescent *cd, const double dlog10_lambda);
 void		cdescent_set_pathwise_outputs_fullpath (cdescent *cd, const char *fn);
 void		cdescent_set_pathwise_outputs_bic_info (cdescent *cd, const char *fn);
 void		cdescent_set_pathwise_gamma_bic (cdescent *cd, const double gamma_bic);

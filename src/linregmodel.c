@@ -104,8 +104,6 @@ linregmodel_alloc (void)
 	lreg->x = NULL;
 	lreg->d = NULL;
 
-	lreg->lambda2 = 0.;
-
 	lreg->c = NULL;
 	lreg->camax = 0.;
 
@@ -134,7 +132,7 @@ linregmodel_alloc (void)
  *                       DO_NORMALIZING_X: do normalizing of each column of x
  *                       DO_STANDARDIZING_X: do centering and normalizing of each column of x ***/
 linregmodel *
-linregmodel_new (mm_real *y, mm_real *x, const double lambda2, const mm_real *d, PreProc proc)
+linregmodel_new (mm_real *y, mm_real *x, const mm_real *d, PreProc proc)
 {
 	int			j;
 	linregmodel	*lreg;
@@ -142,9 +140,6 @@ linregmodel_new (mm_real *y, mm_real *x, const double lambda2, const mm_real *d,
 	/* check whether x and y are not empty */
 	if (!y) error_and_exit ("linregmodel_new", "y is empty.", __FILE__, __LINE__);
 	if (!x) error_and_exit ("linregmodel_new", "x is empty.", __FILE__, __LINE__);
-
-	/* check whether lambda2 >= 0. */
-	if (lambda2 < 0.) error_and_exit ("linregmodel_new", "lambda2 must be >= 0.", __FILE__, __LINE__);
 
 	/* check whether y is vector */
 	if (y->n != 1) error_and_exit ("linregmodel_new", "y must be vector.", __FILE__, __LINE__);
@@ -157,9 +152,6 @@ linregmodel_new (mm_real *y, mm_real *x, const double lambda2, const mm_real *d,
 
 	lreg = linregmodel_alloc ();
 	if (lreg == NULL) error_and_exit ("linregmodel_new", "failed to allocate memory for linregmodel object.", __FILE__, __LINE__);
-
-	/* lambda2 */
-	if (lambda2 > 0.) lreg->lambda2 = lambda2;
 
 	lreg->has_copy_y = false;
 	lreg->y = y;

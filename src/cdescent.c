@@ -25,9 +25,9 @@ pathwise_alloc (void)
 	pathwise	*path = (pathwise *) malloc (sizeof (pathwise));
 	path->was_modified = false;
 
-	path->log10_lambda1_upper = 0.;
-	path->log10_lambda1_lower = 0.;
-	path->dlog10_lambda1 = 0.;
+	path->log10_lambda_upper = 0.;
+	path->log10_lambda_lower = 0.;
+	path->dlog10_lambda = 0.;
 
 	path->output_fullpath = false;
 	path->output_bic_info = false;
@@ -94,12 +94,16 @@ cdescent_alloc (void)
 	cd->is_regtype_lasso = true;
 	cd->use_intercept = true;
 	cd->force_beta_nonnegative = false;
+	cd->use_constant_lambda2 = false;
 
 	cd->m = NULL;
 	cd->n = NULL;
 	cd->lreg = NULL;
 
+	cd->alpha1 = 0.;
+	cd->alpha2 = 0.;
 	cd->lambda1 = 0.;
+	cd->lambda2 = 0.;
 	cd->w = NULL;
 
 	cd->tolerance = 0.;
@@ -122,11 +126,12 @@ cdescent_alloc (void)
 
 /*** create new cdescent object ***/
 cdescent *
-cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool parallel)
+cdescent_new (const double alpha, const linregmodel *lreg, const double tol, const int maxiter, bool parallel)
 {
 	cdescent	*cd;
 
 	if (!lreg) error_and_exit ("cdescent_new", "linregmodel *lreg is empty.", __FILE__, __LINE__);
+	if (alpha < 0 || 1. < alpha) error_and_exit ("cdescent_new", "alpha must be 0 <= alpha <= 1.", __FILE__, __LINE__);
 
 	cd = cdescent_alloc ();
 	if (cd == NULL) error_and_exit ("cdescent_new", "failed to allocate object.", __FILE__, __LINE__);
@@ -137,12 +142,17 @@ cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool
 	cd->m = &cd->lreg->y->m;
 	cd->n = &cd->lreg->x->n;
 
-	/* if lreg->lambda2 == 0 || lreg->d == NULL, regression type is Lasso */
-	cd->is_regtype_lasso =  (cd->lreg->lambda2 < DBL_EPSILON || cd->lreg->d == NULL);
-
 	cd->tolerance = tol;
 
-	cd->lambda1 = cd->lreg->camax;
+	cd->alpha1 = alpha;
+	cd->alpha2 = 1. - alpha;
+
+	/* if cd->lreg->d == NULL, regression type is Lasso */
+	cd->is_regtype_lasso =  (cd->lreg->d == NULL);
+
+	cd->lambda = (cd->alpha1 > 0.) ? cd->lreg->camax / cd->alpha1 : cd->lreg->camax;
+	cd->lambda1 = cd->alpha1 * cd->lambda;
+	cd->lambda2 = cd->alpha2 * cd->lambda;
 
 	cd->beta = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, *cd->n, 1, *cd->n);
 	mm_real_set_all (cd->beta, 0.);	// in initial, set to 0
@@ -162,9 +172,10 @@ cdescent_new (const linregmodel *lreg, const double tol, const int maxiter, bool
 
 	cd->path = pathwise_alloc ();
 	/* default values */
-	cd->path->log10_lambda1_upper = floor (log10 (cd->lreg->camax)) + 1.;
-	cd->path->log10_lambda1_lower = log10 (tol);
-	cd->path->dlog10_lambda1 = 0.1;
+	cd->path->log10_lambda_upper = floor (log10 (cd->lreg->camax)) + 1.;
+	if (cd->alpha1 > 0.) cd->path->log10_lambda_upper -= floor (log10 (cd->alpha1));
+	cd->path->log10_lambda_lower = log10 (tol);
+	cd->path->dlog10_lambda = 0.1;
 	strcpy (cd->path->fn_path, default_fn_path);	// default filename
 	strcpy (cd->path->fn_bic, default_fn_bic);		// default filename
 
@@ -214,61 +225,68 @@ cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w, const double tau)
 	return (cd->w != NULL);
 }
 
+void
+cdescent_not_use_intercept (cdescent *cd)
+{
+	cd->use_intercept = false;
+	return;
+}
+
+void
+cdescent_force_beta_nonnegative (cdescent *cd)
+{
+	cd->force_beta_nonnegative = true;
+	return;
+}
+
+void
+cdescent_use_constant_lambda2 (cdescent *cd, const double lambda2)
+{
+	cd->use_constant_lambda2 = true;
+	cd->lambda2 = lambda2;
+	return;
+}
+
 /*** set cd->lambda1
  * if designated lambda1 >= cd->lambda1_max, cd->lambda1 is set to cd->lambda1_max and return false
  * else cd->lambda1 is set to lambda1 and return true ***/
-bool
-cdescent_set_lambda1 (cdescent *cd, const double lambda1)
+void
+cdescent_set_lambda (cdescent *cd, const double lambda)
 {
-	if (cd->lreg->camax <= lambda1) {
-		cd->lambda1 = cd->lreg->camax;
-		return false;
-	}
-	cd->lambda1 = lambda1;
-	return true;
+	cd->lambda = lambda;
+	cd->lambda1 = cd->alpha1 * lambda;
+	if (!cd->use_constant_lambda2) cd->lambda2 = cd->alpha2 * lambda;
+	return;
 }
 
 /*** set cd->lambda1 to 10^log10_lambda1 ***/
-bool
-cdescent_set_log10_lambda1 (cdescent *cd, const double log10_lambda1)
-{
-	return cdescent_set_lambda1 (cd, pow (10., log10_lambda1));
-}
-
 void
-cdescent_set_beta_nonnegative (cdescent *cd, bool nonnegative)
+cdescent_set_log10_lambda (cdescent *cd, const double log10_lambda)
 {
-	cd->force_beta_nonnegative = nonnegative;
-	return;
-}
-
-void
-cdescent_set_use_intercept (cdescent *cd, bool use_intercept)
-{
-	cd->use_intercept = use_intercept;
+	cdescent_set_lambda (cd, pow (10., log10_lambda));
 	return;
 }
 
 /*** routines to tuning pathwise CD optimization ***/
 void
-cdescent_set_pathwise_log10_lambda1_upper (cdescent *cd, const double log10_lambda1_upper)
+cdescent_set_pathwise_log10_lambda_upper (cdescent *cd, const double log10_lambda_upper)
 {
-	cd->path->log10_lambda1_upper = log10_lambda1_upper;
+	cd->path->log10_lambda_upper = log10_lambda_upper;
 	return;
 }
 
 /*** routines to tuning pathwise CD optimization ***/
 void
-cdescent_set_pathwise_log10_lambda1_lower (cdescent *cd, const double log10_lambda1_lower)
+cdescent_set_pathwise_log10_lambda_lower (cdescent *cd, const double log10_lambda_lower)
 {
-	cd->path->log10_lambda1_lower = log10_lambda1_lower;
+	cd->path->log10_lambda_lower = log10_lambda_lower;
 	return;
 }
 
 void
-cdescent_set_pathwise_dlog10_lambda1 (cdescent *cd, const double dlog10_lambda1)
+cdescent_set_pathwise_dlog10_lambda (cdescent *cd, const double dlog10_lambda)
 {
-	cd->path->dlog10_lambda1 = dlog10_lambda1;
+	cd->path->dlog10_lambda = dlog10_lambda;
 	return;
 }
 

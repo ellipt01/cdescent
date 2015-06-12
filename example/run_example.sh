@@ -37,7 +37,7 @@
 # example for diabetes.data
 # lambda2 = 0 (lasso), lambda1 = [0.01 : 10^0.1 : lambda1_max],
 # where lambda1_max = 10^(cd->lreg->logcamax) 
-./elasticnet -x ../share/diabetes_x.data -y ../share/diabetes_y.data -l 0 -r -4:0.1 -m 100000
+./elasticnet -x ../share/diabetes_x.data -y ../share/diabetes_y.data -a 1 -r -4:0.1 -m 100000
 
 # display resultant solution path
 # USAGE: plot_path <dim of beta> <lambda2>

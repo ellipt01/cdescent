@@ -27,14 +27,22 @@ struct s_cdescent {
 	bool				was_modified;			// whether this object was modified after created
 
 	/* whether regression type is Lasso */
-	bool				is_regtype_lasso;		// = (d == NULL || lambda2 == 0)
-	bool				force_beta_nonnegative;	// whether force beta is nonnegative or not
+	bool				is_regtype_lasso;		// = (d == NULL)
+	bool				force_beta_nonnegative;	// force beta to be non-negative (default is false)
+	bool				use_constant_lambda2;	// use fixed lambda2 value (default is false)
 
 	const int			*m;						// number of observations, points cd->lreg->y->m
 	const int			*n;						// number of variables, points cd->lreg->x->n
 	const linregmodel	*lreg;					// linear regression model
 
+
+	double				alpha1;					// raito of weight for L1 and L2 norm penalty
+	double				alpha2;					// = 1. - alpha
+
+	double				lambda;					// regularization parameter of L1 and L2 penalty
 	double				lambda1;				// regularization parameter of L1 penalty
+	double				lambda2;				// regularization parameter of L2 penalty
+
 	mm_dense			*w;						// dense general: weight for L1 penalty (penalty factor)
 
 	double				tolerance;				// tolerance of convergence
@@ -85,8 +93,6 @@ struct s_linregmodel {
 	mm_real			*x;		// sparse/dense symmetric/general: matrix of predictors X
 	const mm_real	*d;		// sparse/dense symmetric/general: linear operator of penalty D
 
-	double			lambda2;		// weight for penalty term
-
 	mm_dense		*c;				// = x' * y: correlation (constant) vector
 	double			camax;			// max ( abs (c) )
 
@@ -119,9 +125,9 @@ struct s_pathwise {
 	char		fn_bic[BUFSIZ];		// file to output BIC info
 	double		gamma_bic;			// gamma for eBIC
 
-	double		log10_lambda1_upper;// upper bound of lambda1 on log10 scale
-	double		log10_lambda1_lower;// lower bound of lambda1 on log10 scale
-	double		dlog10_lambda1;		// increment of lambda1 on log10 scale
+	double		log10_lambda_upper;	// upper bound of lambda1 on log10 scale
+	double		log10_lambda_lower;	// lower bound of lambda1 on log10 scale
+	double		dlog10_lambda;		// increment of lambda1 on log10 scale
 
 	double		min_bic_val;		// minimum BIC
 	int			index_opt;			// index of optimal beta

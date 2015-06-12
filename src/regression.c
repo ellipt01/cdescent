@@ -272,7 +272,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 	if (cd->path->was_modified) pathwise_reset (cd->path);
 
 	/* warm start */
-	stop_flag = set_logt (cd->path->log10_lambda1_lower, cd->path->log10_lambda1_upper, &logt);
+	stop_flag = set_logt (cd->path->log10_lambda_lower, cd->path->log10_lambda_upper, &logt);
 
 	if (cd->path->output_fullpath) {
 		if (!(fp_path = fopen (cd->path->fn_path, "w"))) {
@@ -297,7 +297,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 
 		iter++;
 
-		cdescent_set_log10_lambda1 (cd, logt);
+		cdescent_set_log10_lambda (cd, logt);
 
 		if (!(converged = cdescent_do_cyclic_update (cd))) break;
 
@@ -316,14 +316,14 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 		}
 
 		// output BIC info
-		if (fp_bic) fprintf (fp_bic, "%.4e\t%.4e\t%.4e\t%.4e\n", cd->nrm1, info->bic_val, info->rss, info->df);
+		if (fp_bic) fprintf (fp_bic, "%.4e\t%.4e\t%.4e\t%.4e\t%.4e\t%.4e\n", cd->nrm1, info->bic_val, info->rss, info->df, mm_real_xj_ssq (cd->beta, 0), cd->lambda2);
 		free (info);
 
 		if (stop_flag) break;
 
 		/* if logt - dlog10_lambda1 < log10_lambda1, logt = log10_lambda1 and stop_flag is set to true
 		 * else logt -= dlog10_lambda1 */
-		stop_flag = set_logt (cd->path->log10_lambda1_lower, logt - cd->path->dlog10_lambda1, &logt);
+		stop_flag = set_logt (cd->path->log10_lambda_lower, logt - cd->path->dlog10_lambda, &logt);
 
 	}
 
