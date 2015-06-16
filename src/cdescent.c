@@ -18,6 +18,26 @@ static const char	default_fn_path[] = "beta_path.data";
 // default file to output BIC info
 static const char	default_fn_bic[] = "bic_info.data";
 
+extern double	cdescent_default_bic_eval_func (const cdescent *cd, bic_info *info, void *data);
+
+static bic_func *
+bic_function_alloc (void)
+{
+	bic_func	*func = (bic_func *) malloc (sizeof (bic_func));
+	func->function = NULL;
+	func->data = NULL;
+	return func;
+}
+
+bic_func *
+bic_function_new (const bic_eval_func function, void *data)
+{
+	bic_func	*func = bic_function_alloc ();
+	func->function = function;
+	func->data = data;
+	return func;
+}
+
 /* allocate pathwise optimization object */
 static pathwise *
 pathwise_alloc (void)
@@ -31,13 +51,16 @@ pathwise_alloc (void)
 
 	path->output_fullpath = false;
 	path->output_bic_info = false;
-	path->gamma_bic = 0.;
+
+	path->bicfunc = NULL;
+
 	path->index_opt = 0;
 	path->b0_opt = 0.;
 	path->beta_opt = NULL;
 	path->lambda_opt = 0.;
 	path->nrm1_opt = 0.;
 	path->min_bic_val = CDESCENT_POSINF;
+
 	return path;
 }
 
@@ -180,6 +203,8 @@ cdescent_new (const double alpha, const linregmodel *lreg, const double tol, con
 	cd->path->dlog10_lambda = 0.1;
 	strcpy (cd->path->fn_path, default_fn_path);	// default filename
 	strcpy (cd->path->fn_bic, default_fn_bic);		// default filename
+	// default bic evaluation function
+	cd->path->bicfunc = bic_function_new (cdescent_default_bic_eval_func, NULL);
 
 	return cd;
 }
@@ -310,11 +335,12 @@ cdescent_set_pathwise_outputs_bic_info (cdescent *cd, const char *fn)
 	return;
 }
 
-/*** set gamma of eBIC ***/
+
 void
-cdescent_set_pathwise_gamma_bic (cdescent *cd, const double gamma_bic)
+cdescent_set_pathwise_bic_func (cdescent *cd, bic_func *func)
 {
-	cd->path->gamma_bic = gamma_bic;
+	if (cd->path->bicfunc) free (cd->path->bicfunc);
+	cd->path->bicfunc = func;
 	return;
 }
 

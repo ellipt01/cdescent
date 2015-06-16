@@ -70,7 +70,6 @@ main (int argc, char **argv)
 	/*** set parameters of pathwise coordinate descent optimization ***/
 	cdescent_set_pathwise_log10_lambda_lower (cd, log10_lambda);
 	cdescent_set_pathwise_dlog10_lambda (cd, dlog10_lambda);
-	cdescent_set_pathwise_gamma_bic (cd, gamma_bic);			// set gamma for eBIC
 
 	/*** do pathwise coordinate descent regression to obtain low bias solution ***/
 	cdescent_do_pathwise_optimization (cd);

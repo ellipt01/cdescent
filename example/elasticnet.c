@@ -72,7 +72,6 @@ main (int argc, char **argv)
 	cdescent_set_pathwise_dlog10_lambda (cd, dlog10_lambda);
 	cdescent_set_pathwise_outputs_fullpath (cd, NULL);	// output full solution path
 	cdescent_set_pathwise_outputs_bic_info (cd, NULL);	// output BIC info
-	cdescent_set_pathwise_gamma_bic (cd, gamma_bic);	// set gamma for eBIC
 
 	/*** do pathwise coordinate descent regression ***/
 	cdescent_do_pathwise_optimization (cd);

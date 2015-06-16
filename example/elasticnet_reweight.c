@@ -34,18 +34,18 @@ weight_func0 (cdescent *cd, void *data)
 int
 main (int argc, char **argv)
 {
-	mm_dense	*x;
-	mm_dense	*y;
-	mm_real		*d;
+	mm_dense			*x;
+	mm_dense			*y;
+	mm_real				*d;
 
-	linregmodel	*lreg;
+	linregmodel			*lreg;
 
-	cdescent	*cd;
+	cdescent			*cd;
 
 	double				eps = 1.e-3;
 	reweighting_func	*func;
 
-	FILE		*fp;
+	FILE				*fp;
 
 	/*** read command line options ***/
 	if (!read_params (argc, argv)) usage (argv[0]);
@@ -88,7 +88,6 @@ main (int argc, char **argv)
 	cdescent_set_pathwise_dlog10_lambda (cd, dlog10_lambda);
 	cdescent_set_pathwise_outputs_fullpath (cd, NULL);	// output full solution path
 	cdescent_set_pathwise_outputs_bic_info (cd, NULL);	// output BIC info
-	cdescent_set_pathwise_gamma_bic (cd, gamma_bic);	// set gamma for eBIC
 
 	/* setup reweighting */
 	func  = reweighting_function_new (1., weight_func0, &eps);

@@ -24,7 +24,6 @@ bic_info_alloc (void)
 	info->n = 0.;
 	info->rss = 0.;
 	info->df = 0.;
-	info->gamma = 0.;
 	info->bic_val = CDESCENT_POSINF;
 	return info;
 }
@@ -42,7 +41,7 @@ calc_rss (const cdescent *cd)
 	rss = mm_real_xj_ssq (r, 0);	// rss = | y - mu |^2
 	mm_real_free (r);
 	// if not lasso, rss = | y - mu |^2 + lambda2 * | nu |^2
-//	if (!cd->is_regtype_lasso && cd->nu) rss += cd->lambda2 * mm_real_xj_ssq (cd->nu, 0);
+	// if (!cd->is_regtype_lasso && cd->nu) rss += cd->lambda2 * mm_real_xj_ssq (cd->nu, 0);
 	return rss;
 }
 
@@ -71,30 +70,30 @@ calc_degree_of_freedom (const cdescent *cd)
 	return df;
 }
 
-/*** Extended Bayesian Information Criterion (Chen and Chen, 2008)
- * eBIC = log(rss) + df * ( log(m) + 2 * gamma * log(n) ) / m
- * gamma	: tuning parameter for eBIC
+double
+cdescent_default_bic_eval_func (const cdescent *cd, bic_info *info, void *data)
+{
+	double	val = log (info->rss) + info->df * log (info->m) / info->m;
+	return val;
+}
+
+/*** Bayesian Information Criterion
+ * BIC = log(rss) + df * log(m) / m
  * rss		: residual sum of squares |b - Z * beta|^2
  * df		: degree of freedom
  * m		: number of data (number of rows of b and Z)
- * n		: number of variables (number of columns of Z and number of rows of beta)
- * if gamma = 0, eBIC is identical with the classical BIC ***/
+ * n		: number of variables (number of columns of Z and number of rows of beta) ***/
 bic_info *
-cdescent_eval_bic (const cdescent *cd, const double gamma)
+cdescent_eval_bic (const cdescent *cd)
 {
+	bic_func	*bicfunc = cd->path->bicfunc;
 	bic_info	*info;
-	if (gamma < 0.) {
-		printf_warning ("cdescent_eval_bic", "gamma must be >= 0.", __FILE__, __LINE__);
-		return NULL;
-	}
 	info = bic_info_alloc ();
-	info->gamma = gamma;
 	info->rss = calc_rss (cd);
 	info->df = calc_degree_of_freedom (cd);
 	info->m = (double) *cd->m;
 	info->n = (double) *cd->n;
-	info->bic_val = log (info->rss) + info->df * log (info->m) / info->m;
-	if (fabs (gamma) > 0.) info->bic_val += 2. * info->df * info->gamma * log (info->n) / info->m;
+	info->bic_val = bicfunc->function (cd, info, bicfunc->data);
 	return info;
 }
 

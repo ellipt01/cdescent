@@ -36,10 +36,13 @@ void		cdescent_set_pathwise_log10_lambda_lower (cdescent *cd, const double log10
 void		cdescent_set_pathwise_dlog10_lambda (cdescent *cd, const double dlog10_lambda);
 void		cdescent_set_pathwise_outputs_fullpath (cdescent *cd, const char *fn);
 void		cdescent_set_pathwise_outputs_bic_info (cdescent *cd, const char *fn);
-void		cdescent_set_pathwise_gamma_bic (cdescent *cd, const double gamma_bic);
+
+bic_func	*bic_function_new (const bic_eval_func function, void *data);
+void		cdescent_set_pathwise_bic_func (cdescent *cd, bic_func *func);
 
 reweighting_func * reweighting_function_new (const double tau, const weight_func func, void *data);
 void		cdescent_set_pathwise_reweighting (cdescent *cd, reweighting_func *func);
+
 
 #ifdef __cplusplus
 }

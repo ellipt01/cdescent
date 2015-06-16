@@ -16,6 +16,7 @@ typedef struct s_cdescent		cdescent;
 typedef struct s_linregmodel	linregmodel;
 typedef struct s_pathwise		pathwise;
 typedef struct s_reweighting	reweighting;
+typedef struct s_bic_func		bic_func;
 typedef struct s_bic_info		bic_info;
 
 /*** object of coordinate descent regression for L1 regularized linear regression problem
@@ -123,17 +124,18 @@ struct s_pathwise {
 	char		fn_path[BUFSIZ];	// file to output solution path
 	bool		output_bic_info;	// whether to outputs BIC info
 	char		fn_bic[BUFSIZ];		// file to output BIC info
-	double		gamma_bic;			// gamma for eBIC
 
 	double		log10_lambda_upper;	// upper bound of lambda1 on log10 scale
 	double		log10_lambda_lower;	// lower bound of lambda1 on log10 scale
 	double		dlog10_lambda;		// increment of lambda1 on log10 scale
 
+	bic_func	*bicfunc;			// BIC evaluation function
+
 	double		min_bic_val;		// minimum BIC
 	int			index_opt;			// index of optimal beta
 	double		b0_opt;				// optimal intercept
 	mm_dense	*beta_opt;			// optimal beta corresponding to min_bic_val
-	double		lambda_opt;		// optimal lambda1
+	double		lambda_opt;			// optimal lambda1
 	double		nrm1_opt;			// | beta_opt |
 };
 
@@ -156,22 +158,35 @@ struct s_reweighting_func {
 
 /* object of reweighting procedure */
 struct s_reweighting {
-	int			maxiter;
-	double		tolerance;
+	int					maxiter;
+	double				tolerance;
 	reweighting_func	*func;		// reweighting function
 };
 
-/*** Extended Bayesian Information Criterion (Chen and Chen, 2008)
- * eBIC = log(rss) + df * (log(m) + 2 * gamma * log(n)) / m
- * 	if gamma = 0, eBIC is identical with the classical BIC ***/
+/*** object of evaluate BIC ***/
+
+/*** bic_eval_func
+ * the function weighting_func is called to calculate weight
+ * for each iteration of coordinate descent optimization ***/
+typedef struct s_bic_func bic_func;
+
+/* weighting function */
+typedef double (*bic_eval_func) (const cdescent *cd, bic_info *info, void *data);
+
+struct s_bic_func {
+	bic_eval_func	function;
+	void			*data;
+};
+
+/*** Bayesian Information Criterion
+ *  BIC = log(rss) + df * log(m) / m ***/
 struct s_bic_info
 {
 	double		m;			// number of data
 	double		n;			// number of variables
 	double		rss;		// residual sum of squares
 	double		df;			// degree of freedom
-	double		gamma;		// tuning parameter for eBIC (0 <= gamma <= 1)
-	double		bic_val;	// value of eBIC
+	double		bic_val;	// value of BIC
 };
 
 #ifdef __cplusplus

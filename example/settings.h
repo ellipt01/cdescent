@@ -14,7 +14,6 @@ char			infn_y[80] = "\0";		// store input file name of observed data
 double			alpha = 1.;				// raito of L1 / L2 penalty parameter
 double			log10_lambda = -2.;		// lower bound of log10(lambda1) for warm start
 double			dlog10_lambda = 0.1;	// increment of log10(lambda1)
-double			gamma_bic = 0.;			// classical BIC
 
 double			tolerance = 1.e-3;
 int				maxiter = 100000;

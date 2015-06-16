@@ -6,8 +6,7 @@
 #
 # USAGE:
 # elasticnet -x <input file of matrix X> -y <input file of vector y> -a <alpha> 
-# [optional] { -t <log10_lambda_min>:<d_log10_lambda>
-#              -g <gamma of EBIC in [0, 1]> -m <maxiters> }
+# [optional] { -t <log10_lambda_min>:<d_log10_lambda> }
 #
 # -x <input file>    : specify MatrixMarket format file of matrix X
 #
@@ -23,9 +22,6 @@
 #                      in the range of [10^log10_lambda_min : 10^d_log10_lambda : 10^log10_lambda_max],
 #                      lambda_max = max( |c| ) / cd->alpha, where c = X' * y
 #                      (default is -2:0.1)
-#
-# -g <gamma>         : tunning parameter of extended BIC, in [0, 1] (see Chen and Chen, 2008).
-#                      (default is 0)
 #
 # -t <tolerance>     : tolerance of convergence
 #                      (default is 1.e-3)

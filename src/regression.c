@@ -308,7 +308,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 		// output solution path
 		if (fp_path) fprintf_solutionpath (fp_path, iter, cd->beta);
 
-		info = cdescent_eval_bic (cd, cd->path->gamma_bic);
+		info = cdescent_eval_bic (cd);
 		// if bic_val < min_bic_val, update min_bic_val, lambda1_opt, nrm1_opt and beta_opt
 		if (info->bic_val < cd->path->min_bic_val) {
 			store_optimal (cd, iter);
