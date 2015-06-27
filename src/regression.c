@@ -153,6 +153,7 @@ fprintf_solutionpath (FILE *stream, const int iter, const mm_dense *beta)
 	fprintf (stream, "%d %.4e", iter, mm_real_xj_asum (beta, 0));
 	for (j = 0; j < beta->m; j++) fprintf (stream, " %.4e", beta->data[j]);
 	fprintf (stream, "\n");
+	fflush (stream);
 	return;
 }
 
@@ -293,12 +294,16 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 		if (fp_bic) fprintf (fp_bic, "t\t\teBIC\t\tRSS\t\tdf\n");
 	}
 
+	if (cd->path->verbos) fprintf (stderr, "starting pathwise optimization.\n");
+
 	while (1) {
 		bic_info	*info;
 
 		iter++;
 
 		cdescent_set_log10_lambda (cd, logt);
+		if (cd->path->verbos) fprintf (stderr, "%d-th iteration lambda1 = %.4e, lamba2 = %.4e ", iter, cd->lambda1, cd->lambda2);
+
 
 		if (!(converged = cdescent_do_cyclic_update (cd))) break;
 
@@ -315,9 +320,12 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 			cd->path->min_bic_val = info->bic_val;
 			if (!cd->path->was_modified) cd->path->was_modified = true;
 		}
-
+		if (cd->path->verbos) fprintf (stderr, "bic = %.4e ... ", info->bic_val);
 		// output BIC info
-		if (fp_bic) fprintf (fp_bic, "%.4e\t%.4e\t%.4e\t%.4e\t%.4e\t%.4e\n", cd->nrm1, info->bic_val, info->rss, info->df, mm_real_xj_ssq (cd->beta, 0), cd->lambda2);
+		if (fp_bic) {
+			fprintf (fp_bic, "%.8e\t%.8e\t%.8e\t%.8e\t%.8e\t%.8e\n", cd->nrm1, info->bic_val, info->rss, info->df, mm_real_xj_ssq (cd->beta, 0), cd->lambda2);
+			fflush (fp_bic);
+		}
 		free (info);
 
 		if (stop_flag) break;
@@ -325,6 +333,8 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 		/* if logt - dlog10_lambda1 < log10_lambda1, logt = log10_lambda1 and stop_flag is set to true
 		 * else logt -= dlog10_lambda1 */
 		stop_flag = set_logt (cd->path->log10_lambda_lower, logt - cd->path->dlog10_lambda, &logt);
+
+		if (cd->path->verbos) fprintf (stderr, "done.\n");
 
 	}
 

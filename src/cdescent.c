@@ -61,6 +61,8 @@ pathwise_alloc (void)
 	path->nrm1_opt = 0.;
 	path->min_bic_val = CDESCENT_POSINF;
 
+	path->verbos = false;
+
 	return path;
 }
 

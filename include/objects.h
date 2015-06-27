@@ -137,6 +137,9 @@ struct s_pathwise {
 	mm_dense	*beta_opt;			// optimal beta corresponding to min_bic_val
 	double		lambda_opt;			// optimal lambda1
 	double		nrm1_opt;			// | beta_opt |
+
+	bool		verbos;
+
 };
 
 /*** object of reweighted CD optimization ***/
