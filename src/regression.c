@@ -10,129 +10,34 @@
 #include <cdescent.h>
 #include <mmreal.h>
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 #include "private/private.h"
-#include "private/atomic.h"
 
-/* stepsize.c */
-extern double		cdescent_beta_stepsize (const cdescent *cd, const int j);
+/* cyclic.c */
+extern bool			cdescent_do_update_once_cycle_cyclic (cdescent *cd);
+/* stochastic.c */
+extern bool			cdescent_do_update_once_cycle_stochastic (cdescent *cd);
 
-/* update intercept: (sum (y) - sum(X) * beta) / n */
-static void
-update_intercept (cdescent *cd)
-{
-	cd->b0 = 0.;
-	// b += bar(y)
-	if (!cd->lreg->ycentered) cd->b0 += *(cd->lreg->sy);
-	// b -= bar(X) * beta
-	if (!cd->lreg->xcentered) cd->b0 -= ddot_ (cd->n, cd->lreg->sx, &ione, cd->beta->data, &ione);
-	if (fabs (cd->b0) > 0.) cd->b0 /= (double) *cd->m;
-	return;
-}
-
-static void
-update_betaj (bool nonnegative, double *betaj, double *etaj, double *abs_etaj)
-{
-	double	betaj_val = *betaj;
-	// nonnegative coordinate descent after Franc, Hlavac and Navara, 2005.
-	if (nonnegative && betaj_val + *etaj < 0.) {
-		*etaj = - betaj_val;
-		*abs_etaj = fabs (*etaj);
-		*betaj = 0.;
-	} else *betaj += *etaj;
-	return;
-}
-
-/* update beta, mu, nu and amax_eta */
-static void
-cdescent_update (cdescent *cd, int j, double *amax_eta)
-{
-	// eta(j) = beta_new(j) - beta_prev(j)
-	double	etaj = cdescent_beta_stepsize (cd, j);
-	double	abs_etaj = fabs (etaj);
-
-	if (abs_etaj < DBL_EPSILON) return;
-
-	// update beta: beta(j) += eta(j)
-	update_betaj (cd->force_beta_nonnegative, &cd->beta->data[j], &etaj, &abs_etaj);
-	// update mu (= X * beta): mu += eta(j) * X(:,j)
-	mm_real_axjpy (etaj, cd->lreg->x, j, cd->mu);
-	// update nu (= D * beta) if lambda2 != 0 && cd->nu != NULL: nu += eta(j) * D(:,j)
-	if (!cd->is_regtype_lasso) mm_real_axjpy (etaj, cd->lreg->d, j, cd->nu);
-	// update max( |eta| )
-	if (*amax_eta < abs_etaj) *amax_eta = abs_etaj;
-
-	return;
-}
-
-/* update beta, mu, nu and amax_eta in atomic */
-static void
-cdescent_update_atomic (cdescent *cd, int j, double *amax_eta)
-{
-	// eta(j) = beta_new(j) - beta_prev(j)
-	double	etaj = cdescent_beta_stepsize (cd, j);
-	double	abs_etaj = fabs (etaj);
-
-	if (abs_etaj < DBL_EPSILON) return;
-
-	// update beta: beta(j) += etaj
-	update_betaj (cd->force_beta_nonnegative, &cd->beta->data[j], &etaj, &abs_etaj);
-	// update mu (= X * beta): mu += etaj * X(:,j)
-	mm_real_axjpy_atomic (etaj, cd->lreg->x, j, cd->mu);
-	// update nu (= D * beta) if lambda2 != 0 && cd->nu != NULL: nu += etaj * D(:,j)
-	if (!cd->is_regtype_lasso) mm_real_axjpy_atomic (etaj, cd->lreg->d, j, cd->nu);
-	// update max( |etaj| )
-	atomic_max (amax_eta, abs_etaj);
-
-	return;
-}
-
-/*** progress coordinate descent update for one full cycle ***/
-static bool
-cdescent_update_once_cycle (cdescent *cd)
-{
-	int		j;
-	int		n = *cd->n;
-	double	amax_eta;	// max of |eta(j)| = |beta_new(j) - beta_prev(j)|
-
-	/* b = (sum(y) - sum(X) * beta) / m */
-	if (cd->use_intercept && !cd->lreg->xcentered) update_intercept (cd);
-
-	amax_eta = 0.;
-
-	/*** single "one-at-a-time" update of cyclic coordinate descent
-	 * the following code was referring to shotgun by A.Kyrola,
-	 * https://github.com/akyrola/shotgun ****/
-	if (cd->parallel) {
-#pragma omp parallel for
-		for (j = 0; j < n; j++) cdescent_update_atomic (cd, j, &amax_eta);
-	} else {
-		for (j = 0; j < n; j++) cdescent_update (cd, j, &amax_eta);
-	}
-
-	cd->nrm1 = mm_real_xj_asum (cd->beta, 0);
-
-	if (!cd->was_modified) cd->was_modified = true;
-
-	return (amax_eta < cd->tolerance);
-}
+typedef bool (*update_one_cycle) (cdescent *cd);
 
 /*** do cyclic coordinate descent optimization for fixed lambda1
  * repeat coordinate descent algorithm until solution is converged ***/
 bool
-cdescent_do_cyclic_update (cdescent *cd)
+cdescent_do_update_one_cycle (cdescent *cd)
 {
-	int		ccd_iter = 0;
-	bool	converged = false;
+	int					ccd_iter = 0;
+	bool				converged = false;
+
+	update_one_cycle	update_func;
+
+	update_func = (cd->rule == CDESCENT_SELECTION_RULE_STOCHASTIC) ?
+			cdescent_do_update_once_cycle_stochastic : cdescent_do_update_once_cycle_cyclic;
+
 
 	if (!cd) error_and_exit ("cdescent_do_cyclic_update", "cdescent *cd is empty.", __FILE__, __LINE__);
 
 	while (!converged) {
 
-		converged = cdescent_update_once_cycle (cd);
+		converged = update_func (cd);
 
 		if (++ccd_iter >= cd->maxiter) {
 			printf_warning ("cdescent_do_cyclic_update", "reaching max number of iterations.", __FILE__, __LINE__);
@@ -233,7 +138,7 @@ cdescent_do_reweighting (cdescent *cd)
 		cdescent_set_penalty_factor (cd, w, cd->rwt->func->tau);
 		mm_real_free (w);
 
-		if (!(converged = cdescent_do_cyclic_update (cd))) break;
+		if (!(converged = cdescent_do_update_one_cycle (cd))) break;
 
 		if (++iter > cd->rwt->maxiter) {
 			printf_warning ("cdescent_do_reweighting", "reaching max number of iterations.", __FILE__, __LINE__);
@@ -291,7 +196,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 			printf_warning ("cdescent_do_pathwise_optimization", msg, __FILE__, __LINE__);
 		}
 		// output BIC info headers
-		if (fp_bic) fprintf (fp_bic, "t\t\teBIC\t\tRSS\t\tdf\n");
+		if (fp_bic) fprintf (fp_bic, "# nrm1\t\tBIC\t\tRSS\t\tdf\t\tnrm2\t\tlambda2\n");
 	}
 
 	if (cd->path->verbos) fprintf (stderr, "starting pathwise optimization.\n");
@@ -305,7 +210,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 		if (cd->path->verbos) fprintf (stderr, "%d-th iteration lambda1 = %.4e, lamba2 = %.4e ", iter, cd->lambda1, cd->lambda2);
 
 
-		if (!(converged = cdescent_do_cyclic_update (cd))) break;
+		if (!(converged = cdescent_do_update_one_cycle (cd))) break;
 
 		// reweighting
 		if (cd->rwt && !(converged = cdescent_do_reweighting (cd))) break;
@@ -323,6 +228,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 		if (cd->path->verbos) fprintf (stderr, "bic = %.4e ... ", info->bic_val);
 		// output BIC info
 		if (fp_bic) {
+			// |beta|  BIC  RSS  df  ||beta||^2 lambda2
 			fprintf (fp_bic, "%.8e\t%.8e\t%.8e\t%.8e\t%.8e\t%.8e\n", cd->nrm1, info->bic_val, info->rss, info->df, mm_real_xj_ssq (cd->beta, 0), cd->lambda2);
 			fflush (fp_bic);
 		}

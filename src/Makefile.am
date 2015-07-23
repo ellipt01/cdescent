@@ -15,6 +15,9 @@ libcdescent_la_SOURCES =\
 	cdescent.c\
 	stepsize.c\
 	bic.c\
+	update.c\
+	cyclic.c\
+	stochastic.c\
 	regression.c
 
 libcdescent_la_LIBADD = -L$(top_srcdir)/src

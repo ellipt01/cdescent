@@ -22,6 +22,10 @@ extern "C" {
 /* cdescent.c */
 cdescent	*cdescent_new (const double alpha, const linregmodel *lreg, const double tol, const int maxiter, bool parallel);
 void		cdescent_free (cdescent *cd);
+
+void		cdescent_set_cyclic (cdescent *cd);
+void		cdescent_set_stochastic (cdescent *cd, const unsigned int *seed);
+
 bool		cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w, const double tau);
 
 void		cdescent_not_use_intercept (cdescent *cd);
@@ -37,8 +41,8 @@ void		cdescent_set_pathwise_dlog10_lambda (cdescent *cd, const double dlog10_lam
 void		cdescent_set_pathwise_outputs_fullpath (cdescent *cd, const char *fn);
 void		cdescent_set_pathwise_outputs_bic_info (cdescent *cd, const char *fn);
 
-bic_func	*bic_function_new (const bic_eval_func function, void *data);
 void		cdescent_set_pathwise_bic_func (cdescent *cd, bic_func *func);
+bic_info	*cdescent_eval_bic (const cdescent *cd);
 
 reweighting_func * reweighting_function_new (const double tau, const weight_func func, void *data);
 void		cdescent_set_pathwise_reweighting (cdescent *cd, reweighting_func *func);

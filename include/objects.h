@@ -19,52 +19,59 @@ typedef struct s_reweighting	reweighting;
 typedef struct s_bic_func		bic_func;
 typedef struct s_bic_info		bic_info;
 
+typedef enum {
+	CDESCENT_SELECTION_RULE_CYCLIC,
+	CDESCENT_SELECTION_RULE_STOCHASTIC
+} CoordinateSelectionRule;
+
 /*** object of coordinate descent regression for L1 regularized linear regression problem
  *       argmin_beta || b - Z * beta ||^2 + sum_j lambda1 * | beta_j |
  *   or
  *       argmin_beta || b - Z * beta ||^2 + sum_j lambda1 * w_j * | beta_j | ***/
 struct s_cdescent {
 
-	bool				was_modified;			// whether this object was modified after created
+	bool					was_modified;			// whether this object was modified after created
 
 	/* whether regression type is Lasso */
-	bool				is_regtype_lasso;		// = (d == NULL)
-	bool				use_intercept;			// whether use intercept (default is true)
-	bool				force_beta_nonnegative;	// force beta to be non-negative (default is false)
-	bool				use_fixed_lambda2;		// use fixed lambda2 value (default is false)
+	bool					is_regtype_lasso;		// = (d == NULL)
+	bool					use_intercept;			// whether use intercept (default is true)
+	bool					force_beta_nonnegative;	// force beta to be non-negative (default is false)
+	bool					use_fixed_lambda2;		// use fixed lambda2 value (default is false)
 
-	const int			*m;						// number of observations, points cd->lreg->y->m
-	const int			*n;						// number of variables, points cd->lreg->x->n
-	const linregmodel	*lreg;					// linear regression model
+	const int				*m;						// number of observations, points cd->lreg->y->m
+	const int				*n;						// number of variables, points cd->lreg->x->n
+	const linregmodel		*lreg;					// linear regression model
 
 
-	double				alpha1;					// raito of weight for L1 and L2 norm penalty
-	double				alpha2;					// = 1. - alpha
+	double					alpha1;					// raito of weight for L1 and L2 norm penalty
+	double					alpha2;					// = 1. - alpha
 
-	double				lambda;					// regularization parameter of L1 and L2 penalty
-	double				lambda1;				// regularization parameter of L1 penalty
-	double				lambda2;				// regularization parameter of L2 penalty
+	double					lambda;					// regularization parameter of L1 and L2 penalty
+	double					lambda1;				// regularization parameter of L1 penalty
+	double					lambda2;				// regularization parameter of L2 penalty
 
-	mm_dense			*w;						// dense general: weight for L1 penalty (penalty factor)
+	mm_dense				*w;						// dense general: weight for L1 penalty (penalty factor)
 
-	double				tolerance;				// tolerance of convergence
+	double					tolerance;				// tolerance of convergence
 
-	double				nrm1;					// L1 norm of beta (= sum_j |beta_j|)
+	double					nrm1;					// L1 norm of beta (= sum_j |beta_j|)
 
-	double				b0;						// intercept
+	double					b0;						// intercept
 
-	mm_dense			*beta;					// estimated regression coefficients
-	mm_dense			*mu;					// mu = X * beta, estimate of y
-	mm_dense			*nu;					// nu = D * beta
+	mm_dense				*beta;					// estimated regression coefficients
+	mm_dense				*mu;					// mu = X * beta, estimate of y
+	mm_dense				*nu;					// nu = D * beta
 
-	int					total_iter;				// total number of iterations
-	int					maxiter;				// maximum number of iterations
+	int						total_iter;				// total number of iterations
+	int						maxiter;				// maximum number of iterations
 
-	bool				parallel;				// whether enable parallel calculation
+	bool					parallel;				// whether enable parallel calculation
 
-	pathwise			*path;					// pathwise CD optimization object
+	pathwise				*path;					// pathwise CD optimization object
 
-	reweighting			*rwt;					// reweighting object
+	reweighting				*rwt;					// reweighting object
+
+	CoordinateSelectionRule	rule;
 };
 
 /*** Object of convex/nonconvex regularized linear regression problem

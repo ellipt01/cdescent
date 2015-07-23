@@ -15,7 +15,7 @@ extern "C" {
 #include <stdbool.h>
 
 /* regression.c */
-bool		cdescent_do_cyclic_update (cdescent *cd);
+bool		cdescent_do_update_one_cycle (cdescent *cd);
 bool		cdescent_do_pathwise_optimization (cdescent *cd);
 
 #ifdef __cplusplus

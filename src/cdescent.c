@@ -18,25 +18,13 @@ static const char	default_fn_path[] = "beta_path.data";
 // default file to output BIC info
 static const char	default_fn_bic[] = "bic_info.data";
 
+/* bic.c */
 extern double	cdescent_default_bic_eval_func (const cdescent *cd, bic_info *info, void *data);
+extern bic_info	*calc_bic_info (const cdescent *cd);
 
-static bic_func *
-bic_function_alloc (void)
-{
-	bic_func	*func = (bic_func *) malloc (sizeof (bic_func));
-	func->function = NULL;
-	func->data = NULL;
-	return func;
-}
-
-bic_func *
-bic_function_new (const bic_eval_func function, void *data)
-{
-	bic_func	*func = bic_function_alloc ();
-	func->function = function;
-	func->data = data;
-	return func;
-}
+/**********************************
+ *  pathwise optimization object  *
+ **********************************/
 
 /* allocate pathwise optimization object */
 static pathwise *
@@ -66,7 +54,7 @@ pathwise_alloc (void)
 	return path;
 }
 
-/*** free pathwise optimization object ***/
+/* free pathwise optimization object */
 static void
 pathwise_free (pathwise *path)
 {
@@ -77,35 +65,9 @@ pathwise_free (pathwise *path)
 	return;
 }
 
-static reweighting_func *
-reweighting_function_alloc (void)
-{
-	reweighting_func	*func = (reweighting_func *) malloc (sizeof (reweighting_func));
-	func->tau = 0.;
-	func->function = NULL;
-	func->data = NULL;
-	return func;
-}
-
-reweighting_func *
-reweighting_function_new (const double tau, const weight_func function, void *data)
-{
-	reweighting_func	*func = reweighting_function_alloc ();
-	func->tau = tau;
-	func->function = function;
-	func->data = data;
-	return func;
-}
-
-static reweighting *
-reweighting_alloc (void)
-{
-	reweighting	*rwt = (reweighting *) malloc (sizeof (reweighting));
-	rwt->maxiter = 0;
-	rwt->tolerance = 0.;
-	rwt->func = NULL;
-	return rwt;
-}
+/*******************************
+ *  coordinate descent object  *
+ *******************************/
 
 /* allocate cdescent object */
 static cdescent *
@@ -147,6 +109,8 @@ cdescent_alloc (void)
 
 	cd->path = NULL;
 	cd->rwt = NULL;
+
+	cd->rule = CDESCENT_SELECTION_RULE_CYCLIC;
 
 	return cd;
 }
@@ -224,6 +188,21 @@ cdescent_free (cdescent *cd)
 		if (cd->rwt) free (cd->rwt);
 		free (cd);
 	}
+	return;
+}
+
+void
+cdescent_set_cyclic (cdescent *cd)
+{
+	cd->rule = CDESCENT_SELECTION_RULE_CYCLIC;
+	return;
+}
+
+void
+cdescent_set_stochastic (cdescent *cd, const unsigned int *seed)
+{
+	cd->rule = CDESCENT_SELECTION_RULE_STOCHASTIC;
+	if (seed) srand (*seed);
 	return;
 }
 
@@ -337,13 +316,54 @@ cdescent_set_pathwise_outputs_bic_info (cdescent *cd, const char *fn)
 	return;
 }
 
+/*** evaluation of BIC ***/
 
+/*** set bic function of pathwise object ***/
 void
 cdescent_set_pathwise_bic_func (cdescent *cd, bic_func *func)
 {
 	if (cd->path->bicfunc) free (cd->path->bicfunc);
 	cd->path->bicfunc = func;
 	return;
+}
+
+/*** evaluate BIC ***/
+bic_info *
+cdescent_eval_bic (const cdescent *cd)
+{
+	return calc_bic_info (cd);
+}
+
+/*** reweighting ***/
+
+static reweighting_func *
+reweighting_function_alloc (void)
+{
+	reweighting_func	*func = (reweighting_func *) malloc (sizeof (reweighting_func));
+	func->tau = 0.;
+	func->function = NULL;
+	func->data = NULL;
+	return func;
+}
+
+reweighting_func *
+reweighting_function_new (const double tau, const weight_func function, void *data)
+{
+	reweighting_func	*func = reweighting_function_alloc ();
+	func->tau = tau;
+	func->function = function;
+	func->data = data;
+	return func;
+}
+
+static reweighting *
+reweighting_alloc (void)
+{
+	reweighting	*rwt = (reweighting *) malloc (sizeof (reweighting));
+	rwt->maxiter = 0;
+	rwt->tolerance = 0.;
+	rwt->func = NULL;
+	return rwt;
 }
 
 void

@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 /* bic.c */
-bic_info	*cdescent_eval_bic (const cdescent *cd);
+bic_func	*bic_function_new (const bic_eval_func function, void *data);
 
 #ifdef __cplusplus
 }

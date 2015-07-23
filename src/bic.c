@@ -70,11 +70,31 @@ calc_degree_of_freedom (const cdescent *cd)
 	return df;
 }
 
+/*** default function which evaluates BIC as: BIC = log (rss) + log (m) * df / m ***/
 double
 cdescent_default_bic_eval_func (const cdescent *cd, bic_info *info, void *data)
 {
 	double	val = log (info->rss) + info->df * log (info->m) / info->m;
 	return val;
+}
+
+static bic_func *
+bic_function_alloc (void)
+{
+	bic_func	*func = (bic_func *) malloc (sizeof (bic_func));
+	func->function = NULL;
+	func->data = NULL;
+	return func;
+}
+
+/*** create bic_function object ***/
+bic_func *
+bic_function_new (const bic_eval_func function, void *data)
+{
+	bic_func	*func = bic_function_alloc ();
+	func->function = function;
+	func->data = data;
+	return func;
 }
 
 /*** Bayesian Information Criterion
@@ -84,7 +104,7 @@ cdescent_default_bic_eval_func (const cdescent *cd, bic_info *info, void *data)
  * m		: number of data (number of rows of b and Z)
  * n		: number of variables (number of columns of Z and number of rows of beta) ***/
 bic_info *
-cdescent_eval_bic (const cdescent *cd)
+calc_bic_info (const cdescent *cd)
 {
 	bic_func	*bicfunc = cd->path->bicfunc;
 	bic_info	*info;
