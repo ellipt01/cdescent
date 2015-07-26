@@ -159,7 +159,6 @@ typedef struct s_reweighting_func reweighting_func;
 /* weighting function */
 typedef mm_dense* (*weight_func) (cdescent *cd, void *data);
 
-
 struct s_reweighting_func {
 	double		tau;
 	weight_func	function;
@@ -173,14 +172,11 @@ struct s_reweighting {
 	reweighting_func	*func;		// reweighting function
 };
 
-/*** object of evaluate BIC ***/
+/*** object for function that evaluates BIC ***/
 
 /*** bic_eval_func
  * the function weighting_func is called to calculate weight
  * for each iteration of coordinate descent optimization ***/
-typedef struct s_bic_func bic_func;
-
-/* weighting function */
 typedef double (*bic_eval_func) (const cdescent *cd, bic_info *info, void *data);
 
 struct s_bic_func {
