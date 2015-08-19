@@ -64,9 +64,10 @@ usage (char *toolname)
 	if (p) p++;
 	else p = toolname;
 	fprintf (stderr, "\nUSAGE:\n%s -x <input file of matrix x> -y <input file of vector y>\n", p);
-	fprintf (stderr, "[optional]  { -a <alpha; default = 1.>\n");
+	fprintf (stderr, "[optional]  { -a <alpha: default = 1>\n");
+	fprintf (stderr, "              -l <lambda2: if fixed lambda2 is used>\n");
 	fprintf (stderr, "              -r <log10_lambda1_min:d_log10_lambda1; default = -2:0.1>\n");
-	fprintf (stderr, "              -t <tolerance; default = 1.e-3> }\n\n");
+	fprintf (stderr, "              -t <tolerance; default = 1.e-3>\n");
 	fprintf (stderr, "              -m <maxiters; default = 100000> }\n\n");
 	exit (1);
 }
@@ -75,6 +76,9 @@ usage (char *toolname)
 extern char		infn_x[];
 extern char		infn_y[];
 extern double	alpha;
+extern bool		nonnegative;
+extern bool		use_fixed_lambda2;
+extern double	lambda2;
 extern double	log10_lambda;
 extern double	dlog10_lambda;
 extern double	tolerance;
@@ -87,7 +91,7 @@ read_params (int argc, char **argv)
 	bool	status = true;
 	char	c;
 
-	while ((c = getopt (argc, argv, "x:y:a:r:t:m:")) != -1) {
+	while ((c = getopt (argc, argv, "x:y:a:l:r:t:m:n")) != -1) {
 
 		switch (c) {
 
@@ -103,6 +107,11 @@ read_params (int argc, char **argv)
 					alpha = (double) atof (optarg);
 				break;
 
+			case 'l':
+					use_fixed_lambda2 = true;
+					lambda2 = (double) atof (optarg);
+				break;
+
 			case 'r':
 					if (strchr (optarg, ':')) {
 						sscanf (optarg, "%lf:%lf", &log10_lambda, &dlog10_lambda);
@@ -115,6 +124,10 @@ read_params (int argc, char **argv)
 
 			case 'm':
 					maxiter = atoi (optarg);
+				break;
+
+			case 'n':
+					nonnegative = true;
 				break;
 
 			case ':':

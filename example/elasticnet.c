@@ -72,6 +72,8 @@ main (int argc, char **argv)
 	cdescent_set_pathwise_dlog10_lambda (cd, dlog10_lambda);
 	cdescent_set_pathwise_outputs_fullpath (cd, NULL);	// output full solution path
 	cdescent_set_pathwise_outputs_bic_info (cd, NULL);	// output BIC info
+	if (nonnegative) cdescent_force_beta_nonnegative (cd);
+	if (use_fixed_lambda2) cdescent_use_fixed_lambda2 (cd, lambda2);
 
 	/*** do pathwise coordinate descent regression ***/
 	cdescent_do_pathwise_optimization (cd);
