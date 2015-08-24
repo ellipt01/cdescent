@@ -6,5 +6,5 @@ includedir=@includedir@
 Name: @PACKAGE@
 Description: @CDESCENT_DESCRIPTION@
 Version: @VERSION@
-Libs: -L${libdir} -lcdescent @OMPFLAGS@
-Cflags: -I${includedir}/@PACKAGE@
+Libs: -L${libdir} -lcdescent
+Cflags: -I${includedir}/@PACKAGE@ @OMPFLAGS@

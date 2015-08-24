@@ -22,6 +22,8 @@ static const char	default_fn_bic[] = "bic_info.data";
 extern double	cdescent_default_bic_eval_func (const cdescent *cd, bic_info *info, void *data);
 extern bic_info	*calc_bic_info (const cdescent *cd);
 
+double			log10_lambda_upper_default = 0.;
+
 /**********************************
  *  pathwise optimization object  *
  **********************************/
@@ -163,7 +165,8 @@ cdescent_new (const double alpha, const linregmodel *lreg, const double tol, con
 
 	cd->path = pathwise_alloc ();
 	/* default values */
-	cd->path->log10_lambda_upper = floor (log10 (cd->lreg->camax)) + 1.;
+	log10_lambda_upper_default = floor (log10 (cd->lreg->camax)) + 1.;
+	cd->path->log10_lambda_upper = log10_lambda_upper_default;
 	if (cd->alpha1 > 0.) cd->path->log10_lambda_upper -= floor (log10 (cd->alpha1));
 	cd->path->log10_lambda_lower = log10 (tol);
 	cd->path->dlog10_lambda = 0.1;
@@ -252,6 +255,10 @@ cdescent_use_fixed_lambda2 (cdescent *cd, const double lambda2)
 {
 	cd->use_fixed_lambda2 = true;
 	cd->lambda2 = lambda2;
+
+	cd->alpha1 = 1.;
+	cd->alpha2 = 0.;
+	cd->path->log10_lambda_upper = log10_lambda_upper_default;
 	return;
 }
 
