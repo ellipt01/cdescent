@@ -20,22 +20,24 @@ extern void		cdescent_update_atomic (cdescent *cd, int j, double *amax_eta);
 
 /* swap array[i] <-> array[j] */
 static void
-swap (int *array, const int i, const int j)
+swap (int *a, int *b)
 {
-	int		tmp = array[j];
-	array[j] = array[i];
-	array[i] = tmp;
+	int	tmp = *a;
+	*a = *b;
+	*b = tmp;
 	return;
 }
 
-/* array shuffling implements Fisher-Yates algorithm */
+/* array shuffling which implements Fisher-Yates algorithm */
 static void
 shuffle (const int size, int array[])
 {
 	int		i, j;
+	int		*p = &array[0];
+	int		*q = p;
 	for (i = 0; i < size - 1; i++) {
 		j = i + rand () % (size - i);
-		swap (array, i, j);
+		swap (p + j, q++);
 	}
 	return;
 }
