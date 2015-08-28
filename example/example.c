@@ -68,7 +68,8 @@ usage (char *toolname)
 	fprintf (stderr, "              -l <lambda2: if fixed lambda2 is used>\n");
 	fprintf (stderr, "              -r <log10_lambda1_min:d_log10_lambda1; default = -2:0.1>\n");
 	fprintf (stderr, "              -t <tolerance; default = 1.e-3>\n");
-	fprintf (stderr, "              -m <maxiters; default = 100000> }\n\n");
+	fprintf (stderr, "              -m <maxiters; default = 100000> }\n");
+	fprintf (stderr, "              -n (add non-negative constraint for solution) }\n\n");
 	exit (1);
 }
 
