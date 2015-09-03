@@ -249,13 +249,12 @@ mm_real_sort (mm_real *x)
 }
 
 /* copy sparse */
-static mm_sparse *
-mm_real_copy_sparse (const mm_sparse *src)
+static void
+mm_real_copy_sparse_0 (const mm_sparse *src, mm_sparse *dest)
 {
 	int			k;
 	int			n = src->n;
 	int			nnz = src->nnz;
-	mm_sparse	*dest = mm_real_new (MM_REAL_SPARSE, src->symm, src->m, src->n, src->nnz);
 
 	int			*si = src->i;
 	int			*sp = src->p;
@@ -266,6 +265,25 @@ mm_real_copy_sparse (const mm_sparse *src)
 	for (k = 0; k <= n; k++) dp[k] = sp[k];
 	dcopy_ (&nnz, src->data, &ione, dest->data, &ione);
 
+	return;
+}
+
+/* copy sparse */
+static mm_sparse *
+mm_real_copy_sparse (const mm_sparse *src)
+{
+	mm_sparse	*dest = mm_real_new (MM_REAL_SPARSE, src->symm, src->m, src->n, src->nnz);
+
+	mm_real_copy_sparse_0 (src, dest);
+
+	return dest;
+}
+
+/* copy dense */
+static mm_dense *
+mm_real_copy_dense_0 (const mm_dense *src, mm_dense *dest)
+{
+	dcopy_ (&src->nnz, src->data, &ione, dest->data, &ione);
 	return dest;
 }
 
@@ -274,7 +292,7 @@ static mm_dense *
 mm_real_copy_dense (const mm_dense *src)
 {
 	mm_dense	*dest = mm_real_new (MM_REAL_DENSE, src->symm, src->m, src->n, src->nnz);
-	dcopy_ (&src->nnz, src->data, &ione, dest->data, &ione);
+	mm_real_copy_dense_0 (src, dest);
 	return dest;
 }
 
@@ -285,26 +303,9 @@ mm_real_copy (const mm_real *x)
 	return (mm_real_is_sparse (x)) ? mm_real_copy_sparse (x) : mm_real_copy_dense (x);
 }
 
-/* set all elements of array to val */
-static void
-mm_real_array_set_all (const int n, double *data, const double val)
-{
-	int		k;
-	for (k = 0; k < n; k++) data[k] = val;
-	return;
-}
-
-/*** set x->data to val ***/
-void
-mm_real_set_all (mm_real *x, const double val)
-{
-	mm_real_array_set_all (x->nnz, x->data, val);
-	return;
-}
-
 /*** convert sparse -> dense ***/
 mm_dense *
-mm_real_sparse_to_dense (const mm_sparse *s)
+mm_real_copy_to_dense (const mm_sparse *s)
 {
 	int			j, k;
 	int			p, n;
@@ -334,7 +335,7 @@ mm_real_sparse_to_dense (const mm_sparse *s)
 /*** convert dense -> sparse
  * if fabs (x->data[j]) < threshold, set to 0 ***/
 mm_sparse *
-mm_real_dense_to_sparse (const mm_dense *d, const double threshold)
+mm_real_copy_to_sparse (const mm_dense *d, const double threshold)
 {
 	int			i, j, k;
 	mm_sparse	*s;
@@ -397,6 +398,139 @@ mm_real_dense_to_sparse (const mm_dense *d, const double threshold)
 	}
 	if (s->nnz != k) mm_real_realloc (s, k);
 	return s;
+}
+
+/* set all elements of array to val */
+static void
+mm_real_array_set_all (const int n, double *data, const double val)
+{
+	int		k;
+	for (k = 0; k < n; k++) data[k] = val;
+	return;
+}
+
+/*** set x->data to val ***/
+void
+mm_real_set_all (mm_real *x, const double val)
+{
+	mm_real_array_set_all (x->nnz, x->data, val);
+	return;
+}
+
+/* convert sparse to dense */
+bool
+mm_real_sparse_to_dense (mm_sparse *s)
+{
+	int		j, k;
+
+	int		m;
+	int		n;
+	int		nnz;
+
+	double	*tmp_data;
+
+	double	*td;
+	int		*si;
+	int		*sp;
+	double	*sd;
+
+	if (!mm_real_is_sparse (s)) return false;
+
+	m = s->m;
+	n = s->n;
+	nnz = m * n;
+
+	/* copy s->data */
+	tmp_data = (double *) malloc (s->nnz * sizeof (double));
+	for (k = 0; k < s->nnz; k++) tmp_data[k] = s->data[k];
+	td = tmp_data;
+
+	/* reallocate s->data */
+	free (s->data);
+	s->data = (double *) malloc (nnz * sizeof (double));
+	for (k = 0; k < nnz; k++) s->data[k] = 0.;
+
+	/* convert sparse to dense */
+	si = s->i;
+	sp = s->p;
+	sd = s->data;
+	for (j = 0; j < n; j++) {
+		int		np = sp[1] - *sp;
+		for (k = 0; k < np; k++) {
+			sd[*si] = *td;
+			si++;
+			td++;
+		}
+		sd += s->m;
+		sp++;
+	}
+	free (tmp_data);
+
+	mm_set_array (&s->typecode);
+	s->nnz = nnz;
+	free (s->i);
+	s->i = NULL;
+	free (s->p);
+	s->p = NULL;
+
+	return true;
+}
+
+/* convert dense to sparse */
+bool
+mm_real_dense_to_sparse (mm_dense *d, const double threshold)
+{
+	int		i, j, k;
+
+	int		m;
+	int		n;
+	int		nnz;
+
+	double	*tmp_data;
+	double	*td;
+
+	int		*di;
+	int		*dp;
+	double	*dd;
+
+	if (!mm_real_is_dense (d)) return false;
+
+	m = d->m;
+	n = d->n;
+	nnz = m * n;
+
+	/* copy d->data */
+	tmp_data = (double *) malloc (nnz * sizeof (double));
+	for (k = 0; k < nnz; k++) tmp_data[k] = d->data[k];
+	td = tmp_data;
+
+	/* convert dense to sparse */
+	d->i = (int *) malloc (nnz * sizeof (int));
+	d->p = (int *) malloc ((n + 1) * sizeof (int));
+	di = d->i;
+	dp = d->p;
+	dd = d->data;
+
+	k = 0;
+	*dp = 0;
+	for (j = 0; j < n; j++) {
+		for (i = 0; i < m; i++) {
+			double	val = *td;
+			if (fabs (val) > threshold) {
+				*(di++) = i;
+				*(dd++) = val;
+				k++;
+			}
+			td++;
+		}
+		*(++dp) = k;
+	}
+	free (tmp_data);
+
+	mm_set_coordinate (&d->typecode);
+	if (k != d->nnz) mm_real_realloc (d, k);
+
+	return true;
 }
 
 /* binary search: search the value key from array *s of length n.
@@ -486,31 +620,39 @@ mm_real_symmetric_to_general_sparse (const mm_sparse *x)
 }
 
 /* convert dense symmetric -> dense general */
-static mm_dense *
-mm_real_symmetric_to_general_dense (const mm_dense *x)
+static void
+mm_real_symmetric_to_general_dense (mm_dense *d)
 {
 	int			j;
-	mm_dense	*d = mm_real_copy (x);
-	if (!mm_real_is_symmetric (x)) return d;
-
-	if (mm_real_is_upper (x)) {
-		for (j = 0; j < x->n; j++) {
+	if (mm_real_is_upper (d)) {
+		for (j = 0; j < d->n; j++) {
 			int		i0 = j + 1;
-			int		n = x->m - i0;
-			dcopy_ (&n, x->data + j + i0 * x->m, &x->m, d->data + i0 + j * d->m, &ione);
+			int		n = d->m - i0;
+			dcopy_ (&n, d->data + j + i0 * d->m, &d->m, d->data + i0 + j * d->m, &ione);
 		}
 	} else {
-		for (j = 0; j < x->n; j++) dcopy_ (&j, x->data + j, &x->m, d->data + j * d->m, &ione);
+		for (j = 0; j < d->n; j++) dcopy_ (&j, d->data + j, &d->m, d->data + j * d->m, &ione);
 	}
 	mm_real_set_general (d);
-	return d;
+	return;
 }
 
 /* convert symmetric -> general */
-mm_real *
-mm_real_symmetric_to_general (const mm_real *x)
+bool
+mm_real_symmetric_to_general (mm_real *x)
 {
-	return (mm_real_is_sparse (x)) ? mm_real_symmetric_to_general_sparse (x) : mm_real_symmetric_to_general_dense (x);
+	if (!mm_real_is_symmetric (x)) return false;
+
+	if (mm_real_is_sparse (x)) {
+		mm_sparse	*s = mm_real_symmetric_to_general_sparse (x);
+		if (s->nnz != x->nnz) mm_real_realloc (x, s->nnz);
+		mm_real_copy_sparse_0 (s, x);
+		mm_real_free (s);
+	} else {
+		mm_real_symmetric_to_general_dense (x);
+	}
+
+	return true;
 }
 
 /* identity sparse matrix */

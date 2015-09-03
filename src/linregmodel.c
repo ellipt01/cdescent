@@ -97,9 +97,6 @@ linregmodel_alloc (void)
 	linregmodel	*lreg = (linregmodel *) malloc (sizeof (linregmodel));
 	if (lreg == NULL) return NULL;
 
-	lreg->has_copy_y = false;
-	lreg->has_copy_x = false;
-
 	lreg->y = NULL;
 	lreg->x = NULL;
 	lreg->d = NULL;
@@ -153,39 +150,24 @@ linregmodel_new (mm_real *y, mm_real *x, const mm_real *d, PreProc proc)
 	lreg = linregmodel_alloc ();
 	if (lreg == NULL) error_and_exit ("linregmodel_new", "failed to allocate memory for linregmodel object.", __FILE__, __LINE__);
 
-	lreg->has_copy_y = false;
 	lreg->y = y;
 	lreg->ycentered = calc_sum (lreg->y, &lreg->sy);
 	/* if DO_CENTERING_Y is set and y is not already centered */
 	if ((proc & DO_CENTERING_Y) && !lreg->ycentered) {
 		/* if lreg->y is sparse, convert to dense vector */
-		if (mm_real_is_sparse (lreg->y)) {
-			mm_real	*tmp = lreg->y;
-			lreg->y = mm_real_sparse_to_dense (tmp);
-			lreg->has_copy_y = true;
-		}
+		if (mm_real_is_sparse (lreg->y)) mm_real_sparse_to_dense (lreg->y);
 		do_centering (lreg->y, lreg->sy);
 		lreg->ycentered = true;
 	}
 
-	lreg->has_copy_x = false;
 	lreg->x = x;
 	lreg->xcentered = calc_sum (lreg->x, &lreg->sx);
 	/* if DO_CENTERING_X is set and x is not already centered */
 	if ((proc & DO_CENTERING_X) && !lreg->xcentered) {
 		/* if lreg->x is sparse, convert to dense matrix */
-		if (mm_real_is_sparse (lreg->x)) {
-			mm_real	*tmp = lreg->x;
-			lreg->x = mm_real_sparse_to_dense (tmp);
-			lreg->has_copy_x = true;
-		}
+		if (mm_real_is_sparse (lreg->x)) mm_real_sparse_to_dense (lreg->x);
 		/* if lreg->x is symmetric, convert to general matrix */
-		if (mm_real_is_symmetric (lreg->x)) {
-			mm_real	*tmp = lreg->x;
-			lreg->x = mm_real_symmetric_to_general (tmp);
-			if (lreg->has_copy_x) mm_real_free (tmp);
-			else lreg->has_copy_x = true;
-		}
+		if (mm_real_is_symmetric (lreg->x)) mm_real_symmetric_to_general (lreg->x);
 		do_centering (lreg->x, lreg->sx);
 		lreg->xcentered = true;
 	};
@@ -194,12 +176,7 @@ linregmodel_new (mm_real *y, mm_real *x, const mm_real *d, PreProc proc)
 	/* if DO_NORMALIZING_X is set and x is not already normalized */
 	if ((proc & DO_NORMALIZING_X) && !lreg->xnormalized) {
 		/* if lreg->x is symmetric, convert to general matrix */
-		if (mm_real_is_symmetric (lreg->x)) {
-			mm_real	*tmp = lreg->x;
-			lreg->x = mm_real_symmetric_to_general (tmp);
-			if (lreg->has_copy_x) mm_real_free (tmp);
-			else lreg->has_copy_x = true;
-		}
+		if (mm_real_is_symmetric (lreg->x)) mm_real_symmetric_to_general (lreg->x);
 		do_normalizing (lreg->x, lreg->xtx);
 		lreg->xnormalized = true;
 	}
@@ -232,8 +209,6 @@ void
 linregmodel_free (linregmodel *lreg)
 {
 	if (lreg) {
-		if (lreg->y && lreg->has_copy_y) mm_real_free (lreg->y);
-		if (lreg->x && lreg->has_copy_x) mm_real_free (lreg->x);
 		if (lreg->sy) free (lreg->sy);
 		if (lreg->sx) free (lreg->sx);
 		if (lreg->xtx) free (lreg->xtx);

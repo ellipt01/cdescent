@@ -94,9 +94,6 @@ typedef enum {
 
 struct s_linregmodel {
 
-	bool			has_copy_y;
-	bool			has_copy_x;
-
 	mm_dense		*y;				// dense general: observed data vector y (must be dense)
 	mm_real			*x;				// sparse/dense symmetric/general: matrix of predictors X
 	const mm_real	*d;				// sparse/dense symmetric/general: linear operator of penalty D
