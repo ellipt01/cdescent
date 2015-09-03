@@ -448,7 +448,7 @@ mm_real_sparse_to_dense (mm_sparse *s)
 	/* reallocate s->data */
 	free (s->data);
 	s->data = (double *) malloc (nnz * sizeof (double));
-	for (k = 0; k < nnz; k++) s->data[k] = 0.;
+	mm_real_array_set_all (nnz, s->data, 0.);
 
 	/* convert sparse to dense */
 	si = s->i;
@@ -486,23 +486,16 @@ mm_real_dense_to_sparse (mm_dense *d, const double threshold)
 	int		n;
 	int		nnz;
 
-	double	*tmp_data;
-	double	*td;
-
 	int		*di;
 	int		*dp;
 	double	*dd;
+	double	*d0;
 
 	if (!mm_real_is_dense (d)) return false;
 
 	m = d->m;
 	n = d->n;
-	nnz = m * n;
-
-	/* copy d->data */
-	tmp_data = (double *) malloc (nnz * sizeof (double));
-	for (k = 0; k < nnz; k++) tmp_data[k] = d->data[k];
-	td = tmp_data;
+	nnz = d->nnz;
 
 	/* convert dense to sparse */
 	d->i = (int *) malloc (nnz * sizeof (int));
@@ -510,22 +503,22 @@ mm_real_dense_to_sparse (mm_dense *d, const double threshold)
 	di = d->i;
 	dp = d->p;
 	dd = d->data;
+	d0 = d->data;
 
 	k = 0;
 	*dp = 0;
 	for (j = 0; j < n; j++) {
 		for (i = 0; i < m; i++) {
-			double	val = *td;
+			double	val = *d0;
 			if (fabs (val) > threshold) {
 				*(di++) = i;
 				*(dd++) = val;
 				k++;
 			}
-			td++;
+			d0++;
 		}
 		*(++dp) = k;
 	}
-	free (tmp_data);
 
 	mm_set_coordinate (&d->typecode);
 	if (k != d->nnz) mm_real_realloc (d, k);
