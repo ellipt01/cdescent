@@ -196,7 +196,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 			printf_warning ("cdescent_do_pathwise_optimization", msg, __FILE__, __LINE__);
 		}
 		// output BIC info headers
-		if (fp_bic) fprintf (fp_bic, "# nrm1\t\tBIC\t\tRSS\t\tdf\t\tnrm2\t\tlambda2\n");
+		if (fp_bic) fprintf (fp_bic, "# nrm1\t\tBIC\t\tRSS\t\tdf\t\tnrm2\t\tlambda1\tlambda2\n");
 	}
 
 	if (cd->path->verbos) fprintf (stderr, "starting pathwise optimization.\n");
@@ -229,7 +229,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 		// output BIC info
 		if (fp_bic) {
 			// |beta|  BIC  RSS  df  ||beta||^2 lambda2
-			fprintf (fp_bic, "%.8e\t%.8e\t%.8e\t%.8e\t%.8e\t%.8e\n", cd->nrm1, info->bic_val, info->rss, info->df, mm_real_xj_ssq (cd->beta, 0), cd->lambda2);
+			fprintf (fp_bic, "%.8e\t%.8e\t%.8e\t%.8e\t%.8e\t%.8e\t%.8e\n", cd->nrm1, info->bic_val, info->rss, info->df, mm_real_xj_ssq (cd->beta, 0), cd->lambda1, cd->lambda2);
 			fflush (fp_bic);
 		}
 		free (info);
