@@ -570,7 +570,7 @@ find_row_element (const int j, const mm_sparse *s, const int k)
 static mm_sparse *
 mm_real_symmetric_to_general_sparse (const mm_sparse *x)
 {
-	int			j, m;
+	int			i, j;
 	mm_sparse	*s;
 
 	int			*si;
@@ -588,21 +588,21 @@ mm_real_symmetric_to_general_sparse (const mm_sparse *x)
 	sp = s->p;
 	sd = s->data;
 
-	m = 0;
+	i = 0;
 	for (j = 0; j < xn; j++) {
 		int		k;
 		int		pend = xp[j + 1];
 		if (mm_real_is_upper (x)) {
 			for (k = xp[j]; k < pend; k++) {
-				si[m] = xi[k];
-				sd[m++] = xd[k];
+				si[i] = xi[k];
+				sd[i++] = xd[k];
 			}
 			for (k = j + 1; k < xn; k++) {
 				int		l = find_row_element (j, x, k);
 				// if found
 				if (l >= 0) {
-					si[m] = k;
-					sd[m++] = xd[l];
+					si[i] = k;
+					sd[i++] = xd[l];
 				}
 			}
 		} else if (mm_real_is_lower (x)) {
@@ -610,18 +610,18 @@ mm_real_symmetric_to_general_sparse (const mm_sparse *x)
 				int		l = find_row_element (j, x, k);
 				// if found
 				if (l >= 0) {
-					si[m] = k;
-					sd[m++] = xd[l];
+					si[i] = k;
+					sd[i++] = xd[l];
 				}
 			}
 			for (k = xp[j]; k < pend; k++) {
-				si[m] = xi[k];
-				sd[m++] = xd[k];
+				si[i] = xi[k];
+				sd[i++] = xd[k];
 			}
 		}
-		sp[j + 1] = m;
+		sp[j + 1] = i;
 	}
-	if (s->nnz != m) mm_real_realloc (s, m);
+	if (s->nnz != i) mm_real_realloc (s, i);
 	return s;
 }
 
