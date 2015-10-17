@@ -24,7 +24,7 @@ typedef enum {
 	CDESCENT_SELECTION_RULE_STOCHASTIC
 } CoordinateSelectionRule;
 
-/*** object of coordinate descent regression for L1 regularized linear regression problem
+/*** object of coordinate descent regression for L1 regularized linear problem
  *       argmin_beta || b - Z * beta ||^2 + sum_j lambda1 * | beta_j |
  *   or
  *       argmin_beta || b - Z * beta ||^2 + sum_j lambda1 * w_j * | beta_j | ***/
@@ -74,14 +74,6 @@ struct s_cdescent {
 	CoordinateSelectionRule	rule;
 };
 
-/*** Object of convex/nonconvex regularized linear regression problem
- *
- *   argmin_beta || b - Z * beta ||^2
- *
- *   where
- *   	b = [y; 0]
- *   	Z = scale * [X; sqrt(lambda2) * D] ***/
-
 /* flag of data preprocessing */
 typedef enum {
 	DO_NOTHING       = 0x0,		// do nothing
@@ -92,6 +84,16 @@ typedef enum {
 	DO_STANDARDIZING_X = DO_CENTERING_X | DO_NORMALIZING_X
 } PreProc;
 
+/*** object of regularized linear regression problem
+ *
+ *   argmin_beta || b - Z * beta ||^2
+ *
+ *   where
+ *   	b = [y; 0]
+ *   	Z = scale * [X; sqrt(lambda2) * D]
+ *
+ * this object stores vector y, matrix x, d and their properties
+ ***/
 struct s_linregmodel {
 
 	mm_dense		*y;				// dense general: observed data vector y (must be dense)

@@ -118,16 +118,14 @@ linregmodel_alloc (void)
 
 /*** create new linregmodel object
  * INPUT:
- * mm_dense          *y: dense vector
- * mm_sparse         *x: sparse general / symmetric matrix
- * const double lambda2: regularization parameter
- * const mm_real     *d: general linear operator of penalty
- * const mm_real     *w: L1 penalty factor
- * PreProc         proc: specify pre-processing for y and x
- *                       DO_CENTERING_Y: do centering of y
- *                       DO_CENTERING_X: do centering of each column of x
- *                       DO_NORMALIZING_X: do normalizing of each column of x
- *                       DO_STANDARDIZING_X: do centering and normalizing of each column of x ***/
+ * mm_dense			*y: dense vector
+ * mm_real			*x: sparse or dense general / symmetric matrix
+ * const mm_real	*d: general linear penalty operator
+ * PreProc			proc: specify pre-processings for y and x
+ * 						DO_CENTERING_Y: centering of y
+ * 						DO_CENTERING_X: centering of each column of x
+ * 						DO_NORMALIZING_X: normalizing of each column of x
+ * 						DO_STANDARDIZING_X: centering and normalizing of each column of x ***/
 linregmodel *
 linregmodel_new (mm_real *y, mm_real *x, const mm_real *d, PreProc proc)
 {
