@@ -24,7 +24,7 @@ typedef enum {
 } CoordinateSelectionRule;
 
 /*** function which decides whether the constraint condition is satisfied ***/
-typedef bool (*constraint_func) (const double betaj, void *data);
+typedef bool (*constraint_func) (const double betaj, double *forced);
 
 /*** object of coordinate descent regression for L1 regularized linear problem
  *       argmin_beta || b - Z * beta ||^2 + sum_j lambda1 * | beta_j |

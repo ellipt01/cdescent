@@ -17,10 +17,10 @@ double	dzero = 0.;
 
 /* nonnegative constraint function */
 bool
-nonnegative_constraint (const double beta, void *val)
+nonnegative_constraint (const double betaj, double *forced)
 {
-	val = &dzero;
-	return (beta >= *(double *) val);
+	*forced = dzero;
+	return (betaj >= *forced);
 }
 
 /*********************************************************
