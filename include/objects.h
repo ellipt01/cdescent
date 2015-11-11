@@ -70,7 +70,7 @@ struct s_cdescent {
 
 	pathwise				*path;					// pathwise CD optimization object
 
-	constraint_func			*cfunc;					// constraint function
+	constraint_func			cfunc;					// constraint function
 
 	CoordinateSelectionRule	rule;
 };
