@@ -82,7 +82,6 @@ cdescent_alloc (void)
 
 	cd->is_regtype_lasso = true;
 	cd->use_intercept = true;
-	cd->force_beta_nonnegative = false;
 	cd->use_fixed_lambda2 = false;
 
 	cd->m = NULL;
@@ -110,7 +109,7 @@ cdescent_alloc (void)
 	cd->total_iter = 0;
 
 	cd->path = NULL;
-	cd->rwt = NULL;
+	cd->cfunc = NULL;
 
 	cd->rule = CDESCENT_SELECTION_RULE_CYCLIC;
 
@@ -188,7 +187,6 @@ cdescent_free (cdescent *cd)
 		if (cd->mu) mm_real_free (cd->mu);
 		if (cd->nu) mm_real_free (cd->nu);
 		if (cd->path) pathwise_free (cd->path);
-		if (cd->rwt) free (cd->rwt);
 		free (cd);
 	}
 	return;
@@ -244,9 +242,9 @@ cdescent_not_use_intercept (cdescent *cd)
 }
 
 void
-cdescent_force_beta_nonnegative (cdescent *cd)
+cdescent_set_constraint (cdescent *cd, constraint_func func)
 {
-	cd->force_beta_nonnegative = true;
+	cd->cfunc = func;
 	return;
 }
 
@@ -339,46 +337,4 @@ bic_info *
 cdescent_eval_bic (const cdescent *cd)
 {
 	return calc_bic_info (cd);
-}
-
-/*** reweighting ***/
-
-static reweighting_func *
-reweighting_function_alloc (void)
-{
-	reweighting_func	*func = (reweighting_func *) malloc (sizeof (reweighting_func));
-	func->tau = 0.;
-	func->function = NULL;
-	func->data = NULL;
-	return func;
-}
-
-reweighting_func *
-reweighting_function_new (const double tau, const weight_func function, void *data)
-{
-	reweighting_func	*func = reweighting_function_alloc ();
-	func->tau = tau;
-	func->function = function;
-	func->data = data;
-	return func;
-}
-
-static reweighting *
-reweighting_alloc (void)
-{
-	reweighting	*rwt = (reweighting *) malloc (sizeof (reweighting));
-	rwt->maxiter = 0;
-	rwt->tolerance = 0.;
-	rwt->func = NULL;
-	return rwt;
-}
-
-void
-cdescent_set_reweighting (cdescent *cd, const int maxiter, const double tolerance, reweighting_func *func)
-{
-	cd->rwt = reweighting_alloc ();
-	cd->rwt->maxiter = maxiter;
-	cd->rwt->tolerance = tolerance;
-	cd->rwt->func = func;
-	return;
 }

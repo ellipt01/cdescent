@@ -13,6 +13,16 @@
 #include "example.h"
 #include "settings.h"
 
+double	dzero = 0.;
+
+/* nonnegative constraint function */
+bool
+nonnegative_constraint (const double beta, void *val)
+{
+	val = &dzero;
+	return (beta >= *(double *) val);
+}
+
 /*********************************************************
  * An example program of adaptive elastic net regression
  *             using cdescent library.
@@ -70,7 +80,7 @@ main (int argc, char **argv)
 	/*** set parameters of pathwise coordinate descent optimization ***/
 	cdescent_set_pathwise_log10_lambda_lower (cd, log10_lambda);
 	cdescent_set_pathwise_dlog10_lambda (cd, dlog10_lambda);
-	if (nonnegative) cdescent_force_beta_nonnegative (cd);
+	if (nonnegative) cdescent_set_constraint (cd, nonnegative_constraint);
 	if (use_fixed_lambda2) cdescent_use_fixed_lambda2 (cd, lambda2);
 
 	/*** do pathwise coordinate descent regression to obtain low bias solution ***/

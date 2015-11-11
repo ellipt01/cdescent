@@ -118,39 +118,6 @@ pathwise_reset (pathwise *path)
 	return;
 }
 
-/*** do reweighted coordinate descent optimization.
- * The weight for L1 norm is updated by calling reweighting function
- * cd->path->func using beta of the previous iteration. ***/
-bool
-cdescent_do_reweighting (cdescent *cd)
-{
-	int			iter;
-	double		dnrm1;
-	bool		converged = true;
-
-	if (!cd->rwt) error_and_exit ("cdescent_do_reweighting", "cd->rwt is empty.", __FILE__, __LINE__);
-	if (!cd->rwt->func) error_and_exit ("cdescent_do_reweighting", "cd->rwt->func is empty.", __FILE__, __LINE__);
-
-	iter = 0;
-	do {
-		double		nrm1_prev = cd->nrm1;
-		mm_dense	*w = cd->rwt->func->function (cd, cd->rwt->func->data);
-		cdescent_set_penalty_factor (cd, w, cd->rwt->func->tau);
-		mm_real_free (w);
-
-		if (!(converged = cdescent_do_update_one_cycle (cd))) break;
-
-		if (++iter > cd->rwt->maxiter) {
-			printf_warning ("cdescent_do_reweighting", "reaching max number of iterations.", __FILE__, __LINE__);
-			break;
-		}
-
-		dnrm1 = fabs (cd->nrm1 - nrm1_prev);
-	} while (dnrm1 > cd->rwt->tolerance);
-
-	return converged;
-}
-
 /*** do pathwise cyclic coordinate descent optimization.
  * The regression is starting at the smallest value lambda1_max for which
  * the entire vector beta = 0, and decreasing sequence of values for lambda1
@@ -211,9 +178,6 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 
 
 		if (!(converged = cdescent_do_update_one_cycle (cd))) break;
-
-		// reweighting
-		if (cd->rwt && !(converged = cdescent_do_reweighting (cd))) break;
 
 		// output solution path
 		if (fp_path) fprintf_solutionpath (fp_path, iter, cd->beta);

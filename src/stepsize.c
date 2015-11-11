@@ -31,7 +31,7 @@ soft_threshold (const double z, const double gamma)
 static double
 cdescent_gradient (const cdescent *cd, const int j)
 {
-	double	cj = cd->lreg->c->data[j];	// X' * y
+	double	cj = cd->lreg->c->data[j];	// c = X' * y
 	double	xjmu = mm_real_xj_trans_dot_yk (cd->lreg->x, j, cd->mu, 0);	// X(:,j)' * mu
 
 	//	z = c(j) - X(:,j)' * mu

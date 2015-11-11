@@ -29,7 +29,7 @@ void		cdescent_set_stochastic (cdescent *cd, const unsigned int *seed);
 bool		cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w, const double tau);
 
 void		cdescent_not_use_intercept (cdescent *cd);
-void		cdescent_force_beta_nonnegative (cdescent *cd);
+void		cdescent_set_constraint (cdescent *cd, constraint_func func);
 void		cdescent_use_fixed_lambda2 (cdescent *cd, const double lambda2);
 
 void		cdescent_set_lambda (cdescent *cd, const double lambda);
@@ -43,9 +43,6 @@ void		cdescent_set_pathwise_outputs_bic_info (cdescent *cd, const char *fn);
 
 void		cdescent_set_pathwise_bic_func (cdescent *cd, bic_func *func);
 bic_info	*cdescent_eval_bic (const cdescent *cd);
-
-reweighting_func * reweighting_function_new (const double tau, const weight_func func, void *data);
-void		cdescent_set_pathwise_reweighting (cdescent *cd, reweighting_func *func);
 
 
 #ifdef __cplusplus

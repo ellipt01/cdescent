@@ -15,7 +15,6 @@ extern "C" {
 typedef struct s_cdescent		cdescent;
 typedef struct s_linregmodel	linregmodel;
 typedef struct s_pathwise		pathwise;
-typedef struct s_reweighting	reweighting;
 typedef struct s_bic_func		bic_func;
 typedef struct s_bic_info		bic_info;
 
@@ -23,6 +22,9 @@ typedef enum {
 	CDESCENT_SELECTION_RULE_CYCLIC,
 	CDESCENT_SELECTION_RULE_STOCHASTIC
 } CoordinateSelectionRule;
+
+/*** function which decides whether the constraint condition is satisfied ***/
+typedef bool (*constraint_func) (const double betaj, void *data);
 
 /*** object of coordinate descent regression for L1 regularized linear problem
  *       argmin_beta || b - Z * beta ||^2 + sum_j lambda1 * | beta_j |
@@ -35,7 +37,6 @@ struct s_cdescent {
 	/* whether regression type is Lasso */
 	bool					is_regtype_lasso;		// = (d == NULL)
 	bool					use_intercept;			// whether use intercept (default is true)
-	bool					force_beta_nonnegative;	// force beta to be non-negative (default is false)
 	bool					use_fixed_lambda2;		// use fixed lambda2 value (default is false)
 
 	const int				*m;						// number of observations, points cd->lreg->y->m
@@ -69,7 +70,7 @@ struct s_cdescent {
 
 	pathwise				*path;					// pathwise CD optimization object
 
-	reweighting				*rwt;					// reweighting object
+	constraint_func			*cfunc;					// constraint function
 
 	CoordinateSelectionRule	rule;
 };
@@ -148,34 +149,10 @@ struct s_pathwise {
 
 };
 
-/*** object of reweighted CD optimization ***/
-
-/*** reweighting function
- * the function weighting_func is called to calculate weight
- * for each iteration of coordinate descent optimization ***/
-typedef struct s_reweighting_func reweighting_func;
-
-/* weighting function */
-typedef mm_dense* (*weight_func) (cdescent *cd, void *data);
-
-struct s_reweighting_func {
-	double		tau;
-	weight_func	function;
-	void		*data;
-};
-
-/* object of reweighting procedure */
-struct s_reweighting {
-	int					maxiter;
-	double				tolerance;
-	reweighting_func	*func;		// reweighting function
-};
-
-/*** object for function that evaluates BIC ***/
+/*** object for function which evaluates BIC ***/
 
 /*** bic_eval_func
- * the function weighting_func is called to calculate weight
- * for each iteration of coordinate descent optimization ***/
+ * the function bic_eval_func is called to evaluate BIC using bic_info object ***/
 typedef double (*bic_eval_func) (const cdescent *cd, bic_info *info, void *data);
 
 struct s_bic_func {

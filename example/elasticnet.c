@@ -13,6 +13,16 @@
 #include "example.h"
 #include "settings.h"
 
+double	dzero = 0.;
+
+/* nonnegative constraint function */
+bool
+nonnegative_constraint (const double betaj, void *val)
+{
+	val = &dzero;
+	return (betaj >= *(double *) val);
+}
+
 /***************************************************
  * An example program of elastic net regression
  *           using cdescent library.
@@ -70,9 +80,9 @@ main (int argc, char **argv)
 	/*** set parameters of pathwise coordinate descent optimization ***/
 	cdescent_set_pathwise_log10_lambda_lower (cd, log10_lambda);
 	cdescent_set_pathwise_dlog10_lambda (cd, dlog10_lambda);
+	if (nonnegative) cdescent_set_constraint (cd, nonnegative_constraint);
 	cdescent_set_pathwise_outputs_fullpath (cd, NULL);	// output full solution path
 	cdescent_set_pathwise_outputs_bic_info (cd, NULL);	// output BIC info
-	if (nonnegative) cdescent_force_beta_nonnegative (cd);
 	if (use_fixed_lambda2) cdescent_use_fixed_lambda2 (cd, lambda2);
 
 	/*** do pathwise coordinate descent regression ***/
