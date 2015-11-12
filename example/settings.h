@@ -12,7 +12,7 @@
 char			infn_x[80] = "\0";		// store input file name of design matrix
 char			infn_y[80] = "\0";		// store input file name of observed data
 double			alpha = 1.;				// raito of L1 / L2 penalty parameter
-bool			nonnegative = false;
+bool			constraint = false;
 bool			use_fixed_lambda2 = false;
 double			lambda2 = 0.;
 double			log10_lambda = -2.;		// lower bound of log10(lambda1) for warm start

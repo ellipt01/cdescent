@@ -77,7 +77,7 @@ usage (char *toolname)
 extern char		infn_x[];
 extern char		infn_y[];
 extern double	alpha;
-extern bool		nonnegative;
+extern bool		constraint;
 extern bool		use_fixed_lambda2;
 extern double	lambda2;
 extern double	log10_lambda;
@@ -128,7 +128,7 @@ read_params (int argc, char **argv)
 				break;
 
 			case 'n':
-					nonnegative = true;
+					constraint = true;
 				break;
 
 			case ':':

@@ -30,20 +30,15 @@ update_intercept (cdescent *cd)
 }
 
 static void
-update_betaj (double *betaj, double *etaj, double *abs_etaj, constraint_func func)
+update_betaj (cdescent *cd, const int j, double *etaj, double *abs_etaj)
 {
+	double	val;
 	// constraint coordinate descent after Franc, Hlavac and Navara, 2005.
-	if (func) {
-		double	val;
-		double	betaj_val = *betaj;
-		if (!func (betaj_val + *etaj, &val)) {
-			*etaj = - betaj_val + val;
-			*abs_etaj = fabs (*etaj);
-			*betaj = val;
-			return;
-		}
-	}
-	*betaj += *etaj;
+	if (cd->cfunc && !cd->cfunc (cd, j, *etaj, &val)) {
+		*etaj = - cd->beta->data[j] + val;
+		cd->beta->data[j] = val;
+	} else cd->beta->data[j] += *etaj;
+	*abs_etaj = fabs (*etaj);
 	return;
 }
 
@@ -58,7 +53,7 @@ cdescent_update (cdescent *cd, int j, double *amax_eta)
 	if (abs_etaj < DBL_EPSILON) return;
 
 	// update beta: beta(j) += eta(j)
-	update_betaj (&cd->beta->data[j], &etaj, &abs_etaj, cd->cfunc);
+	update_betaj (cd, j, &etaj, &abs_etaj);
 	// update mu (= X * beta): mu += eta(j) * X(:,j)
 	mm_real_axjpy (etaj, cd->lreg->x, j, cd->mu);
 	// update nu (= D * beta) if lambda2 != 0 && cd->nu != NULL: nu += eta(j) * D(:,j)
@@ -80,7 +75,7 @@ cdescent_update_atomic (cdescent *cd, int j, double *amax_eta)
 	if (abs_etaj < DBL_EPSILON) return;
 
 	// update beta: beta(j) += etaj
-	update_betaj (&cd->beta->data[j], &etaj, &abs_etaj, cd->cfunc);
+	update_betaj (cd, j, &etaj, &abs_etaj);
 	// update mu (= X * beta): mu += etaj * X(:,j)
 	mm_real_axjpy_atomic (etaj, cd->lreg->x, j, cd->mu);
 	// update nu (= D * beta) if lambda2 != 0 && cd->nu != NULL: nu += etaj * D(:,j)

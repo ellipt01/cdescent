@@ -7,20 +7,21 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include <cdescent.h>
 
 #include "example.h"
 #include "settings.h"
 
-double	dzero = 0.;
+double	lower = 0.;
 
-/* nonnegative constraint function */
+/* constraint function */
 bool
-nonnegative_constraint (const double betaj, double *forced)
+constraint_func0 (cdescent *cd, const int j, const double etaj, double *forced)
 {
-	*forced = dzero;
-	return (betaj >= *forced);
+	*forced = lower;
+	return (cd->beta->data[j] + etaj >= *forced);
 }
 
 /***************************************************
@@ -80,7 +81,7 @@ main (int argc, char **argv)
 	/*** set parameters of pathwise coordinate descent optimization ***/
 	cdescent_set_pathwise_log10_lambda_lower (cd, log10_lambda);
 	cdescent_set_pathwise_dlog10_lambda (cd, dlog10_lambda);
-	if (nonnegative) cdescent_set_constraint (cd, nonnegative_constraint);
+	if (constraint) cdescent_set_constraint (cd, constraint_func0);
 	cdescent_set_pathwise_outputs_fullpath (cd, NULL);	// output full solution path
 	cdescent_set_pathwise_outputs_bic_info (cd, NULL);	// output BIC info
 	if (use_fixed_lambda2) cdescent_use_fixed_lambda2 (cd, lambda2);
