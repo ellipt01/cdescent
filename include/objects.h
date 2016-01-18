@@ -27,9 +27,11 @@ typedef enum {
 typedef bool (*constraint_func) (cdescent *cd, const int j, const double etaj, double *forced);
 
 /*** object of coordinate descent regression for L1 regularized linear problem
- *       argmin_beta || b - Z * beta ||^2 + sum_j lambda1 * | beta_j |
+ *       argmin_beta || y - x * beta ||^2 + lambda2 * || d * beta ||^2 + sum_j lambda1 * | beta_j |
  *   or
- *       argmin_beta || b - Z * beta ||^2 + sum_j lambda1 * w_j * | beta_j | ***/
+ *       argmin_beta || y - x * beta ||^2 + lambda2 * || d * beta ||^2  + sum_j lambda1 * w_j * | beta_j |
+ *   where vector y, matrix x and d are specified by linregmodel *lreg,
+ *   e.g. y = lreg->y, x = lreg->x and d = lreg->d ***/
 struct s_cdescent {
 
 	bool					was_modified;			// whether this object was modified after created
@@ -87,37 +89,37 @@ typedef enum {
 
 /*** object of regularized linear regression problem
  *
- *   argmin_beta || b - Z * beta ||^2
+ *   argmin_beta || b - z * beta ||^2
  *
  *   where
  *   	b = [y; 0]
- *   	Z = scale * [X; sqrt(lambda2) * D]
+ *   	z = scale * [x; sqrt(lambda2) * d]
  *
  * this object stores vector y, matrix x, d and their properties
  ***/
 struct s_linregmodel {
 
-	mm_dense		*y;				// dense general: observed data vector y (must be dense)
-	mm_real			*x;				// sparse/dense symmetric/general: matrix of predictors X
-	const mm_real	*d;				// sparse/dense symmetric/general: linear operator of penalty D
-
-	mm_dense		*c;				// = x' * y: correlation (constant) vector
-	double			camax;			// max ( abs (c) )
-
 	bool			ycentered;		// y is centered?
 	bool			xcentered;		// x is centered?
 	bool			xnormalized;	// x is normalized?
 
+	mm_dense		*y;				// dense general: observed data vector y (must be dense)
+	mm_real			*x;				// sparse/dense symmetric/general: matrix of predictors x
+	const mm_real	*d;				// sparse/dense symmetric/general: linear operator of penalty d
+
+	mm_dense		*c;				// = x' * y: correlation (constant) vector
+	double			camax;			// max ( abs (c) )
+
 	/* sum y. If y is centered, sy = NULL */
 	double			*sy;
 
-	/* sum X(:, j). If X is centered, sx = NULL. */
+	/* sum X(:, j). If x is centered, sx = NULL. */
 	double			*sx;
 
-	/* xtx = diag(X' * X). If X is normalized, xtx = NULL. */
+	/* xtx = diag(x' * x). If x is normalized, xtx = NULL. */
 	double			*xtx;
 
-	/* dtd = diag(D' * D), D = lreg->pen->d */
+	/* dtd = diag(d' * d) */
 	double			*dtd;
 
 };
@@ -136,8 +138,6 @@ struct s_pathwise {
 	double		log10_lambda_lower;	// lower bound of lambda1 on log10 scale
 	double		dlog10_lambda;		// increment of lambda1 on log10 scale
 
-	bic_func	*bicfunc;			// BIC evaluation function
-
 	double		min_bic_val;		// minimum BIC
 	int			index_opt;			// index of optimal beta
 	double		b0_opt;				// optimal intercept
@@ -145,7 +145,9 @@ struct s_pathwise {
 	double		lambda_opt;			// optimal lambda1
 	double		nrm1_opt;			// | beta_opt |
 
-	bool		verbos;
+	bool		verbos;				// if this is set to true, detailed progress of calculation will be reported
+
+	bic_func	*bicfunc;			// BIC evaluation function
 
 };
 
