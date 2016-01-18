@@ -19,11 +19,12 @@ typedef struct s_bic_func		bic_func;
 typedef struct s_bic_info		bic_info;
 
 typedef enum {
-	CDESCENT_SELECTION_RULE_CYCLIC,
-	CDESCENT_SELECTION_RULE_STOCHASTIC
+	CDESCENT_SELECTION_RULE_CYCLIC,		// use cyclic coordinate descent update
+	CDESCENT_SELECTION_RULE_STOCHASTIC	// use stochastic coordinate descent update
 } CoordinateSelectionRule;
 
-/*** function which decides whether the constraint condition is satisfied ***/
+/*** constraint_fun
+ * pointer of the function which evaluates whether the constraint condition for beta is satisfied ***/
 typedef bool (*constraint_func) (cdescent *cd, const int j, const double etaj, double *forced);
 
 /*** object of coordinate descent regression for L1 regularized linear problem
@@ -76,6 +77,36 @@ struct s_cdescent {
 
 	CoordinateSelectionRule	rule;
 };
+/***
+ * For example, the following function realizes non-negativity constraint for the solution double *cd->beta:
+ *
+ * bool
+ * constraint_func0 (cdescent *cd, const int j, const double etaj, double *forced)
+ * {
+ *    double new_betaj = cd->beta[j] + etaj;
+ *    if (new_betaj < 0.) {
+ *       *forced = 0.;
+ *       return false;
+ *    }
+ *    return true;
+ * }
+ *
+ * If the next value of beta[j]; new_betaj = cd->beta[j] + etaj < 0. (non-negativity is violated),
+ * this function returns false and double *forced is set to the forced value of beta[j] (i.e. in this
+ * case, *forced = 0).
+ *
+ * If the pointer of the above function is connected by calling
+ *
+ *     cdescent_set_constraint (cd, constraint_func0);
+ *     (this function set to cd->cfunc = constraint_func0)
+ *
+ * then, this function is called by the function void update_betaj in update.c, which updates cd->beta[j]
+ * on each coordinate descent update, and cd->beta[j] and etaj is replaced as the followings:
+ *
+ *     etaj -> - cd->beta[j] + *forced (so as to be the next beta[j] = cd->beta[j] + etaj = *forced)
+ *     cd->beta[j] -> *forced
+ *
+ ***/
 
 /* flag of data preprocessing */
 typedef enum {
@@ -154,7 +185,7 @@ struct s_pathwise {
 /*** object for function which evaluates BIC ***/
 
 /*** bic_eval_func
- * the function bic_eval_func is called to evaluate BIC using bic_info object ***/
+ * The pointer of the function which is called to evaluate BIC using cdescent and bic_info objects. ***/
 typedef double (*bic_eval_func) (const cdescent *cd, bic_info *info, void *data);
 
 struct s_bic_func {
