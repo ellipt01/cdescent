@@ -95,13 +95,14 @@ struct s_cdescent {
  * this function returns false and double *forced is set to the forced value of beta[j] (i.e. in this
  * case, *forced = 0).
  *
- * If the pointer of the above function is connected by calling
+ * The pointer of the above function is connected to cdescent *cd by calling
  *
  *     cdescent_set_constraint (cd, constraint_func0);
  *     (this function set to cd->cfunc = constraint_func0)
  *
- * then, this function is called by the function void update_betaj in update.c, which updates cd->beta[j]
- * on each coordinate descent update, and cd->beta[j] and etaj is replaced as the followings:
+ * This function is called by the function void update_betaj in update.c, which updates cd->beta[j]
+ * on each coordinate descent updates.
+ * If cd->cfunc (= constraint_func0) returns false, cd->beta[j] and etaj is replaced by the followings:
  *
  *     etaj -> - cd->beta[j] + *forced (so as to be the next beta[j] = cd->beta[j] + etaj = *forced)
  *     cd->beta[j] -> *forced
