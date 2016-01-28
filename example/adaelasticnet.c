@@ -79,8 +79,8 @@ main (int argc, char **argv)
 	cd = cdescent_new (alpha, lreg, tolerance, maxiter, false);
 
 	/*** set parameters of pathwise coordinate descent optimization ***/
-	cdescent_set_pathwise_log10_lambda_lower (cd, log10_lambda);
-	cdescent_set_pathwise_dlog10_lambda (cd, dlog10_lambda);
+	cdescent_set_log10_lambda_lower (cd, log10_lambda);
+	cdescent_set_dlog10_lambda (cd, dlog10_lambda);
 	if (constraint) cdescent_set_constraint (cd, constraint_func0);
 	if (use_fixed_lambda2) cdescent_use_fixed_lambda2 (cd, lambda2);
 
@@ -91,13 +91,10 @@ main (int argc, char **argv)
 	/* use low bias solution (beta of lambda = 10^log10_lambda_lower) for L1 / L2 norm weight */
 	cdescent_set_penalty_factor (cd, cd->beta, 0.25);	// set weight = | beta_low_bias |^(1/4)
 
-	cdescent_set_pathwise_outputs_fullpath (cd, NULL);	// output full solution path
-	cdescent_set_pathwise_outputs_bic_info (cd, NULL);	// output BIC info
+	cdescent_set_outputs_fullpath (cd, NULL);	// output full solution path
+	cdescent_set_outputs_info (cd, NULL);		// output regression info
 	/* do pathwise coordinate descent again */
 	cdescent_do_pathwise_optimization (cd);
-
-	fprintf (stderr, "lambda_opt = %.2f, nrm1(beta_opt) = %.2f, min_bic = %.2f\n",
-		cd->path->lambda_opt, cd->path->nrm1_opt, cd->path->min_bic_val);
 
 	cdescent_free (cd);
 	linregmodel_free (lreg);

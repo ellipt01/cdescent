@@ -1221,8 +1221,14 @@ mm_real_x_dot_y (const bool trans, const double alpha, const mm_real *x, const m
 	if (mm_real_is_symmetric (z)) error_and_exit ("mm_real_x_dot_y", "z must be general.", __FILE__, __LINE__);
 	if ((trans && x->n != z->m) || (!trans && x->m != z->m))
 		error_and_exit ("mm_real_x_dot_y", "dimensions of x and z do not match.", __FILE__, __LINE__);
+
+	if (y->n == 1) {
+		mm_real_x_dot_yk (trans, alpha, x, y, 0, beta, z);
+	} else {
 #pragma omp parallel for
-	for (k = 0; k < y->n; k++) mm_real_x_dot_yk (trans, alpha, x, y, k, beta, z);
+		for (k = 0; k < y->n; k++) mm_real_x_dot_yk (trans, alpha, x, y, k, beta, z);
+	}
+
 	return;
 }
 

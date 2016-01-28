@@ -14,9 +14,6 @@ extern "C" {
 
 typedef struct s_cdescent		cdescent;
 typedef struct s_linregmodel	linregmodel;
-typedef struct s_pathwise		pathwise;
-typedef struct s_bic_func		bic_func;
-typedef struct s_bic_info		bic_info;
 
 typedef enum {
 	CDESCENT_SELECTION_RULE_CYCLIC,		// use cyclic coordinate descent update
@@ -26,6 +23,35 @@ typedef enum {
 /*** constraint_fun
  * pointer of the function which evaluates whether the constraint condition for beta is satisfied ***/
 typedef bool (*constraint_func) (cdescent *cd, const int j, const double etaj, double *forced);
+/* For example, the following function realizes non-negativity constraint for the solution double *cd->beta:
+ *
+ * bool
+ * constraint_func0 (cdescent *cd, const int j, const double etaj, double *forced)
+ * {
+ *    double new_betaj = cd->beta[j] + etaj;
+ *    if (new_betaj < 0.) {
+ *       *forced = 0.;
+ *       return false;
+ *    }
+ *    return true;
+ * }
+ *
+ * If the next value of beta[j]; new_betaj = cd->beta[j] + etaj < 0. (non-negativity is violated),
+ * this function returns false and double *forced is set to the forced value of beta[j] (i.e. in this
+ * case, *forced = 0).
+ *
+ * The pointer of the above function is connected to cdescent *cd by calling
+ *
+ *     cdescent_set_constraint (cd, constraint_func0);
+ *     (this function set to cd->cfunc = constraint_func0)
+ *
+ * This function is called by the function void update_betaj in update.c, which updates cd->beta[j]
+ * on each coordinate descent updates.
+ * If cd->cfunc (= constraint_func0) returns false, cd->beta[j] and etaj is replaced by the followings:
+ *
+ *     etaj -> - cd->beta[j] + *forced (so as to be the next beta[j] = cd->beta[j] + etaj = *forced)
+ *     cd->beta[j] -> *forced
+ */
 
 /*** object of coordinate descent regression for L1 regularized linear problem
  *       argmin_beta || y - x * beta ||^2 + lambda2 * || d * beta ||^2 + sum_j lambda1 * | beta_j |
@@ -41,6 +67,7 @@ struct s_cdescent {
 	bool					is_regtype_lasso;		// = (d == NULL)
 	bool					use_intercept;			// whether use intercept (default is true)
 	bool					use_fixed_lambda2;		// use fixed lambda2 value (default is false)
+	CoordinateSelectionRule	rule;					// decide cyclic or stochastic coordinate descent
 
 	const int				*m;						// number of observations, points cd->lreg->y->m
 	const int				*n;						// number of variables, points cd->lreg->x->n
@@ -71,43 +98,20 @@ struct s_cdescent {
 
 	bool					parallel;				// whether enable parallel calculation
 
-	pathwise				*path;					// pathwise CD optimization object
-
 	constraint_func			cfunc;					// constraint function
 
-	CoordinateSelectionRule	rule;
+	bool					output_fullpath;		// whether to outputs full solution path
+	char					fn_path[BUFSIZ];		// file to output solution path
+	bool					output_info;			// whether to outputs regression info
+	char					fn_info[BUFSIZ];		// file to output info
+
+	double					log10_lambda_upper;		// upper bound of lambda1 on log10 scale
+	double					log10_lambda_lower;		// lower bound of lambda1 on log10 scale
+	double					dlog10_lambda;			// increment of lambda1 on log10 scale
+
+	bool					verbos;					// if this is set to true, detailed progress of calculation will be reported
+
 };
-/***
- * For example, the following function realizes non-negativity constraint for the solution double *cd->beta:
- *
- * bool
- * constraint_func0 (cdescent *cd, const int j, const double etaj, double *forced)
- * {
- *    double new_betaj = cd->beta[j] + etaj;
- *    if (new_betaj < 0.) {
- *       *forced = 0.;
- *       return false;
- *    }
- *    return true;
- * }
- *
- * If the next value of beta[j]; new_betaj = cd->beta[j] + etaj < 0. (non-negativity is violated),
- * this function returns false and double *forced is set to the forced value of beta[j] (i.e. in this
- * case, *forced = 0).
- *
- * The pointer of the above function is connected to cdescent *cd by calling
- *
- *     cdescent_set_constraint (cd, constraint_func0);
- *     (this function set to cd->cfunc = constraint_func0)
- *
- * This function is called by the function void update_betaj in update.c, which updates cd->beta[j]
- * on each coordinate descent updates.
- * If cd->cfunc (= constraint_func0) returns false, cd->beta[j] and etaj is replaced by the followings:
- *
- *     etaj -> - cd->beta[j] + *forced (so as to be the next beta[j] = cd->beta[j] + etaj = *forced)
- *     cd->beta[j] -> *forced
- *
- ***/
 
 /* flag of data preprocessing */
 typedef enum {
@@ -154,55 +158,6 @@ struct s_linregmodel {
 	/* dtd = diag(d' * d) */
 	double			*dtd;
 
-};
-
-/*** object of pathwise CD optimization ***/
-struct s_pathwise {
-
-	bool		was_modified;		// whether this object was modified after initialization
-
-	bool		output_fullpath;	// whether to outputs full solution path
-	char		fn_path[BUFSIZ];	// file to output solution path
-	bool		output_bic_info;	// whether to outputs BIC info
-	char		fn_bic[BUFSIZ];		// file to output BIC info
-
-	double		log10_lambda_upper;	// upper bound of lambda1 on log10 scale
-	double		log10_lambda_lower;	// lower bound of lambda1 on log10 scale
-	double		dlog10_lambda;		// increment of lambda1 on log10 scale
-
-	double		min_bic_val;		// minimum BIC
-	int			index_opt;			// index of optimal beta
-	double		b0_opt;				// optimal intercept
-	mm_dense	*beta_opt;			// optimal beta corresponding to min_bic_val
-	double		lambda_opt;			// optimal lambda1
-	double		nrm1_opt;			// | beta_opt |
-
-	bool		verbos;				// if this is set to true, detailed progress of calculation will be reported
-
-	bic_func	*bicfunc;			// BIC evaluation function
-
-};
-
-/*** object for function which evaluates BIC ***/
-
-/*** bic_eval_func
- * The pointer of the function which is called to evaluate BIC using cdescent and bic_info objects. ***/
-typedef double (*bic_eval_func) (const cdescent *cd, bic_info *info, void *data);
-
-struct s_bic_func {
-	bic_eval_func	function;
-	void			*data;
-};
-
-/*** Bayesian Information Criterion
- *  BIC = log(rss) + df * log(m) / m ***/
-struct s_bic_info
-{
-	double		m;			// number of data
-	double		n;			// number of variables
-	double		rss;		// residual sum of squares
-	double		df;			// degree of freedom
-	double		bic_val;	// value of BIC
 };
 
 #ifdef __cplusplus

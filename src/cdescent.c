@@ -15,57 +15,10 @@
 // default file to output solution path
 static const char	default_fn_path[] = "beta_path.data";
 
-// default file to output BIC info
-static const char	default_fn_bic[] = "bic_info.data";
-
-/* bic.c */
-extern double	cdescent_default_bic_eval_func (const cdescent *cd, bic_info *info, void *data);
-extern bic_info	*calc_bic_info (const cdescent *cd);
+// default file to output regression info
+static const char	default_fn_info[] = "regression_info.data";
 
 double			log10_lambda_upper_default = 0.;
-
-/**********************************
- *  pathwise optimization object  *
- **********************************/
-
-/* allocate pathwise optimization object */
-static pathwise *
-pathwise_alloc (void)
-{
-	pathwise	*path = (pathwise *) malloc (sizeof (pathwise));
-	path->was_modified = false;
-
-	path->log10_lambda_upper = 0.;
-	path->log10_lambda_lower = 0.;
-	path->dlog10_lambda = 0.;
-
-	path->output_fullpath = false;
-	path->output_bic_info = false;
-
-	path->bicfunc = NULL;
-
-	path->index_opt = 0;
-	path->b0_opt = 0.;
-	path->beta_opt = NULL;
-	path->lambda_opt = 0.;
-	path->nrm1_opt = 0.;
-	path->min_bic_val = CDESCENT_POSINF;
-
-	path->verbos = false;
-
-	return path;
-}
-
-/* free pathwise optimization object */
-static void
-pathwise_free (pathwise *path)
-{
-	if (path) {
-		if (path->beta_opt) mm_real_free (path->beta_opt);
-		free (path);
-	}
-	return;
-}
 
 /*******************************
  *  coordinate descent object  *
@@ -83,6 +36,7 @@ cdescent_alloc (void)
 	cd->is_regtype_lasso = true;
 	cd->use_intercept = true;
 	cd->use_fixed_lambda2 = false;
+	cd->rule = CDESCENT_SELECTION_RULE_CYCLIC;
 
 	cd->m = NULL;
 	cd->n = NULL;
@@ -108,10 +62,16 @@ cdescent_alloc (void)
 	cd->parallel = false;
 	cd->total_iter = 0;
 
-	cd->path = NULL;
 	cd->cfunc = NULL;
 
-	cd->rule = CDESCENT_SELECTION_RULE_CYCLIC;
+	cd->log10_lambda_upper = 0.;
+	cd->log10_lambda_lower = 0.;
+	cd->dlog10_lambda = 0.;
+
+	cd->output_fullpath = false;
+	cd->output_info = false;
+
+	cd->verbos = false;
 
 	return cd;
 }
@@ -162,17 +122,14 @@ cdescent_new (const double alpha, const linregmodel *lreg, const double tol, con
 	cd->maxiter = maxiter;
 	cd->parallel = parallel;
 
-	cd->path = pathwise_alloc ();
 	/* default values */
 	log10_lambda_upper_default = floor (log10 (cd->lreg->camax)) + 1.;
-	cd->path->log10_lambda_upper = log10_lambda_upper_default;
-	if (cd->alpha1 > 0.) cd->path->log10_lambda_upper -= floor (log10 (cd->alpha1));
-	cd->path->log10_lambda_lower = log10 (tol);
-	cd->path->dlog10_lambda = 0.1;
-	strcpy (cd->path->fn_path, default_fn_path);	// default filename
-	strcpy (cd->path->fn_bic, default_fn_bic);		// default filename
-	// default bic evaluation function
-	cd->path->bicfunc = bic_function_new (cdescent_default_bic_eval_func, NULL);
+	cd->log10_lambda_upper = log10_lambda_upper_default;
+	if (cd->alpha1 > 0.) cd->log10_lambda_upper -= floor (log10 (cd->alpha1));
+	cd->log10_lambda_lower = log10 (tol);
+	cd->dlog10_lambda = 0.1;
+	strcpy (cd->fn_path, default_fn_path);	// default filename
+	strcpy (cd->fn_info, default_fn_info);	// default filename
 
 	return cd;
 }
@@ -186,7 +143,6 @@ cdescent_free (cdescent *cd)
 		if (cd->beta) mm_real_free (cd->beta);
 		if (cd->mu) mm_real_free (cd->mu);
 		if (cd->nu) mm_real_free (cd->nu);
-		if (cd->path) pathwise_free (cd->path);
 		free (cd);
 	}
 	return;
@@ -256,7 +212,7 @@ cdescent_use_fixed_lambda2 (cdescent *cd, const double lambda2)
 
 	cd->alpha1 = 1.;
 	cd->alpha2 = 0.;
-	cd->path->log10_lambda_upper = log10_lambda_upper_default;
+	cd->log10_lambda_upper = log10_lambda_upper_default;
 	return;
 }
 
@@ -280,61 +236,44 @@ cdescent_set_log10_lambda (cdescent *cd, const double log10_lambda)
 	return;
 }
 
-/*** routines to tuning pathwise CD optimization ***/
+/*** set cd->log10_lambda_upper ***/
 void
-cdescent_set_pathwise_log10_lambda_upper (cdescent *cd, const double log10_lambda_upper)
+cdescent_set_log10_lambda_upper (cdescent *cd, const double log10_lambda_upper)
 {
-	cd->path->log10_lambda_upper = log10_lambda_upper;
+	cd->log10_lambda_upper = log10_lambda_upper;
 	return;
 }
 
-/*** routines to tuning pathwise CD optimization ***/
+/*** set cd->log10_lambda_lower ***/
 void
-cdescent_set_pathwise_log10_lambda_lower (cdescent *cd, const double log10_lambda_lower)
+cdescent_set_log10_lambda_lower (cdescent *cd, const double log10_lambda_lower)
 {
-	cd->path->log10_lambda_lower = log10_lambda_lower;
+	cd->log10_lambda_lower = log10_lambda_lower;
 	return;
 }
 
+/*** set cd->dlog10_lambda ***/
 void
-cdescent_set_pathwise_dlog10_lambda (cdescent *cd, const double dlog10_lambda)
+cdescent_set_dlog10_lambda (cdescent *cd, const double dlog10_lambda)
 {
-	cd->path->dlog10_lambda = dlog10_lambda;
+	cd->dlog10_lambda = dlog10_lambda;
 	return;
 }
 
 /*** set outputs_fullpath = true and specify output filename ***/
 void
-cdescent_set_pathwise_outputs_fullpath (cdescent *cd, const char *fn)
+cdescent_set_outputs_fullpath (cdescent *cd, const char *fn)
 {
-	cd->path->output_fullpath = true;
-	if (fn) strcpy (cd->path->fn_path, fn);
+	cd->output_fullpath = true;
+	if (fn) strcpy (cd->fn_path, fn);
 	return;
 }
 
-/*** set outputs_bic_info = true and specify output filename ***/
+/*** set outputs_info = true and specify output filename ***/
 void
-cdescent_set_pathwise_outputs_bic_info (cdescent *cd, const char *fn)
+cdescent_set_outputs_info (cdescent *cd, const char *fn)
 {
-	cd->path->output_bic_info = true;
-	if (fn) strcpy (cd->path->fn_bic, fn);
+	cd->output_info = true;
+	if (fn) strcpy (cd->fn_info, fn);
 	return;
-}
-
-/*** evaluation of BIC ***/
-
-/*** set bic function of pathwise object ***/
-void
-cdescent_set_pathwise_bic_func (cdescent *cd, bic_func *func)
-{
-	if (cd->path->bicfunc) free (cd->path->bicfunc);
-	cd->path->bicfunc = func;
-	return;
-}
-
-/*** evaluate BIC ***/
-bic_info *
-cdescent_eval_bic (const cdescent *cd)
-{
-	return calc_bic_info (cd);
 }

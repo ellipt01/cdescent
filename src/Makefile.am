@@ -14,7 +14,6 @@ libcdescent_la_SOURCES =\
 	linregmodel.c\
 	cdescent.c\
 	stepsize.c\
-	bic.c\
 	update.c\
 	cyclic.c\
 	stochastic.c\

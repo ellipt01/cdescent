@@ -7,7 +7,6 @@ libcdescent_include_DATA =\
 	mmreal.h\
 	objects.h\
 	linregmodel.h\
-	bic.h\
 	regression.h\
 	cdescent.h
 
