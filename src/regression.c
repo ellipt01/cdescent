@@ -170,13 +170,13 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 			fflush (fp_info);
 		}
 
+		if (cd->verbos) fprintf (stderr, "done.\n");
+
 		if (stop_flag) break;
 
 		/* if logt - dlog10_lambda1 < log10_lambda1, logt = log10_lambda1 and stop_flag is set to true
 		 * else logt -= dlog10_lambda1 */
 		stop_flag = set_logt (cd->log10_lambda_lower, logt - cd->dlog10_lambda, &logt);
-
-		if (cd->verbos) fprintf (stderr, "done.\n");
 
 	}
 
