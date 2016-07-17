@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <cdescent.h>
-#include <mmreal.h>
 
 #include "private/private.h"
 
@@ -16,6 +15,9 @@
 extern bool			cdescent_do_update_once_cycle_cyclic (cdescent *cd);
 /* stochastic.c */
 extern bool			cdescent_do_update_once_cycle_stochastic (cdescent *cd);
+
+/* utils.c */
+extern void			fprintf_solutionpath (FILE *stream, cdescent *cd);
 
 typedef bool (*update_one_cycle) (cdescent *cd);
 
@@ -49,19 +51,6 @@ cdescent_do_update_one_cycle (cdescent *cd)
 	return converged;
 }
 
-/* fprint solution path to FILE *stream
- * iter-th row of outputs indicates beta obtained by iter-th iteration */
-static void
-fprintf_solutionpath (FILE *stream, const int iter, const mm_dense *beta)
-{
-	int		j;
-	fprintf (stream, "%d %.4e", iter, mm_real_xj_asum (beta, 0));
-	for (j = 0; j < beta->m; j++) fprintf (stream, " %.8e", beta->data[j]);
-	fprintf (stream, "\n");
-	fflush (stream);
-	return;
-}
-
 /* set log(t):
  * if new_logt <= logt_lower, *logt = logt_lower and return true
  * else *logt = new_logt */
@@ -85,6 +74,7 @@ calc_rss (const cdescent *cd)
 	double	rss;
 	mm_dense	*r = mm_real_copy (cd->lreg->y);
 	mm_real_axjpy (-1., cd->mu, 0, r);	// r = y - mu
+	if (cd->use_intercept) mm_real_xj_add_const (r, 0, - cd->b0);	// r = y - mu - b0
 	rss = mm_real_xj_ssq (r, 0);
 	mm_real_free (r);
 	return rss;
@@ -114,7 +104,7 @@ cdescent_reset (cdescent *cd)
 bool
 cdescent_do_pathwise_optimization (cdescent *cd)
 {
-	int			iter = 0;
+	int			iter;
 	double		logt;
 	bool		stop_flag = false;
 
@@ -132,15 +122,16 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 	stop_flag = set_logt (cd->log10_lambda_lower, cd->log10_lambda_upper, &logt);
 
 	if (cd->output_fullpath) {
-		if (!(fp_path = fopen (cd->fn_path, "w"))) {
+		if ((fp_path = fopen (cd->fn_path, "w")) == NULL) {
 			char	msg[80];
 			sprintf (msg, "cannot open file %s.", cd->fn_path);
 			printf_warning ("cdescent_do_pathwise_optimization", msg, __FILE__, __LINE__);
 		}
-		if (fp_path) fprintf_solutionpath (fp_path, iter, cd->beta);
+		if (fp_path) fprintf_solutionpath (fp_path, cd);
 	}
+
 	if (cd->output_info) {
-		if (!(fp_info = fopen (cd->fn_info, "w"))) {
+		if ((fp_info = fopen (cd->fn_info, "w")) == NULL) {
 			char	msg[80];
 			sprintf (msg, "cannot open file %s.", cd->fn_info);
 			printf_warning ("cdescent_do_pathwise_optimization", msg, __FILE__, __LINE__);
@@ -151,17 +142,16 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 
 	if (cd->verbos) fprintf (stderr, "starting pathwise optimization.\n");
 
+	iter = 0;
 	while (1) {
-		iter++;
 
 		cdescent_set_log10_lambda (cd, logt);
 		if (cd->verbos) fprintf (stderr, "%d-th iteration lambda1 = %.4e, lamba2 = %.4e ", iter, cd->lambda1, cd->lambda2);
 
-
 		if (!(converged = cdescent_do_update_one_cycle (cd))) break;
 
 		// output solution path
-		if (fp_path) fprintf_solutionpath (fp_path, iter, cd->beta);
+		if (fp_path) fprintf_solutionpath (fp_path, cd);
 
 		// output regression info
 		if (fp_info) {
@@ -178,6 +168,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 		 * else logt -= dlog10_lambda1 */
 		stop_flag = set_logt (cd->log10_lambda_lower, logt - cd->dlog10_lambda, &logt);
 
+		iter++;
 	}
 
 	if (fp_path) fclose (fp_path);

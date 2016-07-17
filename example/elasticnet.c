@@ -12,9 +12,22 @@
 #include <cdescent.h>
 
 #include "example.h"
-#include "settings.h"
 
-double	lower = 0.;
+/*** default settings ***/
+char		infn_x[80] = "\0";		// store input file name of design matrix
+char		infn_y[80] = "\0";		// store input file name of observed data
+double		alpha = 1.;				// raito of L1 / L2 penalty parameter
+bool		constraint = false;
+bool		use_fixed_lambda2 = false;
+double		lambda2 = 0.;
+double		log10_lambda = -2.;		// lower bound of log10(lambda1) for warm start
+double		dlog10_lambda = 0.1;	// increment of log10(lambda1)
+
+double		tolerance = 1.e-3;
+int			maxiter = 100000;
+bool		verbos = false;
+
+double		lower = 0.;
 
 /* constraint function */
 bool
@@ -71,9 +84,12 @@ main (int argc, char **argv)
 	// sparse 1D derivation operator for s-lasso
 	//	d = penalty_smooth (MM_REAL_SPARSE, x->n);	// see example.c
 
+	standardizing (x, y);
+
 	/*** create linear regression model object
 	     for || y - x * beta ||^2 + lambda2 * || d * beta ||^2 ***/
-	lreg = linregmodel_new (y, x, d, DO_CENTERING_Y | DO_STANDARDIZING_X);
+//	lreg = linregmodel_new (y, x, d, DO_CENTERING_Y | DO_STANDARDIZING_X);
+	lreg = linregmodel_new (y, x, d, DO_CENTERING_Y | DO_CENTERING_X);
 
 	/*** create coordinate descent object ***/
 	cd = cdescent_new (alpha, lreg, tolerance, maxiter, false);

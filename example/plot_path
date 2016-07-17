@@ -35,7 +35,7 @@ fn="beta_path.data"
 j=3
 for i in `seq -f %03g 0 $n`; do
 
-	echo -n "\"$fn\" using 2:$j with line linewidth 1" >> tmp.gnuplot
+	echo -n "\"$fn\" using 1:$j with line linewidth 1" >> tmp.gnuplot
 
 	if [ $minor -ge 2 ]; then
 		echo -n " linetype 1 linecolor $j" >> tmp.gnuplot

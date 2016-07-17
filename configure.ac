@@ -163,9 +163,9 @@ elif test "x$use_satlas" == xyes; then
 elif test "x$use_mkl" == xyes; then
 	AC_CHECK_LIB([mkl_intel_lp64],
 	[main],
-	[LIBS="-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm $LIBS"],
+	[LIBS="-lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lpthread -lm $LIBS"],
 	[AC_MSG_ERROR([Cannot find Intel Math Kernel Library])],
-	[-lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm])
+	[-lmkl_intel_lp64 -lmkl_gnu_thread -lmkl_core -lpthread -lm])
 else
 	AC_CHECK_LIB([blas],[main],[])
 fi

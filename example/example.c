@@ -8,7 +8,26 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <math.h>
 #include <cdescent.h>
+
+/*** standardizong data ***/
+void
+standardizing (mm_real *x, mm_real *y)
+{
+	int		j;
+	double	ym = mm_real_xj_sum (y, 0) / (double) y->m;
+	mm_real_xj_add_const (y, 0, - ym);
+	for (j = 0; j < x->n; j++) {
+		double	xm;
+		double	xtx;
+		xm = mm_real_xj_sum (x, j) / (double) x->m;
+		mm_real_xj_add_const (x, j, - xm);
+		xtx = mm_real_xj_ssq (x, j);
+		mm_real_xj_scale (x, j, 1. / sqrt (xtx));
+	}
+	return;
+}
 
 /*** 1D derivation operator for the L2 penalty of s-lasso ***/
 
@@ -84,6 +103,7 @@ extern double	log10_lambda;
 extern double	dlog10_lambda;
 extern double	tolerance;
 extern int		maxiter;
+extern bool		verbos;
 
 /*** read command line options ***/
 bool
@@ -92,7 +112,7 @@ read_params (int argc, char **argv)
 	bool	status = true;
 	char	c;
 
-	while ((c = getopt (argc, argv, "x:y:a:l:r:t:m:n")) != -1) {
+	while ((c = getopt (argc, argv, "x:y:a:l:r:t:m:vn")) != -1) {
 
 		switch (c) {
 
@@ -105,30 +125,34 @@ read_params (int argc, char **argv)
 				break;
 
 			case 'a':
-					alpha = (double) atof (optarg);
+				alpha = (double) atof (optarg);
 				break;
 
 			case 'l':
-					use_fixed_lambda2 = true;
-					lambda2 = (double) atof (optarg);
+				use_fixed_lambda2 = true;
+				lambda2 = (double) atof (optarg);
 				break;
 
 			case 'r':
-					if (strchr (optarg, ':')) {
-						sscanf (optarg, "%lf:%lf", &log10_lambda, &dlog10_lambda);
-					} else log10_lambda = (double) atof (optarg);
+				if (strchr (optarg, ':')) {
+					sscanf (optarg, "%lf:%lf", &log10_lambda, &dlog10_lambda);
+				} else log10_lambda = (double) atof (optarg);
 				break;
 
 			case 't':
-					tolerance = (double) atof (optarg);
+				tolerance = (double) atof (optarg);
 				break;
 
 			case 'm':
-					maxiter = atoi (optarg);
+				maxiter = atoi (optarg);
 				break;
 
 			case 'n':
-					constraint = true;
+				constraint = true;
+				break;
+
+			case 'v':
+				verbos = true;
 				break;
 
 			case ':':

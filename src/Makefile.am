@@ -17,6 +17,7 @@ libcdescent_la_SOURCES =\
 	update.c\
 	cyclic.c\
 	stochastic.c\
+	io.c\
 	regression.c
 
 libcdescent_la_LIBADD = -L$(top_srcdir)/src

@@ -8,6 +8,7 @@ libcdescent_include_DATA =\
 	objects.h\
 	linregmodel.h\
 	regression.h\
+	io.h\
 	cdescent.h
 
 EXTRA_DIST = $(libcdescent_include_DATA)
