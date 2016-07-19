@@ -27,7 +27,7 @@ cdescent_do_update_once_cycle_cyclic (cdescent *cd)
 	double	amax_eta;	// max of |eta(j)| = |beta_new(j) - beta_prev(j)|
 
 	/* b = (sum(y) - sum(X) * beta) / m */
-	if (cd->use_intercept && cd->lreg->xcentered) update_intercept (cd);
+	if (cd->use_intercept) update_intercept (cd);
 
 	amax_eta = 0.;
 

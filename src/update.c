@@ -33,9 +33,9 @@ update_intercept (cdescent *cd)
 {
 	cd->b0 = 0.;
 	// b += bar(y)
-	if (cd->lreg->ycentered) cd->b0 += *(cd->lreg->sy);
+	if (cd->lreg->ycentered && cd->lreg->sy) cd->b0 += *(cd->lreg->sy);
 	// b -= bar(X) * beta
-	if (cd->lreg->xcentered) {
+	if (cd->lreg->xcentered && cd->lreg->sx) {
 		mm_dense	*beta;
 		if (cd->lreg->xnormalized) beta = unscaled_beta (cd);
 		else beta = cd->beta;
