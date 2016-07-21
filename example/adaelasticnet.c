@@ -20,8 +20,8 @@ double		alpha = 1.;				// raito of L1 / L2 penalty parameter
 bool		constraint = false;
 bool		use_fixed_lambda2 = false;
 double		lambda2 = 0.;
-double		log10_lambda = -2.;		// lower bound of log10(lambda1) for warm start
-double		dlog10_lambda = 0.1;	// increment of log10(lambda1)
+double		log10_lambda_lower = -2.;		// lower bound of log10(lambda1) for warm start
+double		log10_dlambda = 0.1;	// increment of log10(lambda1)
 
 double		tolerance = 1.e-3;
 int			maxiter = 100000;
@@ -95,8 +95,8 @@ main (int argc, char **argv)
 	cd = cdescent_new (alpha, lreg, tolerance, maxiter, false);
 
 	/*** set parameters of pathwise coordinate descent optimization ***/
-	cdescent_set_log10_lambda_lower (cd, log10_lambda);
-	cdescent_set_dlog10_lambda (cd, dlog10_lambda);
+	cdescent_set_log10_lambda_lower (cd, log10_lambda_lower);
+	cdescent_set_log10_dlambda (cd, log10_dlambda);
 	if (constraint) cdescent_set_constraint (cd, constraint_func0);
 	if (use_fixed_lambda2) cdescent_use_fixed_lambda2 (cd, lambda2);
 

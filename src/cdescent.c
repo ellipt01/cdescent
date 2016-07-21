@@ -66,7 +66,7 @@ cdescent_alloc (void)
 
 	cd->log10_lambda_upper = 0.;
 	cd->log10_lambda_lower = 0.;
-	cd->dlog10_lambda = 0.;
+	cd->log10_dlambda = 0.;
 
 	cd->output_fullpath = false;
 	cd->output_info = false;
@@ -127,7 +127,7 @@ cdescent_new (const double alpha, const linregmodel *lreg, const double tol, con
 	cd->log10_lambda_upper = log10_lambda_upper_default;
 	if (cd->alpha1 > 0.) cd->log10_lambda_upper -= floor (log10 (cd->alpha1));
 	cd->log10_lambda_lower = log10 (tol);
-	cd->dlog10_lambda = 0.1;
+	cd->log10_dlambda = 0.1;
 	strcpy (cd->fn_path, default_fn_path);	// default filename
 	strcpy (cd->fn_info, default_fn_info);	// default filename
 
@@ -252,11 +252,11 @@ cdescent_set_log10_lambda_lower (cdescent *cd, const double log10_lambda_lower)
 	return;
 }
 
-/*** set cd->dlog10_lambda ***/
+/*** set cd->log10_dlambda ***/
 void
-cdescent_set_dlog10_lambda (cdescent *cd, const double dlog10_lambda)
+cdescent_set_log10_dlambda (cdescent *cd, const double log10_dlambda)
 {
-	cd->dlog10_lambda = dlog10_lambda;
+	cd->log10_dlambda = log10_dlambda;
 	return;
 }
 

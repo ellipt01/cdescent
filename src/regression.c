@@ -166,7 +166,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 
 		/* if logt - dlog10_lambda1 < log10_lambda1, logt = log10_lambda1 and stop_flag is set to true
 		 * else logt -= dlog10_lambda1 */
-		stop_flag = set_logt (cd->log10_lambda_lower, logt - cd->dlog10_lambda, &logt);
+		stop_flag = set_logt (cd->log10_lambda_lower, logt - cd->log10_dlambda, &logt);
 
 		iter++;
 	}

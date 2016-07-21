@@ -99,8 +99,8 @@ extern double	alpha;
 extern bool		constraint;
 extern bool		use_fixed_lambda2;
 extern double	lambda2;
-extern double	log10_lambda;
-extern double	dlog10_lambda;
+extern double	log10_lambda_lower;
+extern double	log10_dlambda;
 extern double	tolerance;
 extern int		maxiter;
 extern bool		verbos;
@@ -135,8 +135,8 @@ read_params (int argc, char **argv)
 
 			case 'r':
 				if (strchr (optarg, ':')) {
-					sscanf (optarg, "%lf:%lf", &log10_lambda, &dlog10_lambda);
-				} else log10_lambda = (double) atof (optarg);
+					sscanf (optarg, "%lf:%lf", &log10_lambda_lower, &log10_dlambda);
+				} else log10_lambda_lower = (double) atof (optarg);
 				break;
 
 			case 't':

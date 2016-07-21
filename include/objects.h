@@ -107,7 +107,7 @@ struct s_cdescent {
 
 	double					log10_lambda_upper;		// upper bound of lambda1 on log10 scale
 	double					log10_lambda_lower;		// lower bound of lambda1 on log10 scale
-	double					dlog10_lambda;			// increment of lambda1 on log10 scale
+	double					log10_dlambda;			// increment of lambda1 on log10 scale
 
 	bool					verbos;					// if this is set to true, detailed progress of calculation will be reported
 

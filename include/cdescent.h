@@ -36,7 +36,7 @@ void		cdescent_set_log10_lambda (cdescent *cd, const double log10_lambda);
 
 void		cdescent_set_log10_lambda_upper (cdescent *cd, const double log10_lambda_upper);
 void		cdescent_set_log10_lambda_lower (cdescent *cd, const double log10_lambda_lower);
-void		cdescent_set_dlog10_lambda (cdescent *cd, const double dlog10_lambda);
+void		cdescent_set_log10_dlambda (cdescent *cd, const double dlog10_lambda);
 void		cdescent_set_outputs_fullpath (cdescent *cd, const char *fn);
 void		cdescent_set_outputs_info (cdescent *cd, const char *fn);
 
