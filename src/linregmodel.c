@@ -34,7 +34,7 @@ calc_sum (const mm_real *x, double **sum)
 		free (_sum);
 	} else *sum = _sum;
 
-	return (centered == false);
+	return centered;
 }
 
 /* calculate sum x(:,j)^2 */
@@ -59,7 +59,7 @@ calc_ssq (const mm_real *x, double **ssq)
 		free (_ssq);
 	} else *ssq = _ssq;
 
-	return (normalized == false);
+	return normalized;
 }
 
 /* centering each column of matrix:
