@@ -40,6 +40,9 @@ void		cdescent_set_log10_dlambda (cdescent *cd, const double dlog10_lambda);
 void		cdescent_set_outputs_fullpath (cdescent *cd, const char *fn);
 void		cdescent_set_outputs_info (cdescent *cd, const char *fn);
 
+double		cdescent_get_intercept_in_original_scale (const cdescent *cd);
+mm_dense	*cdescent_get_beta_in_original_scale (const cdescent *cd);
+
 #ifdef __cplusplus
 }
 #endif

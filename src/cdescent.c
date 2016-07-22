@@ -277,3 +277,27 @@ cdescent_set_outputs_info (cdescent *cd, const char *fn)
 	if (fn) strcpy (cd->fn_info, fn);
 	return;
 }
+
+double
+cdescent_get_intercept_in_original_scale (const cdescent *cd)
+{
+	return cd->b0;
+}
+
+static void
+beta_in_original_scale (mm_dense *beta, const double *xtx)
+{
+	int		j;
+	for (j = 0; j < beta->m; j++) beta->data[j] /= sqrt (xtx[j]);
+	return;
+}
+
+mm_dense *
+cdescent_get_beta_in_original_scale (const cdescent *cd)
+{
+	mm_dense	*beta = mm_real_copy (cd->beta);
+	if (cd->lreg->xnormalized && cd->lreg->xtx) {
+		beta_in_original_scale (beta, cd->lreg->xtx);
+	}
+	return beta;
+}

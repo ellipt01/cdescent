@@ -16,18 +16,8 @@
 /* stepsize.c */
 extern double		cdescent_beta_stepsize (const cdescent *cd, const int j);
 
-mm_dense *
-unscaled_beta (cdescent *cd)
-{
-	int		j;
-	mm_dense	*beta = mm_real_copy (cd->beta);
-	for (j = 0; j < beta->m; j++) {
-		beta->data[j] /= sqrt (cd->lreg->xtx[j]);
-	}
-	return beta;
-}
-
-/* update intercept: (sum (y) - sum(X) * beta) / n */
+/* update intercept: (sum (y) - sum(X) * beta) / m
+ * intercept is calculated in original scale */
 void
 update_intercept (cdescent *cd)
 {
@@ -36,13 +26,11 @@ update_intercept (cdescent *cd)
 	if (cd->lreg->ycentered && cd->lreg->sy) cd->b0 += *(cd->lreg->sy);
 	// b -= bar(X) * beta
 	if (cd->lreg->xcentered && cd->lreg->sx) {
-		mm_dense	*beta;
-		if (cd->lreg->xnormalized) beta = unscaled_beta (cd);
-		else beta = cd->beta;
+		mm_dense	*beta = cdescent_get_beta_in_original_scale (cd);
 		cd->b0 -= ddot_ (cd->n, cd->lreg->sx, &ione, beta->data, &ione);
-		if (cd->lreg->xnormalized) mm_real_free (beta);
+		mm_real_free (beta);
 	}
-	if (fabs (cd->b0) > DBL_EPSILON) cd->b0 /= (double) *cd->m;
+	cd->b0 /= (double) *cd->m;
 	return;
 }
 
