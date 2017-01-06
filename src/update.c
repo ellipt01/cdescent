@@ -23,14 +23,14 @@ update_intercept (cdescent *cd)
 {
 	cd->b0 = 0.;
 	// b += bar(y)
-	if (cd->lreg->ycentered && cd->lreg->sy) cd->b0 += *(cd->lreg->sy);
+	if (!cd->lreg->ycentered && cd->lreg->sy) cd->b0 += *(cd->lreg->sy);
 	// b -= bar(X) * beta
-	if (cd->lreg->xcentered && cd->lreg->sx) {
+	if (!cd->lreg->xcentered && cd->lreg->sx) {
 		mm_dense	*beta = cdescent_get_beta_in_original_scale (cd);
 		cd->b0 -= ddot_ (cd->n, cd->lreg->sx, &ione, beta->data, &ione);
 		mm_real_free (beta);
 	}
-	cd->b0 /= (double) *cd->m;
+	if (fabs (cd->b0) > DBL_EPSILON) cd->b0 /= (double) *cd->m;
 	return;
 }
 

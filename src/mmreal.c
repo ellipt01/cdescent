@@ -269,11 +269,11 @@ mm_real_memcpy_sparse (mm_sparse *dest, const mm_sparse *src)
 }
 
 /* memcpy dense */
-static mm_dense *
+static void
 mm_real_memcpy_dense (mm_dense *dest, const mm_dense *src)
 {
 	dcopy_ (&src->nnz, src->data, &ione, dest->data, &ione);
-	return dest;
+	return;
 }
 
 /*** memcpy mm_real ***/
