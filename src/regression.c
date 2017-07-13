@@ -127,7 +127,6 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 			sprintf (msg, "cannot open file %s.", cd->fn_path);
 			printf_warning ("cdescent_do_pathwise_optimization", msg, __FILE__, __LINE__);
 		}
-		if (fp_path) fprintf_solutionpath (fp_path, cd);
 	}
 
 	if (cd->output_info) {
