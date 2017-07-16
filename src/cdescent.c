@@ -301,3 +301,18 @@ cdescent_get_beta_in_original_scale (const cdescent *cd)
 	}
 	return beta;
 }
+
+void
+cdescent_init_beta (cdescent *cd, const mm_dense *beta)
+{
+	if (cd->beta) {
+		int		n = *cd->n;
+		mm_real_free (cd->beta);
+		cd->beta = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, n, 1, n);
+	}
+	mm_real_memcpy (cd->beta, beta);
+	cd->nrm1 = mm_real_xj_asum (cd->beta, 0);
+	mm_real_x_dot_y (false, 1., cd->lreg->x, cd->beta, 0., cd->mu);
+	if (!cd->is_regtype_lasso) mm_real_x_dot_y (false, 1., cd->lreg->d, cd->beta, 0., cd->nu);
+	return;
+}

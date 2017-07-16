@@ -42,6 +42,7 @@ void		cdescent_set_outputs_info (cdescent *cd, const char *fn);
 
 double		cdescent_get_intercept_in_original_scale (const cdescent *cd);
 mm_dense	*cdescent_get_beta_in_original_scale (const cdescent *cd);
+void		cdescent_init_beta (cdescent *cd, const mm_dense *beta);
 
 #ifdef __cplusplus
 }
