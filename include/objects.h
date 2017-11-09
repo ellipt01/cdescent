@@ -66,7 +66,7 @@ struct s_cdescent {
 	/* whether regression type is Lasso */
 	bool					is_regtype_lasso;		// = (d == NULL)
 	bool					use_intercept;			// whether use intercept (default is true)
-	bool					use_fixed_lambda2;		// use fixed lambda2 value (default is false)
+	bool					use_fixed_lambda;		// use fixed lambda value (default is false)
 	CoordinateSelectionRule	rule;					// decide cyclic or stochastic coordinate descent
 
 	const int				*m;						// number of observations, points cd->lreg->y->m

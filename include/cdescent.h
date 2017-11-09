@@ -29,7 +29,7 @@ bool		cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w, const double
 
 void		cdescent_not_use_intercept (cdescent *cd);
 void		cdescent_set_constraint (cdescent *cd, constraint_func func);
-void		cdescent_use_fixed_lambda2 (cdescent *cd, const double lambda2);
+void		cdescent_use_fixed_lambda (cdescent *cd, const double lambda);
 
 void		cdescent_set_lambda (cdescent *cd, const double lambda);
 void		cdescent_set_log10_lambda (cdescent *cd, const double log10_lambda);

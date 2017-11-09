@@ -18,8 +18,8 @@ char		infn_x[80] = "\0";		// store input file name of design matrix
 char		infn_y[80] = "\0";		// store input file name of observed data
 double		alpha = 1.;				// raito of L1 / L2 penalty parameter
 bool		constraint = false;
-bool		use_fixed_lambda2 = false;
-double		lambda2 = 0.;
+bool		use_fixed_lambda = false;
+double		lambda = 0.;
 double		log10_lambda_lower = -2.;		// lower bound of log10(lambda1) for warm start
 double		log10_dlambda = 0.1;	// increment of log10(lambda1)
 
@@ -100,7 +100,7 @@ main (int argc, char **argv)
 	if (constraint) cdescent_set_constraint (cd, constraint_func0);
 	cdescent_set_outputs_fullpath (cd, NULL);	// output full solution path
 	cdescent_set_outputs_info (cd, NULL);		// output regression info
-	if (use_fixed_lambda2) cdescent_use_fixed_lambda2 (cd, lambda2);
+	if (use_fixed_lambda) cdescent_use_fixed_lambda (cd, lambda);
 
 	/*** do pathwise coordinate descent regression ***/
 	cdescent_do_pathwise_optimization (cd);

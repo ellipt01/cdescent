@@ -97,8 +97,8 @@ extern char		infn_x[];
 extern char		infn_y[];
 extern double	alpha;
 extern bool		constraint;
-extern bool		use_fixed_lambda2;
-extern double	lambda2;
+extern bool		use_fixed_lambda;
+extern double	lambda;
 extern double	log10_lambda_lower;
 extern double	log10_dlambda;
 extern double	tolerance;
@@ -129,8 +129,8 @@ read_params (int argc, char **argv)
 				break;
 
 			case 'l':
-				use_fixed_lambda2 = true;
-				lambda2 = (double) atof (optarg);
+				use_fixed_lambda = true;
+				lambda = (double) atof (optarg);
 				break;
 
 			case 'r':

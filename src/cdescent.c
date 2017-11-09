@@ -35,7 +35,7 @@ cdescent_alloc (void)
 
 	cd->is_regtype_lasso = true;
 	cd->use_intercept = true;
-	cd->use_fixed_lambda2 = false;
+	cd->use_fixed_lambda = false;
 	cd->rule = CDESCENT_SELECTION_RULE_CYCLIC;
 
 	cd->m = NULL;
@@ -204,15 +204,37 @@ cdescent_set_constraint (cdescent *cd, constraint_func func)
 	return;
 }
 
-void
-cdescent_use_fixed_lambda2 (cdescent *cd, const double lambda2)
+static bool
+is_regtype_l1 (const cdescent *cd)
 {
-	cd->use_fixed_lambda2 = true;
-	cd->lambda2 = lambda2;
+	// whether alpha1 == 1
+	return (fabs (cd->alpha1 - 1.) < DBL_EPSILON);
+}
 
-	cd->alpha1 = 1.;
-	cd->alpha2 = 0.;
-	cd->log10_lambda_upper = log10_lambda_upper_default;
+static bool
+is_regtype_l2 (const cdescent *cd)
+{
+	// whether alpha2 == 1
+	return (fabs (cd->alpha2 - 1.) < DBL_EPSILON);
+}
+
+void
+cdescent_use_fixed_lambda (cdescent *cd, const double lambda)
+{
+	if (is_regtype_l1 (cd)) {	// L1 norm regularization
+		cd->use_fixed_lambda = true;
+		cd->lambda2 = lambda;
+		cd->log10_lambda_upper = log10_lambda_upper_default;
+	} else if (is_regtype_l2 (cd)) {	// L2 norm regularization
+		cd->use_fixed_lambda = true;
+		cd->lambda1 = lambda;
+		cd->log10_lambda_upper = log10_lambda_upper_default;
+	} else {
+		printf_warning (
+			"cdescent_use_fixed_lambda",
+			"alpha must be 0 or 1, use_fixed_lambda is ignored",
+			__FILE__, __LINE__);
+	}
 	return;
 }
 
@@ -223,8 +245,16 @@ void
 cdescent_set_lambda (cdescent *cd, const double lambda)
 {
 	cd->lambda = lambda;
-	cd->lambda1 = cd->alpha1 * lambda;
-	if (!cd->use_fixed_lambda2) cd->lambda2 = cd->alpha2 * lambda;
+	if (!cd->use_fixed_lambda) {
+		cd->lambda1 = cd->alpha1 * lambda;
+		cd->lambda2 = cd->alpha2 * lambda;
+	} else {
+		if (is_regtype_l1 (cd)) {	// L1 norm regularization
+			cd->lambda1 = lambda;
+		} else if (is_regtype_l2 (cd)) {	// L2 norm regularization
+			cd->lambda2 = lambda;
+		}
+	}
 	return;
 }
 
