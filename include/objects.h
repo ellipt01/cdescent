@@ -65,6 +65,7 @@ struct s_cdescent {
 
 	/* whether regression type is Lasso */
 	bool					is_regtype_lasso;		// = (d == NULL)
+	bool					use_penalty_factor;		// whether use penalty factor
 	bool					use_intercept;			// whether use intercept (default is true)
 	bool					use_fixed_lambda;		// use fixed lambda value (default is false)
 	CoordinateSelectionRule	rule;					// decide cyclic or stochastic coordinate descent
@@ -101,9 +102,9 @@ struct s_cdescent {
 	constraint_func			cfunc;					// constraint function
 
 	bool					output_fullpath;		// whether to outputs full solution path
-	char					fn_path[BUFSIZ];		// file to output solution path
+	char					fn_path[128];			// file to output solution path
 	bool					output_info;			// whether to outputs regression info
-	char					fn_info[BUFSIZ];		// file to output info
+	char					fn_info[128];			// file to output info
 
 	double					log10_lambda_upper;		// upper bound of lambda1 on log10 scale
 	double					log10_lambda_lower;		// lower bound of lambda1 on log10 scale

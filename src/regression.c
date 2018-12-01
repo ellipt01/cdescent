@@ -123,7 +123,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 
 	if (cd->output_fullpath) {
 		if ((fp_path = fopen (cd->fn_path, "w")) == NULL) {
-			char	msg[80];
+			char	msg[BUFSIZ];
 			sprintf (msg, "cannot open file %s.", cd->fn_path);
 			printf_warning ("cdescent_do_pathwise_optimization", msg, __FILE__, __LINE__);
 		}
@@ -131,7 +131,7 @@ cdescent_do_pathwise_optimization (cdescent *cd)
 
 	if (cd->output_info) {
 		if ((fp_info = fopen (cd->fn_info, "w")) == NULL) {
-			char	msg[80];
+			char	msg[BUFSIZ];
 			sprintf (msg, "cannot open file %s.", cd->fn_info);
 			printf_warning ("cdescent_do_pathwise_optimization", msg, __FILE__, __LINE__);
 		}

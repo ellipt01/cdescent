@@ -88,8 +88,8 @@ main (int argc, char **argv)
 
 	/*** create linear regression model object
 	     for || y - x * beta ||^2 + lambda2 * || d * beta ||^2 ***/
-//	lreg = linregmodel_new (y, x, d, DO_CENTERING_Y | DO_STANDARDIZING_X);
-	lreg = linregmodel_new (y, x, d, DO_CENTERING_Y | DO_CENTERING_X);
+	lreg = linregmodel_new (y, x, d, DO_CENTERING_Y | DO_STANDARDIZING_X);
+//	lreg = linregmodel_new (y, x, d, DO_CENTERING_Y | DO_CENTERING_X);
 
 	/*** create coordinate descent object ***/
 	cd = cdescent_new (alpha, lreg, tolerance, maxiter, false);

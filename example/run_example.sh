@@ -31,9 +31,20 @@
 
 # example for diabetes.data
 # alpha = 1 (lasso), lambda = [0.01 : 10^0.1 : max( |c| )],
-./elasticnet -x ../share/diabetes_x.data -y ../share/diabetes_y.data -a 1 -r -4:0.1 -m 100000
+
+#suffix="diabetes"
+#suffix="iris"
+#suffix="boston"
+suffix="wine"
+#suffix="breast_cancer"
+
+fnx="../share/"$suffix"_x.mtx"
+fny="../share/"$suffix"_y.mtx"
+
+./elasticnet -x $fnx -y $fny -a 1. -r -4:0.1 -m 100000 -t 1.e-5
 
 # display resultant solution path
 # USAGE: plot_path <dim of beta> <alpha>
-./plot_path 10 1
+n=`cat $fnx | gawk '{if(substr($0,1,1)!="%"){print $2;exit}}'`
+./plot_path $n 1
 

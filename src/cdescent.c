@@ -33,6 +33,7 @@ cdescent_alloc (void)
 
 	cd->was_modified = false;
 
+	cd->use_penalty_factor = false;
 	cd->is_regtype_lasso = true;
 	cd->use_intercept = true;
 	cd->use_fixed_lambda = false;
@@ -179,6 +180,8 @@ cdescent_set_penalty_factor (cdescent *cd, const mm_dense *w, const double tau)
 	if (w->n != 1) error_and_exit ("cdescent_set_penalty_factor", "w must be vector.", __FILE__, __LINE__);
 	/* check dimensions of x and w */
 	if (w->m != *cd->n) error_and_exit ("cdescent_set_penalty_factor", "dimensions of w does not match.", __FILE__, __LINE__);
+
+	cd->use_penalty_factor = true;
 
 	/* copy w */
 	if (!cd->w) cd->w = mm_real_new (MM_REAL_DENSE, MM_REAL_GENERAL, w->m, 1, w->nnz);
